@@ -9,7 +9,7 @@ type Bits = u16;
 type SizeAndBits = u16;
 
 /// A set of knowns implemented using a bit field.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Set(SizeAndBits);
 
 const ALL_KNOWNS: std::ops::Range<Size> = 0..9;
@@ -250,7 +250,7 @@ impl Iterator for Iter {
         } else {
             let bit = 1 << self.bits.trailing_zeros();
             self.bits &= !bit;
-            Some(Known::from(bit as u16))
+            Some(Known::from(bit.trailing_zeros() as u16))
         }
     }
 }

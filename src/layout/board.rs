@@ -1,8 +1,12 @@
+use std::fmt;
+use crate::layout::{Column, Row};
+
 use super::{Cell, CellSet};
 use super::{Known, KnownSet};
 
 const UNKNOWN: u8 = 0;
 
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Board {
     givens: CellSet,
     knowns: CellSet,
@@ -71,5 +75,29 @@ impl Board {
         for c in cell.neighbors().iter() {
             self.candidates[c.cell().usize()] -= known;
         }
+    }
+}
+
+impl fmt::Display for Board {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut first = true;
+        for r in 0..9 {
+            let row = Row::new(r);
+            if !first {
+                write!(f, " ")?;
+            }
+            first = false;
+            for c in 0..9 {
+                let col = Column::new(c);
+                let cell = row.cell(col);
+                let value = self.value(cell);
+                if value == UNKNOWN {
+                    write!(f, ".")?;
+                } else {
+                    write!(f, "{}", value)?;
+                }
+            }
+        }
+        Ok(())
     }
 }

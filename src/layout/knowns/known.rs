@@ -3,7 +3,7 @@ use std::ops::{Deref, DerefMut};
 use super::Set;
 
 /// Specifies a single known value using its index and bit.
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Known {
     index: u16,
     bit: u16,
@@ -22,6 +22,10 @@ impl Known {
         self.index
     }
 
+    pub const fn usize(&self) -> usize {
+        self.index as usize
+    }
+
     pub const fn bit(&self) -> u16 {
         self.bit
     }
@@ -37,7 +41,14 @@ impl Known {
 
 impl From<u16> for Known {
     fn from(index: u16) -> Self {
+        assert!(index < 9);
         KNOWNS[index as usize]
+    }
+}
+
+impl From<Known> for usize {
+    fn from(known: Known) -> Self {
+        known.index as usize
     }
 }
 
@@ -60,7 +71,9 @@ impl ToString for Known {
 }
 
 const LABELS: [&str; 9] = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
-const KNOWNS: [Known; 9] = [
+
+pub const UNKNOWN: u8 = 0;
+pub const KNOWNS: [Known; 9] = [
     Known::new(0),
     Known::new(1),
     Known::new(2),
