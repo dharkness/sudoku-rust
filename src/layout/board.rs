@@ -10,6 +10,7 @@ pub struct Board {
     knowns: CellSet,
     values: [u8; 81],
     candidates: [KnownSet; 81],
+    valid: bool,
 }
 
 impl Board {
@@ -19,6 +20,7 @@ impl Board {
             knowns: CellSet::empty(),
             values: [UNKNOWN; 81],
             candidates: [KnownSet::full(); 81],
+            valid: true,
         }
     }
 
@@ -42,6 +44,10 @@ impl Board {
         self.knowns.is_full()
     }
 
+    pub fn is_valid(&self) -> bool {
+        self.valid
+    }
+
     pub fn candidates(&self, cell: Cell) -> KnownSet {
         self.candidates[cell.index() as usize]
     }
@@ -52,7 +58,9 @@ impl Board {
 
     pub fn remove_candidate(&mut self, cell: Cell, known: Known) {
         assert!(self.is_candidate(cell, known));
-        self.candidates[cell.index() as usize] -= known;
+        let mut set = self.candidates[cell.index() as usize];
+        set -= known;
+        self.valid = !set.is_empty();
     }
 
     pub fn value(&self, cell: Cell) -> u8 {
@@ -70,9 +78,31 @@ impl Board {
         self.knowns += cell;
         self.values[cell.usize()] = known.value();
         self.candidates[cell.usize()] = KnownSet::empty();
+
+        // let mut singles: Vec<(Cell, Known)> = Vec::new();
         for c in cell.neighbors().iter() {
-            self.candidates[c.cell().usize()] -= known;
+            let set = &mut self.candidates[c.index() as usize];
+            if set[known] {
+                *set -= known;
+                if set.is_empty() {
+                    self.valid = false;
+                // } else if set.size() == 1 {
+                //     singles.push((c.cell(), set.iter().next().unwrap()));
+                }
+            }
         }
+
+        // for (c, k) in singles {
+        //     if self.is_solved() {
+        //         continue;
+        //     }
+        //     if !self.is_candidate(c, k) {
+        //         self.set_known(c, k);
+        //     } else {
+        //         self.valid = false;
+        //         break;
+        //     }
+        // }
     }
 }
 

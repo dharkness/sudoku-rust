@@ -12,7 +12,7 @@ impl Bit {
     pub const ALL: u128 = (1 << Cell::COUNT) - 1;
 
     pub const fn new(bit: u128) -> Self {
-        debug_assert!(bit <= Bit::MAX && bit == 1 << bit.trailing_zeros());
+        debug_assert!(bit <= Bit::MAX && bit.count_ones() == 1);
         Self(bit)
     }
 
@@ -20,8 +20,12 @@ impl Bit {
         self.0
     }
 
+    pub const fn index(&self) -> u32 {
+        self.0.trailing_zeros()
+    }
+
     pub const fn cell(&self) -> Cell {
-        Cell::new(self.0.trailing_zeros())
+        Cell::new(self.index())
     }
 }
 

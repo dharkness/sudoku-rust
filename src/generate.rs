@@ -1,3 +1,6 @@
+use std::sync::atomic::{AtomicBool, Ordering};
+
+use ctrlc;
 use rand::rngs::ThreadRng;
 use rand::seq::SliceRandom;
 
@@ -26,6 +29,9 @@ impl Generator {
     }
 
     pub fn generate(&mut self) -> Option<Board> {
+        static CANCEL: AtomicBool = AtomicBool::new(false);
+        ctrlc::set_handler(|| CANCEL.store(true, Ordering::Relaxed)).expect("Error setting Ctrl-C handler");
+
         let mut stack = Vec::with_capacity(81);
 
         stack.push(Entry {
@@ -38,6 +44,9 @@ impl Generator {
             println!("{}{}", FILLED[..stack.len()+1].to_string(), EMPTY[stack.len()+1..].to_string());
 
             let Entry { board, cell, mut candidates } = stack.pop().unwrap();
+            if CANCEL.load(Ordering::Relaxed) {
+                return Some(board);
+            }
             if candidates.is_empty() {
                 continue;
             }
@@ -50,6 +59,10 @@ impl Generator {
             let candidate = candidates.pop().unwrap();
             let mut clone = board.clone();
             clone.set_known(cell, candidate);
+            if !clone.is_valid() {
+                continue;
+            }
+
             stack.push(Entry {
                 board,
                 cell,
