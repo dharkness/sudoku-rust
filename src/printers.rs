@@ -1,17 +1,16 @@
-use crate::layout::{Board, Cell, Column, Coord, KNOWNS, KnownSet, Row, UNKNOWN};
+use crate::layout::{Board, Cell, Coord, House, KNOWNS, KnownSet, UNKNOWN};
 
 const MISSING: char = '·';
 const ROW_COORDS: [char; 9] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J'];
 const VALUES: [char; 10] = [MISSING, '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 pub fn print_values(board: &Board) {
-    println!("  123456789");
+    println!("  ¹²³⁴⁵⁶⁷⁸⁹");
     for (r, coord) in ROW_COORDS.iter().enumerate() {
-        let row = Row::new(r as Coord);
+        let row = House::row(Coord::new(r as u8));
         print!("{} ", coord);
         for c in 0..9 {
-            let col = Column::new(c as Coord);
-            let value = board.value(row.cell(col));
+            let value = board.value(row.cell(Coord::new(c as u8)));
             if value == UNKNOWN {
                 print!("{}", MISSING);
             } else {
@@ -23,17 +22,16 @@ pub fn print_values(board: &Board) {
 }
 
 pub fn print_candidates(board: &Board) {
-    println!("   1   2   3     4   5   6     7   8   9\n");
+    println!("   ¹   ²   ³     ⁴   ⁵   ⁶     ⁷   ⁸   ⁹");
     for (r, coord) in ROW_COORDS.iter().enumerate() {
-        let row = Row::new(r as Coord);
+        let row = House::row(Coord::new(r as u8));
         let mut lines = [
             String::from("  "),
             coord.to_string() + " ",
             String::from("  "),
         ];
         for c in 0..9 {
-            let col = Column::new(c as Coord);
-            let cell = row.cell(col);
+            let cell = row.cell(Coord::new(c as u8));
             let value = board.value(cell);
             let candidates = board.candidates(cell);
             if value == UNKNOWN {
@@ -78,5 +76,5 @@ pub fn print_candidates(board: &Board) {
             println!("              |             |");
         }
     }
-    println!("\n   1   2   3     4   5   6     7   8   9");
+    println!("   ₁   ₂   ₃     ₄   ₅   ₆     ₇   ₈   ₉");
 }

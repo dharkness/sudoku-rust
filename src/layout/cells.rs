@@ -8,4 +8,4 @@ mod set;
 pub use bit::Bit;
 pub use cell::Cell;
 pub use generate::generate_code_for_neighbors;
-pub use set::Set;
+pub use set::{Bits, Set};

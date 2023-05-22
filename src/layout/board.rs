@@ -1,8 +1,6 @@
 use std::fmt;
-use crate::layout::{Column, Row};
 
-use super::{Cell, CellSet};
-use super::{Known, KnownSet};
+use super::{Cell, CellSet, Coord, House, Known, KnownSet};
 
 const UNKNOWN: u8 = 0;
 
@@ -82,14 +80,13 @@ impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut first = true;
         for r in 0..9 {
-            let row = Row::new(r);
+            let row = House::row(Coord::new(r as u8));
             if !first {
                 write!(f, " ")?;
             }
             first = false;
             for c in 0..9 {
-                let col = Column::new(c);
-                let cell = row.cell(col);
+                let cell = row.cell(Coord::new(c as u8));
                 let value = self.value(cell);
                 if value == UNKNOWN {
                     write!(f, ".")?;

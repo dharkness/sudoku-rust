@@ -1,4 +1,3 @@
-mod coord_set;
 mod generate;
 mod layout;
 mod printers;

@@ -90,6 +90,7 @@ pub fn generate_board() {
     match generator.generate() {
         Some(board) => {
             print_values(&board);
+            print_candidates(&board);
             println!("Board: {}", board);
         },
         None => {

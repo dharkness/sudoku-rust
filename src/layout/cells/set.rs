@@ -10,8 +10,8 @@ use std::ops::{
 
 use super::{Bit, Cell};
 
+pub type Bits = u128;
 type Size = u32;
-type Bits = u128;
 type SizeAndBits = u128;
 
 /// A set of cells implemented using a bit field.
@@ -45,6 +45,17 @@ impl Set {
 
     pub const fn new(bits: Bits) -> Set {
         Set(pack(bits, bits.count_ones() as Size))
+    }
+
+    pub const fn from<const N: usize>(cells: &[Cell; N]) -> Set {
+        let mut bits: Bits = 0;
+        let mut i = 0;
+
+        while i < N {
+            bits |= cells[i].bit().bit();
+            i += 1;
+        }
+        Set::new(bits)
     }
 
     const fn packed(size_and_bits: SizeAndBits) -> Set {

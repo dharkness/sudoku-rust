@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use crate::layout::{Block, Column, Coord, House, Row};
+use crate::layout::{Coord, House, Shape};
 
 use super::label::{index_from_label, label_from_index};
 use super::{Bit, Set};
@@ -29,16 +29,24 @@ impl Cell {
         Bit::new(1 << self.0)
     }
 
-    pub const fn row(&self) -> Row {
-        Row::new((self.0 / 9) as Coord)
+    pub const fn house(&self, shape: Shape) -> House {
+        match shape {
+            Shape::Row => self.row(),
+            Shape::Column => self.column(),
+            Shape::Block => self.block(),
+        }
     }
 
-    pub const fn column(&self) -> Column {
-        Column::new((self.0 % 9) as Coord)
+    pub const fn row(&self) -> House {
+        House::row(Coord::new((self.0 / 9) as u8))
     }
 
-    pub const fn block(&self) -> Block {
-        Block::new((self.row().coord() / 3) * 3 + (self.column().coord() / 3))
+    pub const fn column(&self) -> House {
+        House::column(Coord::new((self.0 % 9) as u8))
+    }
+
+    pub const fn block(&self) -> House {
+        House::block(Coord::new((self.row().coord().u8() / 3) * 3 + (self.column().coord().u8() / 3)))
     }
 
     pub const fn neighbors(&self) -> Set {
