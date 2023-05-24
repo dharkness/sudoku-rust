@@ -1,3 +1,4 @@
+use std::fmt;
 use std::ops::{Deref, DerefMut};
 
 use crate::layout::{Coord, House, Shape};
@@ -49,6 +50,18 @@ impl Cell {
         House::block(Coord::new((self.row().coord().u8() / 3) * 3 + (self.column().coord().u8() / 3)))
     }
 
+    pub const fn coord_in_row(&self) -> Coord {
+        return Coord::new((self.0 % 9) as u8);
+    }
+
+    pub const fn coord_in_column(&self) -> Coord {
+        return Coord::new((self.0 / 9) as u8);
+    }
+
+    pub const fn coord_in_block(&self) -> Coord {
+        Coord::new(3 * (self.row().coord().u8() % 3) + (self.column().coord().u8() % 3))
+    }
+
     pub const fn neighbors(&self) -> Set {
         NEIGHBORS[self.0 as usize]
     }
@@ -84,9 +97,10 @@ impl From<Bit> for Cell {
     }
 }
 
-impl ToString for Cell {
-    fn to_string(&self) -> String {
-        self.label().to_string()
+impl fmt::Display for Cell {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.label())?;
+        Ok(())
     }
 }
 

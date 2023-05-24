@@ -6,6 +6,7 @@ use rand::seq::SliceRandom;
 
 use crate::layout::{Board, Cell, CellSet, Known, KnownSet};
 use crate::printers::{print_candidates, print_values};
+use crate::solvers::deadly_rectangles::{creates_deadly_rectangle};
 
 const FILLED: &str = "|---------=========---------=========---------=========---------=========---------|";
 const EMPTY : &str = "|                                                                                 |";
@@ -57,6 +58,9 @@ impl Generator {
             // }
 
             let candidate = candidates.pop().unwrap();
+            if stack.len() >= 3 && creates_deadly_rectangle(&board, cell, candidate) {
+                continue;
+            }
             let mut clone = board.clone();
             clone.set_known(cell, candidate);
             if !clone.is_valid() {
@@ -103,7 +107,6 @@ pub fn generate_board() {
     match generator.generate() {
         Some(board) => {
             print_values(&board);
-            print_candidates(&board);
             println!("Board: {}", board);
         },
         None => {
