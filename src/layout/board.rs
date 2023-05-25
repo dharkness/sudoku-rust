@@ -2,8 +2,6 @@ use std::fmt;
 
 use super::{Cell, CellSet, Coord, House, Known, KnownSet};
 
-const UNKNOWN: u8 = 0;
-
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct Board {
     givens: CellSet,
@@ -14,17 +12,17 @@ pub struct Board {
 }
 
 impl Board {
-    pub fn new() -> Board {
+    pub const fn new() -> Board {
         Board {
             givens: CellSet::empty(),
             knowns: CellSet::empty(),
-            values: [UNKNOWN; 81],
+            values: [Known::UNKNOWN; 81],
             candidates: [KnownSet::full(); 81],
             valid: true,
         }
     }
 
-    pub fn given_count(&self) -> u32 {
+    pub const fn given_count(&self) -> u32 {
         self.givens.size()
     }
 
@@ -32,7 +30,7 @@ impl Board {
         self.givens[cell]
     }
 
-    pub fn known_count(&self) -> u32 {
+    pub const fn known_count(&self) -> u32 {
         self.knowns.size()
     }
 
@@ -40,15 +38,21 @@ impl Board {
         self.knowns[cell]
     }
 
-    pub fn is_solved(&self) -> bool {
+    pub const fn is_solved(&self) -> bool {
         self.knowns.is_full()
     }
 
-    pub fn is_valid(&self) -> bool {
+    pub const fn is_valid(&self) -> bool {
         self.valid
     }
 
-    pub fn candidates(&self, cell: Cell) -> KnownSet {
+    pub fn all_candidates(&self, cells: CellSet) -> KnownSet {
+        cells.iter().fold(KnownSet::empty(), |acc, cell| {
+            acc | self.candidates(cell)
+        })
+    }
+
+    pub const fn candidates(&self, cell: Cell) -> KnownSet {
         self.candidates[cell.index() as usize]
     }
 
@@ -57,13 +61,12 @@ impl Board {
     }
 
     pub fn remove_candidate(&mut self, cell: Cell, known: Known) {
-        assert!(self.is_candidate(cell, known));
-        let mut set = self.candidates[cell.index() as usize];
-        set -= known;
+        let set = &mut self.candidates[cell.index() as usize];
+        *set -= known;
         self.valid = !set.is_empty();
     }
 
-    pub fn value(&self, cell: Cell) -> u8 {
+    pub const fn value(&self, cell: Cell) -> u8 {
         self.values[cell.index() as usize]
     }
 
@@ -73,6 +76,9 @@ impl Board {
     }
 
     pub fn set_known(&mut self, cell: Cell, known: Known) {
+        if self.values[cell.usize()] == known.value() {
+            return;
+        }
         assert!(!self.is_known(cell));
         assert!(self.is_candidate(cell, known));
         self.knowns += cell;
@@ -80,8 +86,8 @@ impl Board {
         self.candidates[cell.usize()] = KnownSet::empty();
 
         // let mut singles: Vec<(Cell, Known)> = Vec::new();
-        for c in cell.neighbors().iter() {
-            let set = &mut self.candidates[c.index() as usize];
+        for cell in cell.neighbors().iter() {
+            let set = &mut self.candidates[cell.usize()];
             if set[known] {
                 *set -= known;
                 if set.is_empty() {
@@ -118,7 +124,7 @@ impl fmt::Display for Board {
             for c in 0..9 {
                 let cell = row.cell(Coord::new(c as u8));
                 let value = self.value(cell);
-                if value == UNKNOWN {
+                if value == Known::UNKNOWN {
                     write!(f, ".")?;
                 } else {
                     write!(f, "{}", value)?;

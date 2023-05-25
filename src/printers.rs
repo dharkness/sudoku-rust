@@ -1,4 +1,4 @@
-use crate::layout::{Board, Cell, Coord, House, KNOWNS, KnownSet, UNKNOWN};
+use crate::layout::{Board, Cell, Coord, House, Known, KnownSet};
 
 const MISSING: char = '·';
 const ROW_COORDS: [char; 9] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J'];
@@ -11,7 +11,7 @@ pub fn print_values(board: &Board) {
         print!("{} ", coord);
         for c in 0..9 {
             let value = board.value(row.cell(Coord::new(c as u8)));
-            if value == UNKNOWN {
+            if value == Known::UNKNOWN {
                 print!("{}", MISSING);
             } else {
                 print!("{}", value);
@@ -34,8 +34,8 @@ pub fn print_candidates(board: &Board) {
             let cell = row.cell(Coord::new(c as u8));
             let value = board.value(cell);
             let candidates = board.candidates(cell);
-            if value == UNKNOWN {
-                for k in KNOWNS {
+            if value == Known::UNKNOWN {
+                for k in Known::ALL {
                     let line = k.usize() / 3;
                     if candidates[k] {
                         lines[line].push(VALUES[k.value() as usize]);

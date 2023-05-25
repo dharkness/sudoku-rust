@@ -6,7 +6,8 @@ use rand::seq::SliceRandom;
 
 use crate::layout::{Board, Cell, CellSet, Known, KnownSet};
 use crate::printers::{print_candidates, print_values};
-use crate::solvers::deadly_rectangles::{creates_deadly_rectangle};
+use crate::solvers::deadly_rectangles::creates_deadly_rectangle;
+use crate::solvers::intersection_removals::find_intersection_removals;
 
 const FILLED: &str = "|---------=========---------=========---------=========---------=========---------|";
 const EMPTY : &str = "|                                                                                 |";
@@ -54,7 +55,7 @@ impl Generator {
             // if stack.len() % 10 == 0 {
             //     print_values(&board);
             //     print_candidates(&board);
-            //     println!("{}: {:?}", cell.label(), candidates);
+            //     println!("{}: {:?}", cell.label(), candidates.iter().map(|k| k.label()).collect::<Vec<&str>>());
             // }
 
             let candidate = candidates.pop().unwrap();
@@ -63,16 +64,19 @@ impl Generator {
             }
             let mut clone = board.clone();
             clone.set_known(cell, candidate);
+            let remove = find_intersection_removals(&clone);
+            if remove.len() > 0 {
+                // print_candidates(&clone);
+                // println!("{:?}", remove.iter().map(|(c, k)| (c.label(), k.label())).collect::<Vec<(&str, &str)>>());
+                for (c, k) in remove {
+                    clone.remove_candidate(c, k);
+                }
+            }
             if !clone.is_valid() {
                 continue;
             }
 
-            stack.push(Entry {
-                board,
-                cell,
-                candidates,
-            });
-
+            stack.push(Entry { board, cell, candidates });
             if stack.len() == 81 {
                 return Some(clone);
             }

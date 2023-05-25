@@ -41,16 +41,80 @@ pub struct House {
 }
 
 impl House {
+    pub const ROWS: [House; 9] = [
+        House::new(Shape::Row, Coord::new(0)),
+        House::new(Shape::Row, Coord::new(1)),
+        House::new(Shape::Row, Coord::new(2)),
+        House::new(Shape::Row, Coord::new(3)),
+        House::new(Shape::Row, Coord::new(4)),
+        House::new(Shape::Row, Coord::new(5)),
+        House::new(Shape::Row, Coord::new(6)),
+        House::new(Shape::Row, Coord::new(7)),
+        House::new(Shape::Row, Coord::new(8)),
+    ];
+    pub const COLUMNS: [House; 9] = [
+        House::new(Shape::Column, Coord::new(0)),
+        House::new(Shape::Column, Coord::new(1)),
+        House::new(Shape::Column, Coord::new(2)),
+        House::new(Shape::Column, Coord::new(3)),
+        House::new(Shape::Column, Coord::new(4)),
+        House::new(Shape::Column, Coord::new(5)),
+        House::new(Shape::Column, Coord::new(6)),
+        House::new(Shape::Column, Coord::new(7)),
+        House::new(Shape::Column, Coord::new(8)),
+    ];
+    pub const BLOCKS: [House; 9] = [
+        House::new(Shape::Block, Coord::new(0)),
+        House::new(Shape::Block, Coord::new(1)),
+        House::new(Shape::Block, Coord::new(2)),
+        House::new(Shape::Block, Coord::new(3)),
+        House::new(Shape::Block, Coord::new(4)),
+        House::new(Shape::Block, Coord::new(5)),
+        House::new(Shape::Block, Coord::new(6)),
+        House::new(Shape::Block, Coord::new(7)),
+        House::new(Shape::Block, Coord::new(8)),
+    ];
+
+    pub const HOUSES: [House; 27] = [
+        House::new(Shape::Row, Coord::new(0)),
+        House::new(Shape::Row, Coord::new(1)),
+        House::new(Shape::Row, Coord::new(2)),
+        House::new(Shape::Row, Coord::new(3)),
+        House::new(Shape::Row, Coord::new(4)),
+        House::new(Shape::Row, Coord::new(5)),
+        House::new(Shape::Row, Coord::new(6)),
+        House::new(Shape::Row, Coord::new(7)),
+        House::new(Shape::Row, Coord::new(8)),
+        House::new(Shape::Column, Coord::new(0)),
+        House::new(Shape::Column, Coord::new(1)),
+        House::new(Shape::Column, Coord::new(2)),
+        House::new(Shape::Column, Coord::new(3)),
+        House::new(Shape::Column, Coord::new(4)),
+        House::new(Shape::Column, Coord::new(5)),
+        House::new(Shape::Column, Coord::new(6)),
+        House::new(Shape::Column, Coord::new(7)),
+        House::new(Shape::Column, Coord::new(8)),
+        House::new(Shape::Block, Coord::new(0)),
+        House::new(Shape::Block, Coord::new(1)),
+        House::new(Shape::Block, Coord::new(2)),
+        House::new(Shape::Block, Coord::new(3)),
+        House::new(Shape::Block, Coord::new(4)),
+        House::new(Shape::Block, Coord::new(5)),
+        House::new(Shape::Block, Coord::new(6)),
+        House::new(Shape::Block, Coord::new(7)),
+        House::new(Shape::Block, Coord::new(8)),
+    ];
+
     pub const fn row(coord: Coord) -> Self {
-        ROWS[coord.usize()]
+        House::ROWS[coord.usize()]
     }
 
     pub const fn column(coord: Coord) -> Self {
-        COLUMNS[coord.usize()]
+        House::COLUMNS[coord.usize()]
     }
 
     pub const fn block(coord: Coord) -> Self {
-        BLOCKS[coord.usize()]
+        House::BLOCKS[coord.usize()]
     }
 
     const fn new(shape: Shape, coord: Coord) -> Self {
@@ -82,6 +146,42 @@ impl House {
     pub fn intersect(&self, house: House) -> CellSet {
         self.set & house.set
     }
+
+    pub fn rows(&self) -> Vec<&Self> {
+        match self.shape {
+            Shape::Row => vec![self],
+            Shape::Column => vec![],
+            Shape::Block => {
+                let first = 3 * (self.coord.usize() / 3);
+                vec![&House::ROWS[first], &House::ROWS[first + 1], &House::ROWS[first + 2]]
+            },
+        }
+    }
+
+    pub fn columns(&self) -> Vec<&Self> {
+        match self.shape {
+            Shape::Row => vec![],
+            Shape::Column => vec![self],
+            Shape::Block => {
+                let first = 3 * (self.coord.usize() % 3);
+                vec![&House::COLUMNS[first], &House::COLUMNS[first + 1], &House::COLUMNS[first + 2]]
+            },
+        }
+    }
+
+    pub fn blocks(&self) -> Vec<&Self> {
+        match self.shape {
+            Shape::Row => {
+                let first = 3 * (self.coord.usize() / 3);
+                vec![&House::BLOCKS[first], &House::BLOCKS[first + 1], &House::BLOCKS[first + 2]]
+            },
+            Shape::Column => {
+                let first = self.coord.usize() / 3;
+                vec![&House::BLOCKS[first], &House::BLOCKS[first + 3], &House::BLOCKS[first + 6]]
+            },
+            Shape::Block => vec![self],
+        }
+    }
 }
 
 impl PartialEq<Self> for House {
@@ -100,70 +200,6 @@ impl PartialOrd<Self> for House {
         }
     }
 }
-
-pub const ROWS: [House; 9] = [
-    House::new(Shape::Row, Coord::new(0)),
-    House::new(Shape::Row, Coord::new(1)),
-    House::new(Shape::Row, Coord::new(2)),
-    House::new(Shape::Row, Coord::new(3)),
-    House::new(Shape::Row, Coord::new(4)),
-    House::new(Shape::Row, Coord::new(5)),
-    House::new(Shape::Row, Coord::new(6)),
-    House::new(Shape::Row, Coord::new(7)),
-    House::new(Shape::Row, Coord::new(8)),
-];
-pub const COLUMNS: [House; 9] = [
-    House::new(Shape::Column, Coord::new(0)),
-    House::new(Shape::Column, Coord::new(1)),
-    House::new(Shape::Column, Coord::new(2)),
-    House::new(Shape::Column, Coord::new(3)),
-    House::new(Shape::Column, Coord::new(4)),
-    House::new(Shape::Column, Coord::new(5)),
-    House::new(Shape::Column, Coord::new(6)),
-    House::new(Shape::Column, Coord::new(7)),
-    House::new(Shape::Column, Coord::new(8)),
-];
-pub const BLOCKS: [House; 9] = [
-    House::new(Shape::Block, Coord::new(0)),
-    House::new(Shape::Block, Coord::new(1)),
-    House::new(Shape::Block, Coord::new(2)),
-    House::new(Shape::Block, Coord::new(3)),
-    House::new(Shape::Block, Coord::new(4)),
-    House::new(Shape::Block, Coord::new(5)),
-    House::new(Shape::Block, Coord::new(6)),
-    House::new(Shape::Block, Coord::new(7)),
-    House::new(Shape::Block, Coord::new(8)),
-];
-
-pub const HOUSES: [House; 27] = [
-    House::new(Shape::Row, Coord::new(0)),
-    House::new(Shape::Row, Coord::new(1)),
-    House::new(Shape::Row, Coord::new(2)),
-    House::new(Shape::Row, Coord::new(3)),
-    House::new(Shape::Row, Coord::new(4)),
-    House::new(Shape::Row, Coord::new(5)),
-    House::new(Shape::Row, Coord::new(6)),
-    House::new(Shape::Row, Coord::new(7)),
-    House::new(Shape::Row, Coord::new(8)),
-    House::new(Shape::Column, Coord::new(0)),
-    House::new(Shape::Column, Coord::new(1)),
-    House::new(Shape::Column, Coord::new(2)),
-    House::new(Shape::Column, Coord::new(3)),
-    House::new(Shape::Column, Coord::new(4)),
-    House::new(Shape::Column, Coord::new(5)),
-    House::new(Shape::Column, Coord::new(6)),
-    House::new(Shape::Column, Coord::new(7)),
-    House::new(Shape::Column, Coord::new(8)),
-    House::new(Shape::Block, Coord::new(0)),
-    House::new(Shape::Block, Coord::new(1)),
-    House::new(Shape::Block, Coord::new(2)),
-    House::new(Shape::Block, Coord::new(3)),
-    House::new(Shape::Block, Coord::new(4)),
-    House::new(Shape::Block, Coord::new(5)),
-    House::new(Shape::Block, Coord::new(6)),
-    House::new(Shape::Block, Coord::new(7)),
-    House::new(Shape::Block, Coord::new(8)),
-];
 
 #[cfg(test)]
 mod tests {

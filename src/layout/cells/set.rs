@@ -84,7 +84,11 @@ impl Set {
     }
 
     pub const fn iter(&self) -> Iter {
-        Iter { bits: self.bits() }
+        Iter { iter: self.bit_iter() }
+    }
+
+    pub const fn bit_iter(&self) -> BitIter {
+        BitIter { bits: self.bits() }
     }
 
     pub fn debug(&self) -> String {
@@ -271,9 +275,9 @@ impl fmt::Display for Set {
         } else {
             let mut s = String::with_capacity(3 * self.size() as usize + 2);
             s.push('(');
-            for bit in self.iter() {
+            for cell in self.iter() {
                 s.push(' ');
-                s.push_str(bit.cell().label());
+                s.push_str(cell.label());
             }
             s.push(' ');
             s.push(')');
@@ -283,10 +287,25 @@ impl fmt::Display for Set {
 }
 
 pub struct Iter {
-    bits: Bits,
+    iter: BitIter,
 }
 
 impl Iterator for Iter {
+    type Item = Cell;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.iter.next() {
+            Some(bit) => Some(bit.cell()),
+            None => None,
+        }
+    }
+}
+
+pub struct BitIter {
+    bits: Bits,
+}
+
+impl Iterator for BitIter {
     type Item = Bit;
 
     fn next(&mut self) -> Option<Self::Item> {

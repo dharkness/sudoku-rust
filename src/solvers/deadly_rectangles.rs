@@ -69,7 +69,7 @@ pub fn creates_deadly_rectangle(board: &Board, cell: Cell, known: Known) -> bool
                     continue;
                 }
 
-                println!("Creates deadly rectangle: ({}, {}) ({}, {})", top_left, bottom_left, top_right, bottom_right);
+                // println!("Creates deadly rectangle: ({}, {}) ({}, {})", top_left, bottom_left, top_right, bottom_right);
                 return true;
             }
         }
