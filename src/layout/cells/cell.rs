@@ -7,7 +7,7 @@ use super::label::{index_from_label, label_from_index};
 use super::{Bit, Set};
 
 /// Specifies a single cell by its index from left to right and top to bottom.
-#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Cell(u32);
 
 impl Cell {

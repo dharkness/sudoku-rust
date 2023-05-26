@@ -2,7 +2,7 @@ use std::fmt;
 
 use super::{Cell, CellSet, Coord, House, Known, KnownSet};
 
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Board {
     givens: CellSet,
     knowns: CellSet,

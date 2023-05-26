@@ -3,7 +3,7 @@ use std::ops::{Deref, DerefMut};
 use super::Set;
 
 /// Specifies a single known value using its index and bit.
-#[derive(Copy, Clone, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Known {
     index: u16,
     bit: u16,
