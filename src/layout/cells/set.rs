@@ -75,8 +75,86 @@ impl Set {
         self.0 & CELLS_MASK
     }
 
-    const fn has(&self, cell: Bit) -> bool {
-        self.0 & cell.bit() != 0
+    pub const fn has(&self, cell: Cell) -> bool {
+        self.0 & cell.bit().bit() != 0
+    }
+
+    pub const fn with(&self, cell: Cell) -> Set {
+        if self.has(cell) {
+            return *self
+        }
+        let mut copy = *self;
+        copy.0 += cell.bit().bit() + SIZE_BIT;
+        copy
+    }
+
+    pub fn add(&mut self, cell: Cell) {
+        if !self.has(cell) {
+            self.0 += cell.bit().bit() + SIZE_BIT
+        }
+    }
+
+    pub const fn without(&self, cell: Cell) -> Set {
+        if !self.has(cell) {
+            return *self
+        }
+        let mut copy = *self;
+        copy.0 -= cell.bit().bit() + SIZE_BIT;
+        copy
+    }
+
+    pub fn remove(&mut self, cell: Cell) {
+        if self.has(cell) {
+            self.0 -= cell.bit().bit() + SIZE_BIT
+        }
+    }
+
+    pub const fn union(&self, set: Self) -> Set {
+        if self.0 == set.0 {
+            *self
+        } else {
+            Set::new((self.0 | set.0) & CELLS_MASK)
+        }
+    }
+
+    pub fn union_with(&mut self, set: Self) {
+        *self = self.union(set)
+    }
+
+    pub const fn intersect(&self, set: Self) -> Set {
+        if self.0 == set.0 {
+            *self
+        } else {
+            Set::new((self.0 & set.0) & CELLS_MASK)
+        }
+    }
+
+    pub fn intersect_with(&mut self, set: Self) {
+        *self = self.intersect(set)
+    }
+
+    pub const fn minus(&self, set: Self) -> Set {
+        if self.0 == set.0 {
+            Set::empty()
+        } else {
+            Set::new((self.0 & !set.0) & CELLS_MASK)
+        }
+    }
+
+    pub fn subtract(&mut self, set: Self) {
+        *self = self.minus(set)
+    }
+
+    pub const fn inverted(&self) -> Set {
+        match self.0 {
+            0 => Set::full(),
+            FULL => Set::empty(),
+            _ => Set::new(!self.0 & CELLS_MASK),
+        }
+    }
+
+    pub fn invert(&mut self) {
+        *self = self.inverted()
     }
 
     pub const fn iter(&self) -> Iter {
@@ -95,8 +173,8 @@ impl Set {
 impl Index<Bit> for Set {
     type Output = bool;
 
-    fn index(&self, cell: Bit) -> &bool {
-        if self.has(cell) {
+    fn index(&self, bit: Bit) -> &bool {
+        if self.has(bit.cell()) {
             &true
         } else {
             &false
@@ -108,7 +186,7 @@ impl Index<Cell> for Set {
     type Output = bool;
 
     fn index(&self, cell: Cell) -> &bool {
-        if self.has(cell.bit()) {
+        if self.has(cell) {
             &true
         } else {
             &false
@@ -120,11 +198,7 @@ impl Add<Bit> for Set {
     type Output = Self;
 
     fn add(self, rhs: Bit) -> Set {
-        if self.has(rhs) {
-            self
-        } else {
-            Set(self.0 + *rhs + SIZE_BIT)
-        }
+        self.with(rhs.cell())
     }
 }
 
@@ -132,7 +206,7 @@ impl Add<Cell> for Set {
     type Output = Self;
 
     fn add(self, rhs: Cell) -> Set {
-        self.add(rhs.bit())
+        self.with(rhs)
     }
 }
 
@@ -140,27 +214,25 @@ impl Add<&str> for Set {
     type Output = Self;
 
     fn add(self, rhs: &str) -> Set {
-        self.add(Cell::from(rhs))
+        self.with(Cell::from(rhs))
     }
 }
 
 impl AddAssign<Bit> for Set {
     fn add_assign(&mut self, rhs: Bit) {
-        if !self.has(rhs) {
-            self.0 += *rhs + SIZE_BIT
-        }
+        self.add(rhs.cell())
     }
 }
 
 impl AddAssign<Cell> for Set {
     fn add_assign(&mut self, rhs: Cell) {
-        self.add_assign(rhs.bit())
+        self.add(rhs)
     }
 }
 
 impl AddAssign<&str> for Set {
     fn add_assign(&mut self, rhs: &str) {
-        self.add_assign(Cell::from(rhs).bit())
+        self.add(Cell::from(rhs))
     }
 }
 
@@ -168,11 +240,7 @@ impl Sub<Bit> for Set {
     type Output = Self;
 
     fn sub(self, rhs: Bit) -> Set {
-        if !self.has(rhs) {
-            self
-        } else {
-            Set(self.0 - *rhs - SIZE_BIT)
-        }
+        self.without(rhs.cell())
     }
 }
 
@@ -180,21 +248,19 @@ impl Sub<Cell> for Set {
     type Output = Self;
 
     fn sub(self, rhs: Cell) -> Set {
-        self.sub(rhs.bit())
+        self.without(rhs)
     }
 }
 
 impl SubAssign<Bit> for Set {
     fn sub_assign(&mut self, rhs: Bit) {
-        if self.has(rhs) {
-            self.0 -= *rhs + SIZE_BIT
-        }
+        self.remove(rhs.cell())
     }
 }
 
 impl SubAssign<Cell> for Set {
     fn sub_assign(&mut self, rhs: Cell) {
-        self.sub_assign(rhs.bit())
+        self.remove(rhs)
     }
 }
 
@@ -202,11 +268,7 @@ impl Not for Set {
     type Output = Self;
 
     fn not(self) -> Set {
-        match self.0 {
-            0 => Set(FULL),
-            FULL => Set(0),
-            _ => Set::new(!self.0 & CELLS_MASK),
-        }
+        self.inverted()
     }
 }
 
@@ -214,19 +276,13 @@ impl BitOr for Set {
     type Output = Self;
 
     fn bitor(self, rhs: Self) -> Set {
-        if self == rhs {
-            self
-        } else {
-            Set::new((self.0 | rhs.0) & CELLS_MASK)
-        }
+        self.union(rhs)
     }
 }
 
 impl BitOrAssign for Set {
     fn bitor_assign(&mut self, rhs: Self) {
-        if self.0 != rhs.0 {
-            *self = Set::new((self.0 | rhs.0) & CELLS_MASK)
-        }
+        self.union_with(rhs)
     }
 }
 
@@ -234,19 +290,13 @@ impl BitAnd for Set {
     type Output = Self;
 
     fn bitand(self, rhs: Self) -> Set {
-        if self == rhs {
-            self
-        } else {
-            Set::new((self.0 & rhs.0) & CELLS_MASK)
-        }
+        self.intersect(rhs)
     }
 }
 
 impl BitAndAssign for Set {
     fn bitand_assign(&mut self, rhs: Self) {
-        if self.0 != rhs.0 {
-            *self = Set::new((self.0 & rhs.0) & CELLS_MASK)
-        }
+        self.intersect_with(rhs)
     }
 }
 
@@ -254,13 +304,13 @@ impl Sub for Set {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Set {
-        Set::new((self.0 & !rhs.0) & CELLS_MASK)
+        self.minus(rhs)
     }
 }
 
 impl SubAssign for Set {
     fn sub_assign(&mut self, rhs: Self) {
-        *self = Set::new((self.0 & !rhs.0) & CELLS_MASK)
+        self.subtract(rhs)
     }
 }
 

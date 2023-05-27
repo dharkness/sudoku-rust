@@ -2,6 +2,7 @@ use std::fmt;
 
 use super::{Cell, CellSet, House, Known, KnownSet};
 
+/// Tracks the full state of a puzzle in play.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Board {
     givens: CellSet,
@@ -53,21 +54,21 @@ impl Board {
     }
 
     pub const fn candidates(&self, cell: Cell) -> KnownSet {
-        self.candidates[cell.index() as usize]
+        self.candidates[cell.usize()]
     }
 
     pub fn is_candidate(&self, cell: Cell, known: Known) -> bool {
-        self.candidates[cell.index() as usize][known]
+        self.candidates[cell.usize()][known]
     }
 
     pub fn remove_candidate(&mut self, cell: Cell, known: Known) {
-        let set = &mut self.candidates[cell.index() as usize];
+        let set = &mut self.candidates[cell.usize()];
         *set -= known;
         self.valid = !set.is_empty();
     }
 
     pub const fn value(&self, cell: Cell) -> u8 {
-        self.values[cell.index() as usize]
+        self.values[cell.usize()]
     }
 
     pub fn set_given(&mut self, cell: Cell, known: Known) {

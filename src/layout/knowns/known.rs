@@ -1,4 +1,4 @@
-/// Specifies a single known value using its index and bit.
+/// Specifies a single known value using its zero-based index.
 #[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Known(u8);
 

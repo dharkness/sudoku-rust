@@ -1,6 +1,7 @@
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Coord(u8);
 
+/// Identifies a cell in a house.
 impl Coord {
     pub const fn new(coord: u8) -> Self {
         debug_assert!(coord <= 8);

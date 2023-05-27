@@ -1,5 +1,6 @@
 use crate::layout::{Cell, CellSet, Coord};
 
+/// The three house shapes on the board.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Shape {
     #[default]

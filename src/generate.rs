@@ -12,6 +12,7 @@ use crate::solvers::intersection_removals::find_intersection_removals;
 const FILLED: &str = "|---------=========---------=========---------=========---------=========---------|";
 const EMPTY : &str = "|                                                                                 |";
 
+/// Generates a full board.
 pub struct Generator {
     rng: ThreadRng,
     cells: Vec<Cell>,

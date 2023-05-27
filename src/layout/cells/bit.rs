@@ -3,7 +3,7 @@ use crate::layout::cells::label::index_from_label;
 
 use super::Cell;
 
-/// Specifies a single cell by its bit in a bit field.
+/// Specifies a single cell by its position in a bit field.
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Bit(u128);
 

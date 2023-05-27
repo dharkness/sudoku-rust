@@ -2,6 +2,7 @@ use std::cmp::Ordering;
 
 use crate::layout::{Cell, CellSet, Coord, Shape};
 
+/// One of the nine rows, columns, or blocks on the board.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct House {
     shape: Shape,
