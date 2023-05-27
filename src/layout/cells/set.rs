@@ -58,10 +58,6 @@ impl Set {
         Set::new(bits)
     }
 
-    const fn packed(size_and_bits: SizeAndBits) -> Set {
-        Set(size_and_bits)
-    }
-
     pub const fn is_empty(&self) -> bool {
         self.0 == 0
     }

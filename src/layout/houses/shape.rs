@@ -1,4 +1,4 @@
-use crate::layout::{Cell, CellSet, Coord, House};
+use crate::layout::{Cell, CellSet, Coord};
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Shape {

@@ -1,4 +1,4 @@
-use crate::layout::{Board, Cell, Coord, House, Known, KnownSet};
+use crate::layout::{Board, House, Known};
 
 const MISSING: char = '·';
 const ROW_COORDS: [char; 9] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J'];

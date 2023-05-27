@@ -1,6 +1,6 @@
 use std::fmt;
 
-use super::{Cell, CellSet, Coord, House, Known, KnownSet};
+use super::{Cell, CellSet, House, Known, KnownSet};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Board {

@@ -1,5 +1,4 @@
 use std::fmt;
-use std::ops::{Deref, DerefMut};
 
 use crate::layout::{Coord, House, Shape};
 

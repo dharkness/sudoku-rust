@@ -1,6 +1,4 @@
-use core::array::from_fn;
 use std::cmp::Ordering;
-use std::ops::Deref;
 
 use crate::layout::{Cell, CellSet, Coord, Shape};
 

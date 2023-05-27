@@ -12,8 +12,6 @@ type SizeAndBits = u16;
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Set(SizeAndBits);
 
-const ALL_KNOWNS: std::ops::Range<Size> = 0..9;
-
 const BITS_MASK: Bits = (1 << 9) - 1;
 const SIZE_SHIFT: u16 = 16 - 4;
 const SIZE_BIT: Bits = 1 << SIZE_SHIFT;
@@ -48,10 +46,6 @@ impl Set {
             set += Known::from(c);
         }
         set
-    }
-
-    const fn packed(size_and_knowns: SizeAndBits) -> Set {
-        Set(size_and_knowns)
     }
 
     pub const fn is_empty(&self) -> bool {

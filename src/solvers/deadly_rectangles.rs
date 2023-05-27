@@ -1,4 +1,4 @@
-use crate::layout::{Board, Cell, Coord, House, Known};
+use crate::layout::{Board, Cell, House, Known};
 
 pub fn find_deadly_rectangles(board: &Board) -> bool {
     let mut found = false;
@@ -30,6 +30,7 @@ pub fn find_deadly_rectangles(board: &Board) -> bool {
     found
 }
 
+#[allow(unused_assignments)]
 pub fn creates_deadly_rectangle(board: &Board, cell: Cell, known: Known) -> bool {
     let cell_coord = cell.coord_in_block().u8();
     let block = cell.block();

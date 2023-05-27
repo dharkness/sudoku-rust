@@ -4,7 +4,7 @@ use ctrlc;
 use rand::rngs::ThreadRng;
 use rand::seq::SliceRandom;
 
-use crate::layout::{Board, Cell, CellSet, Known, KnownSet};
+use crate::layout::{Board, Cell, Known, KnownSet};
 use crate::printers::{print_candidates, print_values};
 use crate::solvers::deadly_rectangles::creates_deadly_rectangle;
 use crate::solvers::intersection_removals::find_intersection_removals;
