@@ -11,7 +11,7 @@ use std::ops::{
 use super::{Bit, Cell};
 
 pub type Bits = u128;
-type Size = u32;
+type Size = u8;
 type SizeAndBits = u128;
 
 /// A set of cells implemented using a bit field.

@@ -23,7 +23,7 @@ impl Board {
         }
     }
 
-    pub const fn given_count(&self) -> u32 {
+    pub const fn given_count(&self) -> u8 {
         self.givens.size()
     }
 
@@ -31,7 +31,7 @@ impl Board {
         self.givens[cell]
     }
 
-    pub const fn known_count(&self) -> u32 {
+    pub const fn known_count(&self) -> u8 {
         self.knowns.size()
     }
 

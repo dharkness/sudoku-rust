@@ -20,8 +20,8 @@ impl Bit {
         self.0
     }
 
-    pub const fn index(&self) -> u32 {
-        self.0.trailing_zeros()
+    pub const fn index(&self) -> u8 {
+        self.0.trailing_zeros() as u8
     }
 
     pub const fn cell(&self) -> Cell {

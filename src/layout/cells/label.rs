@@ -2,13 +2,13 @@ use super::Cell;
 
 // FACTOR Move all to index?
 
-pub fn index_from_label(label: &str) -> u32 {
+pub fn index_from_label(label: &str) -> u8 {
     if label.len() != 2 {
         panic!("Invalid cell: {}", label);
     }
     let mut chars = label.chars();
-    let row = chars.next().unwrap() as u32 - b'A' as u32;
-    let col = chars.next().unwrap() as u32 - b'1' as u32;
+    let row = chars.next().unwrap() as u8 - b'A' as u8;
+    let col = chars.next().unwrap() as u8 - b'1' as u8;
 
     // row H is 9 and ok, becomes 8 below
     if row > 9 || col >= 9 {
@@ -21,7 +21,7 @@ pub fn index_from_label(label: &str) -> u32 {
     }
 }
 
-pub const fn label_from_index(index: u32) -> &'static str {
+pub const fn label_from_index(index: u8) -> &'static str {
     debug_assert!(index < Cell::COUNT);
     CELL_LABELS[index as usize]
 }

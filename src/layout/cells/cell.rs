@@ -7,17 +7,17 @@ use super::{Bit, Set};
 
 /// Specifies a single cell by its index from left to right and top to bottom.
 #[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub struct Cell(u32);
+pub struct Cell(u8);
 
 impl Cell {
-    pub const COUNT: u32 = 81;
+    pub const COUNT: u8 = 81;
 
-    pub const fn new(index: u32) -> Self {
+    pub const fn new(index: u8) -> Self {
         debug_assert!(index < Cell::COUNT);
         Self(index)
     }
 
-    pub const fn index(&self) -> u32 {
+    pub const fn index(&self) -> u8 {
         self.0
     }
 
@@ -69,14 +69,14 @@ impl Cell {
 impl From<i32> for Cell {
     fn from(index: i32) -> Self {
         debug_assert!(index >= 0 && index < Cell::COUNT as i32);
-        Cell::new(index as u32)
+        Cell::new(index as u8)
     }
 }
 
 impl From<usize> for Cell {
     fn from(index: usize) -> Self {
         debug_assert!(index < Cell::COUNT as usize);
-        Cell::new(index as u32)
+        Cell::new(index as u8)
     }
 }
 
@@ -140,7 +140,7 @@ const NEIGHBORS: [Set; 81] = {
     let mut i = 0;
 
     while i < 81 {
-        let cell = Cell::new(i as u32);
+        let cell = Cell::new(i as u8);
         sets[i] = Set::empty()
             .union(cell.row().cells())
             .union(cell.column().cells())
