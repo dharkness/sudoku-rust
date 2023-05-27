@@ -1,21 +1,22 @@
+use crate::effects::{Effects, Strategy};
 use crate::layout::{Board, Cell, House, Known};
 
-pub fn find_intersection_removals(board: &Board) -> Vec<(Cell, Known)> {
-    let mut found = vec![];
+pub fn find_intersection_removals(board: &Board) -> Effects {
+    let mut effects = Effects::new();
 
     for block in House::all_blocks() {
         for row in block.rows() {
-            check_intersection(board, *block, *row, &mut found)
+            check_intersection(board, *block, *row, &mut effects)
         }
         for column in block.columns() {
-            check_intersection(board, *block, *column, &mut found)
+            check_intersection(board, *block, *column, &mut effects)
         }
     }
 
-    found
+    effects
 }
 
-fn check_intersection(board: &Board, block: House, other: House, found: &mut Vec<(Cell, Known)>) {
+fn check_intersection(board: &Board, block: House, other: House, effects: &mut Effects) {
     let segment = block.cells() & other.cells();
     let block_disjoint = block.cells() - segment;
     let other_disjoint = other.cells() - segment;
@@ -29,7 +30,7 @@ fn check_intersection(board: &Board, block: House, other: House, found: &mut Vec
                 if !other_disjoint_candidates[known] {
                     for cell in block_disjoint.iter() {
                         if board.is_candidate(cell, known) {
-                            found.push((cell, known));
+                            effects.add_erase(Strategy::BoxLineReduction, cell, known);
                         }
                     }
                 }
@@ -37,7 +38,10 @@ fn check_intersection(board: &Board, block: House, other: House, found: &mut Vec
                 if other_disjoint_candidates[known] {
                     for cell in other_disjoint.iter() {
                         if board.is_candidate(cell, known) {
-                            found.push((cell, known));
+                            effects.add_erase(
+                                if segment_candidates.size() == 3 { Strategy::PointingTriple } else { Strategy::PointingPair },
+                                cell, known
+                            );
                         }
                     }
                 }

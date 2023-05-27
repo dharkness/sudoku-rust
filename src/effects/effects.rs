@@ -1,4 +1,5 @@
-use crate::layout::Board;
+use crate::effects::Strategy;
+use crate::layout::{Board, Cell, Known};
 
 use super::{Error, Action, Actions};
 
@@ -40,7 +41,32 @@ impl Effects {
         self.actions.add(action);
     }
 
-    pub fn apply_all(&self, board: &mut Board, effects: &mut Effects) {
+    pub fn add_set(&mut self, strategy: Strategy, cell: Cell, known: Known) {
+        self.add_action(Action::new_set(strategy, cell, known));
+    }
+
+    pub fn add_erase(&mut self, strategy: Strategy, cell: Cell, known: Known) {
+        self.add_action(Action::new_erase(strategy, cell, known));
+    }
+
+    pub fn apply(&self, board: &mut Board, effects: &mut Effects) {
         self.actions.apply_all(board, effects);
+    }
+
+    pub fn apply_all(&self, board: &mut Board) -> bool {
+        let mut effects = self.clone();
+        loop {
+            if effects.has_errors() {
+                // print_candidates(&board);
+                // println!("set known effects caused errors {:?}", effects.errors());
+                return false;
+            }
+            if !effects.has_actions() {
+                return true;
+            }
+            let mut next = Effects::new();
+            effects.apply(board, &mut next);
+            effects = next;
+        }
     }
 }

@@ -74,7 +74,7 @@ fn apply_all_actions(board: &mut Board, effects: &Effects) -> bool {
     while effects.has_actions() {
         println!("\n{:?}\n", effects);
         let mut next = Effects::new();
-        effects.apply_all(board, &mut next);
+        effects.apply(board, &mut next);
         if next.has_errors() {
             println!("\n==> Invalid move\n");
             print_candidates(board);

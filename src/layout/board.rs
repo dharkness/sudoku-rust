@@ -75,7 +75,7 @@ impl Board {
                 self.valid = false;
                 effects.add_error(Error::UnsolvableCell(cell));
             } else if knowns.size() == 1 {
-                effects.add_action(Action::new_set(Strategy::NakedSingle, cell, knowns.iter().next().unwrap()));
+                effects.add_set(Strategy::NakedSingle, cell, knowns.iter().next().unwrap());
             }
 
             let cells = &mut self.cell_candidates[known.usize()];
@@ -88,7 +88,7 @@ impl Board {
                         self.valid = false;
                         effects.add_error(Error::UnsolvableHouse(house));
                     } else if remaining.size() == 1 {
-                        effects.add_action(Action::new_set(Strategy::HiddenSingle, remaining.iter().next().unwrap(), known));
+                        effects.add_set(Strategy::HiddenSingle, remaining.iter().next().unwrap(), known);
                     }
                 }
             }
@@ -136,8 +136,7 @@ impl Board {
         self.cell_candidates[known.usize()] -= cell;
 
         for neighbor in cell.neighbors().iter() {
-            effects.add_action(Action::new_erase(Strategy::Neighbor, neighbor, known));
-            // self.remove_candidate(neighbor, known, effects);
+            effects.add_erase(Strategy::Neighbor, neighbor, known);
         }
 
         true

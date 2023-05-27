@@ -37,14 +37,13 @@ impl Generator {
         ctrlc::set_handler(|| CANCEL.store(true, Ordering::Relaxed)).expect("Error setting Ctrl-C handler");
 
         let mut stack = Vec::with_capacity(81);
-
         stack.push(Entry {
             board: Board::new(),
             cell: self.cells[0],
             candidates: self.shuffle_candidates(KnownSet::full()),
         });
 
-        'next_move: while !stack.is_empty() {
+        while !stack.is_empty() {
             println!("{}{}", FILLED[..stack.len()+1].to_string(), EMPTY[stack.len()+1..].to_string());
 
             let Entry { board, cell, mut candidates } = stack.pop().unwrap();
@@ -70,54 +69,21 @@ impl Generator {
                 // println!("deadly rectangle");
                 continue;
             }
+
             let mut clone = board.clone();
             let mut effects = Effects::new();
             clone.set_known(cell, candidate, &mut effects);
-            if effects.has_errors() {
+            if !effects.apply_all(&mut clone) {
                 // print_candidates(&clone);
-                // println!("set known caused errors {:?}", effects.errors());
+                // println!("intersection removals caused errors");
                 continue;
             }
-            while effects.has_actions() {
-                // print_candidates(&clone);
-                // println!("{:?}", effects);
-                let mut next = Effects::new();
-                effects.apply_all(&mut clone, &mut next);
-                // print_candidates(&clone);
-                if next.has_errors() {
-                    // print_candidates(&clone);
-                    // println!("set known effects caused errors {:?}", effects.errors());
-                    continue 'next_move;
-                }
-                effects = next;
-            }
 
-            let remove = find_intersection_removals(&clone);
-            if remove.len() > 0 {
+            effects = find_intersection_removals(&clone);
+            if !effects.apply_all(&mut clone) {
                 // print_candidates(&clone);
-                // println!("{:?}", remove.iter().map(|(c, k)| (c.label(), k.label())).collect::<Vec<(&str, &str)>>());
-                effects = Effects::new();
-                for (c, k) in remove {
-                    clone.remove_candidate(c, k, &mut effects);
-                    if effects.has_errors() {
-                        // print_candidates(&clone);
-                        // println!("intersection removals caused errors {:?}", effects.errors());
-                        continue;
-                    }
-                }
-                while effects.has_actions() {
-                    // print_candidates(&clone);
-                    // println!("{:?}", effects);
-                    let mut next = Effects::new();
-                    effects.apply_all(&mut clone, &mut next);
-                    // print_candidates(&clone);
-                    if next.has_errors() {
-                        // print_candidates(&clone);
-                        // println!("intersection removal effects caused errors {:?}", effects.errors());
-                        continue 'next_move;
-                    }
-                    effects = next;
-                }
+                // println!("intersection removals caused errors");
+                continue;
             }
             // if !clone.is_valid() {
             //     println!("invalid with error");
