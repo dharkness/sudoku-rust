@@ -4,6 +4,7 @@ use ctrlc;
 use rand::rngs::ThreadRng;
 use rand::seq::SliceRandom;
 
+use crate::effects::Effects;
 use crate::layout::{Board, Cell, Known, KnownSet};
 use crate::printers::{print_candidates, print_values};
 use crate::solvers::deadly_rectangles::creates_deadly_rectangle;
@@ -26,7 +27,7 @@ impl Generator {
         for i in 0..81 {
             cells.push(Cell::new(i));
         }
-        // cells.shuffle(&mut rng);
+        cells.shuffle(&mut rng);
 
         Generator { rng, cells }
     }
@@ -43,14 +44,18 @@ impl Generator {
             candidates: self.shuffle_candidates(KnownSet::full()),
         });
 
-        while !stack.is_empty() {
+        'next_move: while !stack.is_empty() {
             println!("{}{}", FILLED[..stack.len()+1].to_string(), EMPTY[stack.len()+1..].to_string());
 
             let Entry { board, cell, mut candidates } = stack.pop().unwrap();
             if CANCEL.load(Ordering::Relaxed) {
                 return Some(board);
             }
+
+            // print_candidates(&board);
+            // println!("stack size {}, cell {}, candidates {:?}", stack.len(), cell, candidates);
             if candidates.is_empty() {
+                // println!("{} is unsolvable {}", cell.label(), board.candidates(cell));
                 continue;
             }
             // if stack.len() % 10 == 0 {
@@ -61,33 +66,87 @@ impl Generator {
 
             let candidate = candidates.pop().unwrap();
             if stack.len() >= 3 && creates_deadly_rectangle(&board, cell, candidate) {
+                // print_candidates(&board);
+                // println!("deadly rectangle");
                 continue;
             }
             let mut clone = board.clone();
-            clone.set_known(cell, candidate);
+            let mut effects = Effects::new();
+            clone.set_known(cell, candidate, &mut effects);
+            if effects.has_errors() {
+                // print_candidates(&clone);
+                // println!("set known caused errors {:?}", effects.errors());
+                continue;
+            }
+            while effects.has_actions() {
+                // print_candidates(&clone);
+                // println!("{:?}", effects);
+                let mut next = Effects::new();
+                effects.apply_all(&mut clone, &mut next);
+                // print_candidates(&clone);
+                if next.has_errors() {
+                    // print_candidates(&clone);
+                    // println!("set known effects caused errors {:?}", effects.errors());
+                    continue 'next_move;
+                }
+                effects = next;
+            }
+
             let remove = find_intersection_removals(&clone);
             if remove.len() > 0 {
                 // print_candidates(&clone);
                 // println!("{:?}", remove.iter().map(|(c, k)| (c.label(), k.label())).collect::<Vec<(&str, &str)>>());
+                effects = Effects::new();
                 for (c, k) in remove {
-                    clone.remove_candidate(c, k);
+                    clone.remove_candidate(c, k, &mut effects);
+                    if effects.has_errors() {
+                        // print_candidates(&clone);
+                        // println!("intersection removals caused errors {:?}", effects.errors());
+                        continue;
+                    }
+                }
+                while effects.has_actions() {
+                    // print_candidates(&clone);
+                    // println!("{:?}", effects);
+                    let mut next = Effects::new();
+                    effects.apply_all(&mut clone, &mut next);
+                    // print_candidates(&clone);
+                    if next.has_errors() {
+                        // print_candidates(&clone);
+                        // println!("intersection removal effects caused errors {:?}", effects.errors());
+                        continue 'next_move;
+                    }
+                    effects = next;
                 }
             }
-            if !clone.is_valid() {
-                continue;
-            }
+            // if !clone.is_valid() {
+            //     println!("invalid with error");
+            //     continue;
+            // }
 
             stack.push(Entry { board, cell, candidates });
-            if stack.len() == 81 {
-                return Some(clone);
-            }
+            loop {
+                if stack.len() == 81 {
+                    return Some(clone);
+                }
 
-            let next = self.cells[stack.len()];
-            stack.push(Entry {
-                board: clone,
-                cell: next,
-                candidates: self.shuffle_candidates(clone.candidates(next)),
-            });
+                let next = self.cells[stack.len()];
+                if !clone.is_known(next) {
+                    // println!("next {} candidates {}", next, clone.candidates(next));
+                    stack.push(Entry {
+                        board: clone,
+                        cell: next,
+                        candidates: self.shuffle_candidates(clone.candidates(next)),
+                    });
+                    break;
+                }
+                // println!("{} is solved", next);
+                stack.push(Entry {
+                    board: clone,
+                    cell: next,
+                    candidates: vec![],
+                });
+            }
         }
 
         None
@@ -112,6 +171,9 @@ pub fn generate_board() {
     match generator.generate() {
         Some(board) => {
             print_values(&board);
+            if !board.is_solved() {
+                print_candidates(&board);
+            }
             println!("Board: {}", board);
         },
         None => {

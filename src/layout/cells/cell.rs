@@ -29,6 +29,10 @@ impl Cell {
         Bit::new(1 << self.0)
     }
 
+    pub const fn houses(&self) -> [House; 3] {
+        HOUSES[self.usize()]
+    }
+
     pub const fn house(&self, shape: Shape) -> House {
         HOUSES[self.usize()][shape.usize()]
     }
@@ -82,7 +86,13 @@ impl From<usize> for Cell {
 
 impl From<&str> for Cell {
     fn from(label: &str) -> Self {
-        Self(index_from_label(label))
+        Self(index_from_label(label.to_uppercase().as_str()))
+    }
+}
+
+impl From<String> for Cell {
+    fn from(label: String) -> Self {
+        Self(index_from_label(label.to_uppercase().as_str()))
     }
 }
 

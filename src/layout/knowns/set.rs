@@ -65,7 +65,7 @@ impl Set {
         self.0 & BITS_MASK
     }
 
-    const fn has(&self, known: Known) -> bool {
+    pub const fn has(&self, known: Known) -> bool {
         self.0 & (known.bit() as u16) != 0
     }
 

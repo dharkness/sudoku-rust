@@ -74,7 +74,7 @@ const CELL_SETS: [[CellSet; 9]; 3] = {
         let mut house = 0;
 
         while house < 9 {
-            cell_sets[house] = CellSet::from::<9>(&CELLS[shape.usize()][house]);
+            cell_sets[house] = CellSet::of::<9>(&CELLS[shape.usize()][house]);
             house += 1;
         }
         cell_sets

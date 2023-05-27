@@ -1,3 +1,5 @@
+use std::fmt;
+
 /// Specifies a single known value using its zero-based index.
 #[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Known(u8);
@@ -57,9 +59,10 @@ impl From<&str> for Known {
     }
 }
 
-impl ToString for Known {
-    fn to_string(&self) -> String {
-        self.label().to_string()
+impl fmt::Display for Known {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.label())?;
+        Ok(())
     }
 }
 

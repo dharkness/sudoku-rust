@@ -8,6 +8,8 @@ use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Not, Sub, SubAssign,
 };
 
+use crate::layout::House;
+
 use super::{Bit, Cell};
 
 pub type Bits = u128;
@@ -47,7 +49,7 @@ impl Set {
         Set(pack(bits, bits.count_ones() as Size))
     }
 
-    pub const fn from<const N: usize>(cells: &[Cell; N]) -> Set {
+    pub const fn of<const N: usize>(cells: &[Cell; N]) -> Set {
         let mut bits: Bits = 0;
         let mut i = 0;
 
@@ -167,6 +169,12 @@ impl Set {
 
     pub fn debug(&self) -> String {
         format!("{:02}:{:081b}", self.size(), self.bits())
+    }
+}
+
+impl From<House> for Set {
+    fn from(house: House) -> Set {
+        house.cells()
     }
 }
 
