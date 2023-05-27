@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::slice::Iter;
 
 use crate::layout::{Cell, CellSet, Coord, Shape};
 
@@ -10,6 +11,10 @@ pub struct House {
 }
 
 impl House {
+    pub const fn all_houses() -> &'static [House; 27] {
+        &ALL
+    }
+
     pub const fn all_rows() -> &'static [House; 9] {
         &ROWS
     }
@@ -63,39 +68,27 @@ impl House {
         self.cells() & other.cells()
     }
 
-    pub fn rows(&self) -> Vec<Self> {
+    pub const fn rows(&self) -> &[House] {
         match self.shape {
-            Shape::Row => vec![*self],
-            Shape::Column => vec![],
-            Shape::Block => {
-                let first = 3 * (self.coord.usize() / 3);
-                vec![ROWS[first], ROWS[first + 1], ROWS[first + 2]]
-            },
+            Shape::Row => &ROW_ROWS[self.coord.usize()],
+            Shape::Column => &COLUMN_ROWS[self.coord.usize()],
+            Shape::Block => &BLOCK_ROWS[self.coord.usize()],
         }
     }
 
-    pub fn columns(&self) -> Vec<Self> {
+    pub const fn columns(&self) -> &[House] {
         match self.shape {
-            Shape::Row => vec![],
-            Shape::Column => vec![*self],
-            Shape::Block => {
-                let first = 3 * (self.coord.usize() % 3);
-                vec![COLUMNS[first], COLUMNS[first + 1], COLUMNS[first + 2]]
-            },
+            Shape::Row => &ROW_COLUMNS[self.coord.usize()],
+            Shape::Column => &COLUMN_COLUMNS[self.coord.usize()],
+            Shape::Block => &BLOCK_COLUMNS[self.coord.usize()],
         }
     }
 
-    pub fn blocks(&self) -> Vec<Self> {
+    pub const fn blocks(&self) -> &[House] {
         match self.shape {
-            Shape::Row => {
-                let first = 3 * (self.coord.usize() / 3);
-                vec![BLOCKS[first], BLOCKS[first + 1], BLOCKS[first + 2]]
-            },
-            Shape::Column => {
-                let first = self.coord.usize() / 3;
-                vec![BLOCKS[first], BLOCKS[first + 3], BLOCKS[first + 6]]
-            },
-            Shape::Block => vec![*self],
+            Shape::Row => &ROW_BLOCKS[self.coord.usize()],
+            Shape::Column => &COLUMN_BLOCKS[self.coord.usize()],
+            Shape::Block => &BLOCK_BLOCKS[self.coord.usize()],
         }
     }
 }
@@ -145,16 +138,57 @@ pub const ALL: [House; 27] = {
     houses
 };
 
-const ROW_ROWS: [[House; 1]; 9] = {
-    let mut rows: [[House; 1]; 9] = [[House::new(Shape::Row, Coord::new(0)); 1]; 9];
-    let mut i = 0;
+const ROW_ROWS: [[House; 1]; 9] = [
+    [ROWS[0]], [ROWS[1]], [ROWS[2]], [ROWS[3]], [ROWS[4]], [ROWS[5]], [ROWS[6]], [ROWS[7]], [ROWS[8]],
+];
 
-    while i < 9 {
-        rows[i][0] = ROWS[i];
-        i += 1;
-    }
-    rows
-};
+const COLUMN_ROWS: [[House; 9]; 9] = [ROWS; 9];
+
+const BLOCK_ROWS: [[House; 3]; 9] = [
+    [ROWS[0], ROWS[1], ROWS[2]], [ROWS[0], ROWS[1], ROWS[2]], [ROWS[0], ROWS[1], ROWS[2]],
+    [ROWS[3], ROWS[4], ROWS[5]], [ROWS[3], ROWS[4], ROWS[5]], [ROWS[3], ROWS[4], ROWS[5]],
+    [ROWS[6], ROWS[7], ROWS[8]], [ROWS[6], ROWS[7], ROWS[8]], [ROWS[6], ROWS[7], ROWS[8]],
+];
+
+const ROW_COLUMNS: [[House; 9]; 9] = [COLUMNS; 9];
+
+const COLUMN_COLUMNS: [[House; 1]; 9] = [
+    [COLUMNS[0]], [COLUMNS[1]], [COLUMNS[2]], [COLUMNS[3]], [COLUMNS[4]], [COLUMNS[5]], [COLUMNS[6]], [COLUMNS[7]], [COLUMNS[8]],
+];
+
+const BLOCK_COLUMNS: [[House; 3]; 9] = [
+    [COLUMNS[0], COLUMNS[1], COLUMNS[2]], [COLUMNS[3], COLUMNS[4], COLUMNS[5]], [COLUMNS[6], COLUMNS[7], COLUMNS[8]],
+    [COLUMNS[0], COLUMNS[1], COLUMNS[2]], [COLUMNS[3], COLUMNS[4], COLUMNS[5]], [COLUMNS[6], COLUMNS[7], COLUMNS[8]],
+    [COLUMNS[0], COLUMNS[1], COLUMNS[2]], [COLUMNS[3], COLUMNS[4], COLUMNS[5]], [COLUMNS[6], COLUMNS[7], COLUMNS[8]],
+];
+
+const ROW_BLOCKS: [[House; 3]; 9] = [
+    [BLOCKS[0], BLOCKS[1], BLOCKS[2]],
+    [BLOCKS[0], BLOCKS[1], BLOCKS[2]],
+    [BLOCKS[0], BLOCKS[1], BLOCKS[2]],
+    [BLOCKS[3], BLOCKS[4], BLOCKS[5]],
+    [BLOCKS[3], BLOCKS[4], BLOCKS[5]],
+    [BLOCKS[3], BLOCKS[4], BLOCKS[5]],
+    [BLOCKS[6], BLOCKS[7], BLOCKS[8]],
+    [BLOCKS[6], BLOCKS[7], BLOCKS[8]],
+    [BLOCKS[6], BLOCKS[7], BLOCKS[8]],
+];
+
+const COLUMN_BLOCKS: [[House; 3]; 9] = [
+    [BLOCKS[0], BLOCKS[3], BLOCKS[6]],
+    [BLOCKS[0], BLOCKS[3], BLOCKS[6]],
+    [BLOCKS[0], BLOCKS[3], BLOCKS[6]],
+    [BLOCKS[1], BLOCKS[4], BLOCKS[7]],
+    [BLOCKS[1], BLOCKS[4], BLOCKS[7]],
+    [BLOCKS[1], BLOCKS[4], BLOCKS[7]],
+    [BLOCKS[2], BLOCKS[5], BLOCKS[8]],
+    [BLOCKS[2], BLOCKS[5], BLOCKS[8]],
+    [BLOCKS[2], BLOCKS[5], BLOCKS[8]],
+];
+
+const BLOCK_BLOCKS: [[House; 1]; 9] = [
+    [BLOCKS[0]], [BLOCKS[1]], [BLOCKS[2]], [BLOCKS[3]], [BLOCKS[4]], [BLOCKS[5]], [BLOCKS[6]], [BLOCKS[7]], [BLOCKS[8]],
+];
 
 #[cfg(test)]
 mod tests {

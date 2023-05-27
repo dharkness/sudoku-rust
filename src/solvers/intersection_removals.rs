@@ -3,12 +3,12 @@ use crate::layout::{Board, Cell, House, Known};
 pub fn find_intersection_removals(board: &Board) -> Vec<(Cell, Known)> {
     let mut found = vec![];
 
-    for block in *House::all_blocks() {
+    for block in House::all_blocks() {
         for row in block.rows() {
-            check_intersection(board, block, row, &mut found)
+            check_intersection(board, *block, *row, &mut found)
         }
         for column in block.columns() {
-            check_intersection(board, block, column, &mut found)
+            check_intersection(board, *block, *column, &mut found)
         }
     }
 
