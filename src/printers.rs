@@ -7,10 +7,10 @@ const VALUES: [char; 10] = [MISSING, '1', '2', '3', '4', '5', '6', '7', '8', '9'
 pub fn print_values(board: &Board) {
     println!("  ¹²³⁴⁵⁶⁷⁸⁹");
     for (r, coord) in ROW_COORDS.iter().enumerate() {
-        let row = House::row(Coord::new(r as u8));
+        let row = House::row(r.into());
         print!("{} ", coord);
         for c in 0..9 {
-            let value = board.value(row.cell(Coord::new(c as u8)));
+            let value = board.value(row.cell(c.into()));
             if value == Known::UNKNOWN {
                 print!("{}", MISSING);
             } else {
@@ -24,14 +24,14 @@ pub fn print_values(board: &Board) {
 pub fn print_candidates(board: &Board) {
     println!("   ¹   ²   ³     ⁴   ⁵   ⁶     ⁷   ⁸   ⁹");
     for (r, coord) in ROW_COORDS.iter().enumerate() {
-        let row = House::row(Coord::new(r as u8));
+        let row = House::row(r.into());
         let mut lines = [
             String::from("  "),
             coord.to_string() + " ",
             String::from("  "),
         ];
         for c in 0..9 {
-            let cell = row.cell(Coord::new(c as u8));
+            let cell = row.cell(c.into());
             let value = board.value(cell);
             let candidates = board.candidates(cell);
             if value == Known::UNKNOWN {

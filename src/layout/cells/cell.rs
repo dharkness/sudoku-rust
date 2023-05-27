@@ -67,20 +67,6 @@ impl Cell {
     }
 }
 
-impl Deref for Cell {
-    type Target = u32;
-
-    fn deref(&self) -> &u32 {
-        &self.0
-    }
-}
-
-impl DerefMut for Cell {
-    fn deref_mut(&mut self) -> &mut u32 {
-        &mut self.0
-    }
-}
-
 impl From<&str> for Cell {
     fn from(label: &str) -> Self {
         Self(index_from_label(label))

@@ -5,18 +5,18 @@ pub fn find_deadly_rectangles(board: &Board) -> bool {
 
     for i in 0..2 {
         for (from, to) in BLOCKS[i] {
-            let from = House::block(Coord::new(from));
-            let to = House::block(Coord::new(to));
+            let from = House::block(from.into());
+            let to = House::block(to.into());
 
             for ((tl, bl), (tr, br)) in COORDS[i] {
-                let tl = from.cell(Coord::new(tl));
-                let br = to.cell(Coord::new(br));
+                let tl = from.cell(tl.into());
+                let br = to.cell(br.into());
                 if !board.is_known(tl) || board.value(tl) != board.value(br) {
                     continue;
                 }
 
-                let bl = from.cell(Coord::new(bl));
-                let tr = to.cell(Coord::new(tr));
+                let bl = from.cell(bl.into());
+                let tr = to.cell(tr.into());
                 if !board.is_known(bl) || board.value(bl) != board.value(tr) {
                     continue;
                 }
@@ -38,8 +38,8 @@ pub fn creates_deadly_rectangle(board: &Board, cell: Cell, known: Known) -> bool
 
     for i in 0..2 {
         for (f, t) in BLOCKS[i] {
-            let mut from = House::block(Coord::new(f));
-            let mut to = House::block(Coord::new(t));
+            let mut from = House::block(f.into());
+            let mut to = House::block(t.into());
             if f == block_coord {
                 // use it
             } else if t == block_coord {
@@ -49,10 +49,10 @@ pub fn creates_deadly_rectangle(board: &Board, cell: Cell, known: Known) -> bool
             }
 
             for ((tl, bl), (tr, br)) in COORDS[i] {
-                let mut top_left = from.cell(Coord::new(tl));
-                let mut bottom_left = from.cell(Coord::new(bl));
-                let mut top_right = to.cell(Coord::new(tr));
-                let mut bottom_right = to.cell(Coord::new(br));
+                let mut top_left = from.cell(tl.into());
+                let mut bottom_left = from.cell(bl.into());
+                let mut top_right = to.cell(tr.into());
+                let mut bottom_right = to.cell(br.into());
                 if tl == cell_coord {
                     // use it
                 } else if bl == cell_coord {

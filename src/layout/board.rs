@@ -116,13 +116,13 @@ impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut first = true;
         for r in 0..9 {
-            let row = House::row(Coord::new(r as u8));
+            let row = House::row(r.into());
             if !first {
                 write!(f, " ")?;
             }
             first = false;
             for c in 0..9 {
-                let cell = row.cell(Coord::new(c as u8));
+                let cell = row.cell(c.into());
                 let value = self.value(cell);
                 if value == Known::UNKNOWN {
                     write!(f, ".")?;

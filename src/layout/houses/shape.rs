@@ -9,16 +9,20 @@ pub enum Shape {
 }
 
 impl Shape {
-    pub const fn cells(self, house: Coord) -> CellSet {
-        CELL_SETS[self as usize][house.usize()]
+    pub const fn usize(&self) -> usize {
+        *self as usize
     }
 
-    pub const fn cell(self, house: Coord, coord: Coord) -> Cell {
-        CELLS[self as usize][house.usize()][coord.usize()]
+    pub const fn cells(&self, house: Coord) -> CellSet {
+        CELL_SETS[self.usize()][house.usize()]
     }
 
-    pub const fn cell_list(self, house: Coord) -> &'static [Cell; 9] {
-        &CELLS[self as usize][house.usize()]
+    pub const fn cell(&self, house: Coord, coord: Coord) -> Cell {
+        CELLS[self.usize()][house.usize()][coord.usize()]
+    }
+
+    pub const fn cell_list(&self, house: Coord) -> &'static [Cell; 9] {
+        &CELLS[self.usize()][house.usize()]
     }
 }
 
@@ -55,9 +59,9 @@ const CELLS: [[[Cell; 9]; 9]; 3] = {
         }
     }
 
-    cells[Shape::Row as usize] = shape_cells(Shape::Row);
-    cells[Shape::Column as usize] = shape_cells(Shape::Column);
-    cells[Shape::Block as usize] = shape_cells(Shape::Block);
+    cells[Shape::Row.usize()] = shape_cells(Shape::Row);
+    cells[Shape::Column.usize()] = shape_cells(Shape::Column);
+    cells[Shape::Block.usize()] = shape_cells(Shape::Block);
     cells
 };
 
@@ -69,14 +73,14 @@ const CELL_SETS: [[CellSet; 9]; 3] = {
         let mut house = 0;
 
         while house < 9 {
-            cell_sets[house] = CellSet::from::<9>(&CELLS[shape as usize][house]);
+            cell_sets[house] = CellSet::from::<9>(&CELLS[shape.usize()][house]);
             house += 1;
         }
         cell_sets
     }
 
-    sets[Shape::Row as usize] = cell_sets(Shape::Row);
-    sets[Shape::Column as usize] = cell_sets(Shape::Column);
-    sets[Shape::Block as usize] = cell_sets(Shape::Block);
+    sets[Shape::Row.usize()] = cell_sets(Shape::Row);
+    sets[Shape::Column.usize()] = cell_sets(Shape::Column);
+    sets[Shape::Block.usize()] = cell_sets(Shape::Block);
     sets
 };
