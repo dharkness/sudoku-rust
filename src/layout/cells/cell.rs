@@ -31,39 +31,35 @@ impl Cell {
     }
 
     pub const fn house(&self, shape: Shape) -> House {
-        match shape {
-            Shape::Row => self.row(),
-            Shape::Column => self.column(),
-            Shape::Block => self.block(),
-        }
+        HOUSES[self.usize()][shape as usize]
     }
 
     pub const fn row(&self) -> House {
-        House::row(Coord::new((self.0 / 9) as u8))
+        HOUSES[self.usize()][Shape::Row as usize]
     }
 
     pub const fn column(&self) -> House {
-        House::column(Coord::new((self.0 % 9) as u8))
+        HOUSES[self.usize()][Shape::Column as usize]
     }
 
     pub const fn block(&self) -> House {
-        House::block(Coord::new((self.row().coord().u8() / 3) * 3 + (self.column().coord().u8() / 3)))
+        HOUSES[self.usize()][Shape::Block as usize]
     }
 
     pub const fn coord_in_row(&self) -> Coord {
-        return Coord::new((self.0 % 9) as u8);
+        HOUSES_COORDS[self.usize()][Shape::Row as usize]
     }
 
     pub const fn coord_in_column(&self) -> Coord {
-        return Coord::new((self.0 / 9) as u8);
+        HOUSES_COORDS[self.usize()][Shape::Column as usize]
     }
 
     pub const fn coord_in_block(&self) -> Coord {
-        Coord::new(3 * (self.row().coord().u8() % 3) + (self.column().coord().u8() % 3))
+        HOUSES_COORDS[self.usize()][Shape::Block as usize]
     }
 
     pub const fn neighbors(&self) -> Set {
-        NEIGHBORS[self.0 as usize]
+        NEIGHBORS[self.usize()]
     }
 
     pub const fn label(&self) -> &'static str {
@@ -104,8 +100,43 @@ impl fmt::Display for Cell {
     }
 }
 
+const HOUSES: [[House; 3]; 81] = {
+    let mut houses = [[House::new(Shape::Row, Coord::new(0)); 3]; 81];
+    let mut cell = 0;
+    while cell < 81 {
+        let row = cell / 9;
+        let column = cell % 9;
+        let block = (row / 3) * 3 + (column / 3);
+        houses[cell as usize] = [
+            House::row(Coord::new(row)),
+            House::column(Coord::new(column)),
+            House::block(Coord::new(block)),
+        ];
+        cell += 1;
+    }
+    houses
+};
+
+const HOUSES_COORDS: [[Coord; 3]; 81] = {
+    let mut coords = [[Coord::new(0); 3]; 81];
+    let mut cell = 0;
+    while cell < 81 {
+        let row = cell / 9;
+        let column = cell % 9;
+        let block = 3 * (row % 3) + (column % 3);
+        coords[cell as usize] = [
+            Coord::new(column),
+            Coord::new(row),
+            Coord::new(block),
+        ];
+        cell += 1;
+    }
+    coords
+};
+
 /// Holds the neighbors for every unique cell.
 /// A cell's neighbors are all the cells in the same row, column and block, excluding the cell itself.
+/// TODO Use a function to generate this.
 const NEIGHBORS: [Set; 81] = [
     Set::new(0b000000001000000001000000001000000001000000001000000001000000111000000111111111110),
     Set::new(0b000000010000000010000000010000000010000000010000000010000000111000000111111111101),
