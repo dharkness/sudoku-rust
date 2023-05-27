@@ -250,7 +250,7 @@ impl Iterator for Iter {
         } else {
             let bit = 1 << self.bits.trailing_zeros();
             self.bits &= !bit;
-            Some(Known::from(bit.trailing_zeros() as u16))
+            Some(Known::from(bit.trailing_zeros() as u8))
         }
     }
 }
