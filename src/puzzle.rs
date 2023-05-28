@@ -1,9 +1,9 @@
-pub mod action;
-pub mod board;
-pub mod effects;
-pub mod error;
-pub mod generate;
-pub mod strategy;
+mod action;
+mod board;
+mod effects;
+mod error;
+mod generate;
+mod strategy;
 
 pub use action::Action;
 pub use board::Board;
