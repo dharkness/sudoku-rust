@@ -140,7 +140,8 @@ fn print_help() {
 fn create_new_puzzle() -> Option<Board> {
     println!(concat!(
         "\n==> Enter the givens\n\n",
-        "- enter up to 81 digits or periods\n",
+        "- enter up to 81 digits\n",
+        "- use period or zero to leave a cell blank\n",
         "- spaces are ignored\n",
         "- leave empty to cancel\n",
         "- enter 'E' for an empty puzzle\n",
@@ -170,7 +171,7 @@ fn create_new_puzzle() -> Option<Board> {
 
         let mut board = Board::new();
         for (i, char) in input.chars().enumerate() {
-            if char == '.' {
+            if char == '.' || char == '0' {
                 continue;
             }
 
