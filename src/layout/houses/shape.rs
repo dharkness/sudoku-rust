@@ -1,4 +1,5 @@
 use crate::layout::{Cell, CellSet, Coord};
+use std::fmt;
 
 /// The three house shapes on the board.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
@@ -14,6 +15,14 @@ impl Shape {
         *self as usize
     }
 
+    pub const fn label(&self) -> &str {
+        match self {
+            Shape::Row => "Row",
+            Shape::Column => "Col",
+            Shape::Block => "Box",
+        }
+    }
+
     pub const fn cells(&self, house: Coord) -> CellSet {
         CELL_SETS[self.usize()][house.usize()]
     }
@@ -24,6 +33,12 @@ impl Shape {
 
     pub const fn cell_list(&self, house: Coord) -> &'static [Cell; 9] {
         &CELLS[self.usize()][house.usize()]
+    }
+}
+
+impl fmt::Display for Shape {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.label())
     }
 }
 

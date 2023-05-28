@@ -1,6 +1,7 @@
 use std::fmt;
 
 use crate::layout::{Cell, CellSet, House, Known, KnownSet};
+use crate::solvers::deadly_rectangles::creates_deadly_rectangles;
 
 use super::{Effects, Error, Strategy};
 
@@ -84,26 +85,37 @@ impl Board {
             }
 
             let cells = &mut self.cell_candidates[known.usize()];
-            assert!(cells[cell]);
+            debug_assert!(cells[cell]);
             *cells -= cell;
-            for house in cell.houses() {
-                if (self.cell_knowns[known.usize()] & house.cells()).is_empty() {
-                    let remaining = *cells & house.cells();
-                    if remaining.is_empty() {
-                        self.valid = false;
-                        effects.add_error(Error::UnsolvableHouse(house));
-                    } else if remaining.size() == 1 {
-                        effects.add_set(
-                            Strategy::HiddenSingle,
-                            remaining.iter().next().unwrap(),
-                            known,
-                        );
-                    }
-                }
-            }
+            self.remove_candidate_cell_from_houses(cell, known, effects);
             true
         } else {
             false
+        }
+    }
+
+    fn remove_candidate_cell_from_houses(
+        &mut self,
+        cell: Cell,
+        known: Known,
+        effects: &mut Effects,
+    ) {
+        let all_candidates = self.cell_candidates[known.usize()];
+        for house in cell.houses() {
+            let house_cells = house.cells();
+            if (self.cell_knowns[known.usize()] & house_cells).is_empty() {
+                let candidates = all_candidates & house_cells;
+                if candidates.is_empty() {
+                    self.valid = false;
+                    effects.add_error(Error::UnsolvableHouse(house, known));
+                } else if candidates.size() == 1 {
+                    effects.add_set(
+                        Strategy::HiddenSingle,
+                        candidates.iter().next().unwrap(),
+                        known,
+                    );
+                }
+            }
         }
     }
 
@@ -121,30 +133,29 @@ impl Board {
     }
 
     pub fn set_known(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> bool {
-        if !self.is_candidate(cell, known) {
+        if !self.is_candidate(cell, known) || self.is_known(cell) {
             return false;
         }
 
-        let current = &mut self.values[cell.usize()];
-        if *current == known.value() {
-            return false;
-        }
-        if *current != Known::UNKNOWN {
-            return false;
+        if let Some(rectangles) = creates_deadly_rectangles(self, cell, known) {
+            rectangles.into_iter().for_each(|r| {
+                effects.add_error(Error::DeadlyRectangle(r));
+            });
         }
 
-        *current = known.value();
+        self.values[cell.usize()] = known.value();
         self.knowns += cell;
         self.cell_knowns[known.usize()] += cell;
-        let candidates = self.candidates(cell) - known;
-        for known in candidates.iter() {
-            self.remove_candidate(cell, known, effects);
-        }
-        // remove without triggering errors for empty houses
-        self.known_candidates[cell.usize()] -= known;
         self.cell_candidates[known.usize()] -= cell;
 
-        for neighbor in cell.neighbors().iter() {
+        let candidates = self.known_candidates[cell.usize()] - known;
+        self.known_candidates[cell.usize()] = KnownSet::empty();
+        for known in candidates.iter() {
+            self.cell_candidates[known.usize()] -= cell;
+            self.remove_candidate_cell_from_houses(cell, known, effects);
+        }
+
+        for neighbor in (self.cell_candidates[known.usize()] & cell.neighbors()).iter() {
             effects.add_erase(Strategy::Neighbor, neighbor, known);
         }
 

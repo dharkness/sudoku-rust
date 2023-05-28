@@ -35,8 +35,8 @@ impl Known {
         self.0 + 1
     }
 
-    pub const fn label(&self) -> &'static str {
-        LABELS[self.usize()]
+    pub const fn label(&self) -> char {
+        (b'1' + self.0) as char
     }
 }
 
@@ -61,9 +61,6 @@ impl From<&str> for Known {
 
 impl fmt::Display for Known {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.label())?;
-        Ok(())
+        write!(f, "{}", self.label())
     }
 }
-
-const LABELS: [&str; 9] = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];

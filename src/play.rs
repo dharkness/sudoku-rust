@@ -70,8 +70,10 @@ pub fn play() {
                 let mut clone = *board;
                 let mut effects = Effects::new();
                 clone.remove_candidate(cell, known, &mut effects);
-                if !effects.apply_all(&mut clone) {
+                if let Some(errors) = effects.apply_all(&mut clone) {
                     println!("\n==> Invalid move\n");
+                    errors.print_errors();
+                    println!();
                     continue;
                 }
                 boards.push(clone);
@@ -96,8 +98,10 @@ pub fn play() {
                 let mut clone = *board;
                 let mut effects = Effects::new();
                 clone.set_known(cell, known, &mut effects);
-                if !effects.apply_all(&mut clone) {
+                if let Some(errors) = effects.apply_all(&mut clone) {
                     println!("\n==> Invalid move\n");
+                    errors.print_errors();
+                    println!();
                     continue;
                 }
                 boards.push(clone);
@@ -189,8 +193,10 @@ fn create_new_puzzle() -> Option<Board> {
 
             let mut effects = Effects::new();
             board.set_known(cell, known, &mut effects);
-            if !effects.apply_all(&mut board) {
+            if let Some(errors) = effects.apply_all(&mut board) {
                 println!("\n==> Invalid puzzle after setting {} to {}\n", cell, known);
+                println!();
+                errors.print_errors();
                 break 'input;
             }
         }

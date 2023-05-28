@@ -220,7 +220,7 @@ impl fmt::Display for Set {
             for k in 0..9 {
                 let known = Known::from(k);
                 if self.has(known) {
-                    s.push_str(known.label());
+                    s.push(known.label());
                 } else {
                     s.push(MISSING)
                 }

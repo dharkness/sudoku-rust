@@ -1,9 +1,11 @@
 use std::collections::HashMap;
+use std::fmt;
 
 use crate::layout::{Cell, Known, KnownSet};
 
 use super::{Board, Effects, Strategy};
 
+/// One or more changes to the board derived using a specific strategy.
 #[derive(Clone, Debug)]
 pub struct Action {
     strategy: Strategy,
@@ -36,6 +38,10 @@ impl Action {
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.set.is_empty() && self.erase.is_empty()
+    }
+
     pub fn set(&mut self, cell: Cell, known: Known) {
         self.set.insert(cell, known);
     }
@@ -58,31 +64,32 @@ impl Action {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct Actions {
-    moves: Vec<Action>,
-}
-
-impl Actions {
-    pub fn new() -> Self {
-        Self { moves: vec![] }
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.moves.is_empty()
-    }
-
-    pub fn size(&self) -> usize {
-        self.moves.len()
-    }
-
-    pub fn add(&mut self, action: Action) {
-        self.moves.push(action);
-    }
-
-    pub fn apply_all(&self, board: &mut Board, effects: &mut Effects) {
-        for action in &self.moves {
-            action.apply(board, effects);
+impl fmt::Display for Action {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.is_empty() {
+            write!(f, "∅")
+        } else {
+            let mut first = true;
+            for (cell, knowns) in &self.erase {
+                if first {
+                    first = false;
+                } else {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{} × ", cell)?;
+                for known in knowns.iter() {
+                    write!(f, "{}", known)?;
+                }
+            }
+            for (cell, known) in &self.set {
+                if first {
+                    first = false;
+                } else {
+                    write!(f, ", ")?;
+                }
+                write!(f, "{} ⇨ {}", cell, known)?;
+            }
+            Ok(())
         }
     }
 }

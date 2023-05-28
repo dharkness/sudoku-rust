@@ -1,5 +1,5 @@
 /// Identifies the logic used to solve cells and remove candidates.
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum Strategy {
     /// When a cell becomes solved, the value may be removed as a candidate
     /// from every cell in the same row, column or box.

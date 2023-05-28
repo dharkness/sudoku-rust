@@ -1,15 +1,37 @@
-use crate::layout::{Cell, House, Known};
+use crate::layout::{Cell, House, Known, Rectangle};
 use crate::puzzle::Board;
 
-pub fn find_deadly_rectangles(board: &Board) -> bool {
-    let mut found = false;
+/// Finds all existing deadly rectangles in the board.
+///
+/// A deadly rectangle occurs when two cells in one block
+/// and two cells in another block form a rectangle
+/// where the same values appears in opposite corners.
+/// This is not allowed because the two values could be swapped,
+/// and every valid Sudoku solution must be unique.
+///
+/// # Example
+///
+/// ```text
+///   123456789
+/// A ·········
+/// B ·2··3····  ←-- not allowed since the 2s and 3s may be swapped;
+/// C ·3··2····      the left pair are in block 1, the right pair in block 2
+/// D ·········
+/// E ···7···4·  ←-- allowed since the 7s and 4s may not be swapped;
+/// F ·········      no two adjacent corners are in the same block
+/// G ·········
+/// H ···4···7·
+/// J ·········
+/// ```
+pub fn find_deadly_rectangles(board: &Board) -> Option<Vec<Rectangle>> {
+    let mut found: Vec<Rectangle> = vec![];
 
-    for i in 0..2 {
-        for (from, to) in BLOCKS[i] {
+    for horiz_vert in 0..2 {
+        for (from, to) in BLOCKS[horiz_vert] {
             let from = House::block(from.into());
             let to = House::block(to.into());
 
-            for ((tl, bl), (tr, br)) in COORDS[i] {
+            for ((tl, bl), (tr, br)) in COORDS[horiz_vert] {
                 let tl = from.cell(tl.into());
                 let br = to.cell(br.into());
                 if !board.is_known(tl) || board.value(tl) != board.value(br) {
@@ -22,24 +44,32 @@ pub fn find_deadly_rectangles(board: &Board) -> bool {
                     continue;
                 }
 
-                println!("Deadly rectangle found: ({}, {}) ({}, {})", tl, bl, tr, br);
-                found = true;
+                found.push(Rectangle::from([tl, tr, br, bl]));
             }
         }
     }
 
-    found
+    if found.is_empty() {
+        None
+    } else {
+        Some(found)
+    }
 }
 
-#[allow(unused_assignments)]
-pub fn creates_deadly_rectangle(board: &Board, cell: Cell, known: Known) -> bool {
+/// Finds all deadly rectangles that would be formed if the given cell were set to the given value.
+pub fn creates_deadly_rectangles(
+    board: &Board,
+    cell: Cell,
+    known: Known,
+) -> Option<Vec<Rectangle>> {
+    let mut found: Vec<Rectangle> = vec![];
+
     let cell_coord = cell.coord_in_block().u8();
-    let block = cell.block();
-    let block_coord = block.coord().u8();
+    let block_coord = cell.block().coord().u8();
     let known_value = known.value();
 
-    for i in 0..2 {
-        for (f, t) in BLOCKS[i] {
+    for horiz_vert in 0..2 {
+        for (f, t) in BLOCKS[horiz_vert] {
             let mut from = House::block(f.into());
             let mut to = House::block(t.into());
             if f == block_coord {
@@ -50,7 +80,7 @@ pub fn creates_deadly_rectangle(board: &Board, cell: Cell, known: Known) -> bool
                 continue;
             }
 
-            for ((tl, bl), (tr, br)) in COORDS[i] {
+            for ((tl, bl), (tr, br)) in COORDS[horiz_vert] {
                 let mut top_left = from.cell(tl.into());
                 let mut bottom_left = from.cell(bl.into());
                 let mut top_right = to.cell(tr.into());
@@ -73,20 +103,29 @@ pub fn creates_deadly_rectangle(board: &Board, cell: Cell, known: Known) -> bool
                     continue;
                 }
 
-                // println!("Creates deadly rectangle: ({}, {}) ({}, {})", top_left, bottom_left, top_right, bottom_right);
-                return true;
+                found.push(Rectangle::from([
+                    top_left,
+                    top_right,
+                    bottom_right,
+                    bottom_left,
+                ]));
             }
         }
     }
 
-    false
+    if found.is_empty() {
+        None
+    } else {
+        Some(found)
+    }
 }
 
 /// A pair of coordinates, either two boxes or two cells in one box.
 type CoordPair = (u8, u8);
 
 /// The block pairs (from, to) to check for deadly rectangles.
-/// All possible rectangles between the two blocks are checked.
+/// All possible rectangles between the two blocks are checked
+/// using the coordinates below.
 #[rustfmt::skip]
 const BLOCKS: [[CoordPair; 9]; 2] = [
     // horizontal

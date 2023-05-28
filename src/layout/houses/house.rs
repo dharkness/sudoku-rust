@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::fmt;
 
 use crate::layout::{Cell, CellSet, Coord, Shape};
 
@@ -55,6 +56,10 @@ impl House {
         self.coord.usize()
     }
 
+    pub const fn label(&self) -> char {
+        self.coord.label()
+    }
+
     pub const fn cell(&self, coord: Coord) -> Cell {
         self.shape.cell(self.coord, coord)
     }
@@ -106,6 +111,12 @@ impl PartialOrd<Self> for House {
             Some(Ordering::Equal) => self.coord.partial_cmp(&other.coord),
             result => result,
         }
+    }
+}
+
+impl fmt::Display for House {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} {}", self.shape, self.coord)
     }
 }
 

@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+extern crate core;
+
 mod layout;
 mod play;
 mod printers;
