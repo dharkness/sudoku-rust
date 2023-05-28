@@ -1,7 +1,8 @@
 use std::collections::HashMap;
-use crate::effects::effects::Effects;
 
 use crate::layout::{Board, Cell, Known, KnownSet};
+
+use super::Effects;
 
 #[derive(Clone, Debug)]
 pub enum Strategy {

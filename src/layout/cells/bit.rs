@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
-use crate::layout::cells::label::index_from_label;
 
+use super::label::index_from_label;
 use super::Cell;
 
 /// Specifies a single cell by its position in a bit field.

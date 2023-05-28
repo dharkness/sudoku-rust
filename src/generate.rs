@@ -10,8 +10,10 @@ use crate::printers::{print_candidates, print_values};
 use crate::solvers::deadly_rectangles::creates_deadly_rectangle;
 use crate::solvers::intersection_removals::find_intersection_removals;
 
-const FILLED: &str = "|---------=========---------=========---------=========---------=========---------|";
-const EMPTY : &str = "|                                                                                 |";
+const FILLED: &str =
+    "|---------=========---------=========---------=========---------=========---------|";
+const EMPTY: &str =
+    "|                                                                                 |";
 
 /// Generates a full board.
 pub struct Generator {
@@ -34,7 +36,8 @@ impl Generator {
 
     pub fn generate(&mut self) -> Option<Board> {
         static CANCEL: AtomicBool = AtomicBool::new(false);
-        ctrlc::set_handler(|| CANCEL.store(true, Ordering::Relaxed)).expect("Error setting Ctrl-C handler");
+        ctrlc::set_handler(|| CANCEL.store(true, Ordering::Relaxed))
+            .expect("Error setting Ctrl-C handler");
 
         let mut stack = Vec::with_capacity(81);
         stack.push(Entry {
@@ -44,9 +47,17 @@ impl Generator {
         });
 
         while !stack.is_empty() {
-            println!("{}{}", FILLED[..stack.len()+1].to_string(), EMPTY[stack.len()+1..].to_string());
+            println!(
+                "{}{}",
+                FILLED[..stack.len() + 1].to_string(),
+                EMPTY[stack.len() + 1..].to_string()
+            );
 
-            let Entry { board, cell, mut candidates } = stack.pop().unwrap();
+            let Entry {
+                board,
+                cell,
+                mut candidates,
+            } = stack.pop().unwrap();
             if CANCEL.load(Ordering::Relaxed) {
                 return Some(board);
             }
@@ -90,7 +101,11 @@ impl Generator {
             //     continue;
             // }
 
-            stack.push(Entry { board, cell, candidates });
+            stack.push(Entry {
+                board,
+                cell,
+                candidates,
+            });
             loop {
                 if stack.len() == 81 {
                     return Some(clone);
@@ -141,9 +156,9 @@ pub fn generate_board() {
                 print_candidates(&board);
             }
             println!("Board: {}", board);
-        },
+        }
         None => {
             println!("No solution found");
-        },
+        }
     }
 }

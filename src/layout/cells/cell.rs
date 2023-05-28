@@ -133,11 +133,7 @@ const HOUSES_COORDS: [[Coord; 3]; 81] = {
         let row = cell / 9;
         let column = cell % 9;
         let block = 3 * (row % 3) + (column % 3);
-        coords[cell as usize] = [
-            Coord::new(column),
-            Coord::new(row),
-            Coord::new(block),
-        ];
+        coords[cell as usize] = [Coord::new(column), Coord::new(row), Coord::new(block)];
         cell += 1;
     }
     coords

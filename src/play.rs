@@ -1,7 +1,7 @@
 use std::io::{stdout, Write};
+
 use crate::effects::Effects;
 use crate::generate::{generate_board, Generator};
-
 use crate::layout::{Board, Cell, Known};
 use crate::printers::print_candidates;
 
@@ -18,7 +18,11 @@ pub fn play() {
             show = false;
         }
 
-        print!("[ {} solved - {} unsolved ] ", board.known_count(), board.unknown_count());
+        print!(
+            "[ {} solved - {} unsolved ] ",
+            board.known_count(),
+            board.unknown_count()
+        );
         let _ = stdout().flush();
         let mut input = String::new();
         std::io::stdin().read_line(&mut input).unwrap();
@@ -36,7 +40,7 @@ pub fn play() {
                 }
                 println!();
                 show = true
-            },
+            }
             "G" => {
                 println!();
                 let mut generator = Generator::new();
@@ -44,16 +48,16 @@ pub fn play() {
                     Some(board) => {
                         println!("\n==> Clues: {}\n", board);
                         boards.push(board);
-                    },
+                    }
                     None => {
                         println!("\n==> Failed to generate a puzzle\n");
-                    },
+                    }
                 }
-            },
+            }
             "P" => {
                 println!();
                 show = true
-            },
+            }
             "E" => {
                 if input.len() != 3 {
                     println!("\n==> c <cell> <value>\n");
@@ -79,7 +83,7 @@ pub fn play() {
                     println!();
                     show = true;
                 }
-            },
+            }
             "S" => {
                 if input.len() != 3 {
                     println!("\n==> s <cell> <value>\n");
@@ -105,14 +109,14 @@ pub fn play() {
                     println!();
                     show = true;
                 }
-            },
+            }
             "Z" => {
                 if boards.len() > 1 {
                     println!("\n==> Undoing last move\n");
                     boards.pop();
                     show = true
                 }
-            },
+            }
             "?" | "H" => print_help(),
             "Q" => break,
             _ => println!("\n==> Unknown command: {}\n", input[0]),
@@ -158,7 +162,11 @@ fn create_new_puzzle() -> Option<Board> {
             return Some(Board::new());
         }
         if input.len() > 81 {
-            println!("\n==> Expected 81 digits, got {} - |{}|\n", input.len(), input);
+            println!(
+                "\n==> Expected 81 digits, got {} - |{}|\n",
+                input.len(),
+                input
+            );
             continue;
         }
 

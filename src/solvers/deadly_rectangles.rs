@@ -66,7 +66,9 @@ pub fn creates_deadly_rectangle(board: &Board, cell: Cell, known: Known) -> bool
                 if known_value != board.value(bottom_right) {
                     continue;
                 }
-                if !board.is_known(bottom_left) || board.value(bottom_left) != board.value(top_right) {
+                if !board.is_known(bottom_left)
+                    || board.value(bottom_left) != board.value(top_right)
+                {
                     continue;
                 }
 
@@ -81,6 +83,7 @@ pub fn creates_deadly_rectangle(board: &Board, cell: Cell, known: Known) -> bool
 
 /// The block pairs (from, to) to check for deadly rectangles.
 /// All possible rectangles between the two blocks are checked.
+#[rustfmt::skip]
 const BLOCKS: [[(u8, u8); 9]; 2] = [
     // horizontal
     [
@@ -88,7 +91,6 @@ const BLOCKS: [[(u8, u8); 9]; 2] = [
         (3, 4), (3, 5), (4, 5),
         (6, 7), (6, 8), (7, 8),
     ],
-
     // vertical
     [
         (0, 3), (0, 6), (3, 6),
@@ -99,6 +101,7 @@ const BLOCKS: [[(u8, u8); 9]; 2] = [
 
 /// Block coordinates (top-left, bottom-right) for each rectangle.
 /// each in a different block in the pairs above.
+#[rustfmt::skip]
 const COORDS: [[((u8, u8), (u8, u8)); 27]; 2] = [
     // horizontal
     [
@@ -117,7 +120,6 @@ const COORDS: [[((u8, u8), (u8, u8)); 27]; 2] = [
 
         ((5, 8), (3, 6)), ((5, 8), (4, 7)), ((5, 8), (5, 8)),
     ],
-
     // vertical
     [
         ((0, 1), (0, 1)), ((0, 1), (3, 4)), ((0, 1), (6, 7)),

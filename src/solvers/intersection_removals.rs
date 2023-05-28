@@ -39,8 +39,13 @@ fn check_intersection(board: &Board, block: House, other: House, effects: &mut E
                     for cell in other_disjoint.iter() {
                         if board.is_candidate(cell, known) {
                             effects.add_erase(
-                                if segment_candidates.size() == 3 { Strategy::PointingTriple } else { Strategy::PointingPair },
-                                cell, known
+                                if segment_candidates.size() == 3 {
+                                    Strategy::PointingTriple
+                                } else {
+                                    Strategy::PointingPair
+                                },
+                                cell,
+                                known,
                             );
                         }
                     }

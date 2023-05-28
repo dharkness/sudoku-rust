@@ -56,7 +56,12 @@ const CELLS: [[[Cell; 9]; 9]; 3] = {
         match shape {
             Shape::Row => Cell::new(9 * house.u8() + coord.u8()),
             Shape::Column => Cell::new(house.u8() + 9 * coord.u8()),
-            Shape::Block => Cell::new((house.u8() / 3) * 27 + (house.u8() % 3) * 3 + (coord.u8() / 3) * 9 + (coord.u8() % 3)),
+            Shape::Block => Cell::new(
+                (house.u8() / 3) * 27
+                    + (house.u8() % 3) * 3
+                    + (coord.u8() / 3) * 9
+                    + (coord.u8() % 3),
+            ),
         }
     }
 

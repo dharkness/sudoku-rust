@@ -1,4 +1,5 @@
 use std::fmt;
+
 use crate::effects::{Action, Actions, Effects, Error, Strategy};
 
 use super::{Cell, CellSet, House, Known, KnownSet};
@@ -57,9 +58,9 @@ impl Board {
     }
 
     pub fn all_candidates(&self, cells: CellSet) -> KnownSet {
-        cells.iter().fold(KnownSet::empty(), |acc, cell| {
-            acc | self.candidates(cell)
-        })
+        cells
+            .iter()
+            .fold(KnownSet::empty(), |acc, cell| acc | self.candidates(cell))
     }
 
     pub fn candidates(&self, cell: Cell) -> KnownSet {
@@ -92,7 +93,11 @@ impl Board {
                         self.valid = false;
                         effects.add_error(Error::UnsolvableHouse(house));
                     } else if remaining.size() == 1 {
-                        effects.add_set(Strategy::HiddenSingle, remaining.iter().next().unwrap(), known);
+                        effects.add_set(
+                            Strategy::HiddenSingle,
+                            remaining.iter().next().unwrap(),
+                            known,
+                        );
                     }
                 }
             }

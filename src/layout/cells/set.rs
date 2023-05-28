@@ -83,7 +83,7 @@ impl Set {
 
     pub const fn with(&self, cell: Cell) -> Set {
         if self.has(cell) {
-            return *self
+            return *self;
         }
         let mut copy = *self;
         copy.0 += cell.bit().bit() + SIZE_BIT;
@@ -98,7 +98,7 @@ impl Set {
 
     pub const fn without(&self, cell: Cell) -> Set {
         if !self.has(cell) {
-            return *self
+            return *self;
         }
         let mut copy = *self;
         copy.0 -= cell.bit().bit() + SIZE_BIT;
@@ -160,7 +160,9 @@ impl Set {
     }
 
     pub const fn iter(&self) -> Iter {
-        Iter { iter: self.bit_iter() }
+        Iter {
+            iter: self.bit_iter(),
+        }
     }
 
     pub const fn bit_iter(&self) -> BitIter {
