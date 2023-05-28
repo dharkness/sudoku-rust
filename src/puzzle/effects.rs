@@ -1,6 +1,6 @@
-use crate::layout::{Board, Cell, Known};
+use crate::layout::{Cell, Known};
 
-use super::{Action, Actions, Error, Strategy};
+use super::{Action, Actions, Board, Error, Strategy};
 
 #[derive(Clone, Debug)]
 pub struct Effects {

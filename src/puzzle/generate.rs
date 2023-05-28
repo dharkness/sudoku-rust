@@ -3,11 +3,12 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use rand::rngs::ThreadRng;
 use rand::seq::SliceRandom;
 
-use crate::effects::Effects;
-use crate::layout::{Board, Cell, Known, KnownSet};
+use crate::layout::{Cell, Known, KnownSet};
 use crate::printers::{print_candidates, print_values};
 use crate::solvers::deadly_rectangles::creates_deadly_rectangle;
 use crate::solvers::intersection_removals::find_intersection_removals;
+
+use super::{Board, Effects};
 
 const FILLED: &str =
     "|---------=========---------=========---------=========---------=========---------|";

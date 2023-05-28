@@ -1,18 +1,8 @@
 use std::collections::HashMap;
 
-use crate::layout::{Board, Cell, Known, KnownSet};
+use crate::layout::{Cell, Known, KnownSet};
 
-use super::Effects;
-
-#[derive(Clone, Debug)]
-pub enum Strategy {
-    Neighbor,
-    NakedSingle,
-    HiddenSingle,
-    PointingPair,
-    PointingTriple,
-    BoxLineReduction,
-}
+use super::{Board, Effects, Strategy};
 
 #[derive(Clone, Debug)]
 pub struct Action {

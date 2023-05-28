@@ -1,8 +1,8 @@
 use std::fmt;
 
-use crate::effects::{Effects, Error, Strategy};
+use crate::layout::{Cell, CellSet, House, Known, KnownSet};
 
-use super::{Cell, CellSet, House, Known, KnownSet};
+use super::{Effects, Error, Strategy};
 
 /// Tracks the full state of a puzzle in play.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

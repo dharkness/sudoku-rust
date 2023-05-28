@@ -1,10 +1,9 @@
 #![allow(dead_code)]
 
-mod effects;
-mod generate;
 mod layout;
 mod play;
 mod printers;
+mod puzzle;
 mod solvers;
 
 use crate::play::play;

@@ -1,4 +1,5 @@
-use crate::layout::{Board, House, Known};
+use crate::layout::{House, Known};
+use crate::puzzle::Board;
 
 const MISSING: char = '·';
 const ROW_COORDS: [char; 9] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J'];

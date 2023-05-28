@@ -1,4 +1,5 @@
-use crate::layout::{Board, Cell, House, Known};
+use crate::layout::{Cell, House, Known};
+use crate::puzzle::Board;
 
 pub fn find_deadly_rectangles(board: &Board) -> bool {
     let mut found = false;

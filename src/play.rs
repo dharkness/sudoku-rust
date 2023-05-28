@@ -1,9 +1,8 @@
 use std::io::{stdout, Write};
 
-use crate::effects::Effects;
-use crate::generate::Generator;
-use crate::layout::{Board, Cell, Known};
+use crate::layout::{Cell, Known};
 use crate::printers::print_candidates;
+use crate::puzzle::{Board, Effects, Generator};
 
 pub fn play() {
     let mut boards = vec![Board::new()];
