@@ -40,6 +40,10 @@ impl Board {
         self.knowns.size()
     }
 
+    pub fn unknown_count(&self) -> u8 {
+        81 - self.knowns.size()
+    }
+
     pub fn is_known(&self, cell: Cell) -> bool {
         self.knowns[cell]
     }
