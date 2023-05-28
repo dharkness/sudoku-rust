@@ -1,7 +1,7 @@
 use std::io::{stdout, Write};
 
 use crate::effects::Effects;
-use crate::generate::{generate_board, Generator};
+use crate::generate::Generator;
 use crate::layout::{Board, Cell, Known};
 use crate::printers::print_candidates;
 
@@ -13,7 +13,7 @@ pub fn play() {
     loop {
         let board = boards.last().unwrap();
         if show {
-            print_candidates(&board);
+            print_candidates(board);
             println!();
             show = false;
         }
@@ -34,9 +34,8 @@ pub fn play() {
 
         match input[0] {
             "N" => {
-                match create_new_puzzle() {
-                    Some(board) => boards.push(board),
-                    None => (),
+                if let Some(board) = create_new_puzzle() {
+                    boards.push(board)
                 }
                 println!();
                 show = true
@@ -69,7 +68,7 @@ pub fn play() {
                     println!("\n==> {} is not a candidate for {}\n", known, cell);
                     continue;
                 }
-                let mut clone = board.clone();
+                let mut clone = *board;
                 let mut effects = Effects::new();
                 clone.remove_candidate(cell, known, &mut effects);
                 if !effects.apply_all(&mut clone) {
@@ -95,7 +94,7 @@ pub fn play() {
                     println!("\n==> {} is not a candidate for {}\n", known, cell);
                     continue;
                 }
-                let mut clone = board.clone();
+                let mut clone = *board;
                 let mut effects = Effects::new();
                 clone.set_known(cell, known, &mut effects);
                 if !effects.apply_all(&mut clone) {
@@ -154,7 +153,7 @@ fn create_new_puzzle() -> Option<Board> {
 
         let mut input = String::new();
         std::io::stdin().read_line(&mut input).unwrap();
-        let input = input.trim().replace(" ", "").to_uppercase();
+        let input = input.trim().replace(' ', "").to_uppercase();
         if input.is_empty() {
             return None;
         }
@@ -176,7 +175,7 @@ fn create_new_puzzle() -> Option<Board> {
                 continue;
             }
 
-            if char < '1' || char > '9' {
+            if !('1'..='9').contains(&char) {
                 println!("\n==> Expected digit or period, got {}\n", char);
                 break 'input;
             }

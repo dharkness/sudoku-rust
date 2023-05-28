@@ -12,10 +12,6 @@ impl Coord {
         self.0
     }
 
-    pub const fn u32(&self) -> u32 {
-        self.0 as u32
-    }
-
     pub const fn usize(&self) -> usize {
         self.0 as usize
     }
@@ -23,21 +19,19 @@ impl Coord {
 
 impl From<i32> for Coord {
     fn from(coord: i32) -> Self {
-        debug_assert!(coord >= 0 && coord <= 8);
-        Self(coord as u8)
+        debug_assert!(coord >= 0);
+        Self::new(coord as u8)
     }
 }
 
 impl From<u8> for Coord {
     fn from(coord: u8) -> Self {
-        debug_assert!(coord <= 8);
-        Self(coord as u8)
+        Self::new(coord)
     }
 }
 
 impl From<usize> for Coord {
     fn from(coord: usize) -> Self {
-        debug_assert!(coord <= 8);
-        Self(coord as u8)
+        Self::new(coord as u8)
     }
 }

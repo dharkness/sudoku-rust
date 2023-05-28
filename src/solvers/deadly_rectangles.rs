@@ -81,10 +81,13 @@ pub fn creates_deadly_rectangle(board: &Board, cell: Cell, known: Known) -> bool
     false
 }
 
+/// A pair of coordinates, either two boxes or two cells in one box.
+type CoordPair = (u8, u8);
+
 /// The block pairs (from, to) to check for deadly rectangles.
 /// All possible rectangles between the two blocks are checked.
 #[rustfmt::skip]
-const BLOCKS: [[(u8, u8); 9]; 2] = [
+const BLOCKS: [[CoordPair; 9]; 2] = [
     // horizontal
     [
         (0, 1), (0, 2), (1, 2),
@@ -102,7 +105,7 @@ const BLOCKS: [[(u8, u8); 9]; 2] = [
 /// Block coordinates (top-left, bottom-right) for each rectangle.
 /// each in a different block in the pairs above.
 #[rustfmt::skip]
-const COORDS: [[((u8, u8), (u8, u8)); 27]; 2] = [
+const COORDS: [[(CoordPair, CoordPair); 27]; 2] = [
     // horizontal
     [
         ((0, 3), (0, 3)), ((0, 3), (1, 4)), ((0, 3), (2, 5)),

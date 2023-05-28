@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::effects::{Action, Actions, Effects, Error, Strategy};
+use crate::effects::{Effects, Error, Strategy};
 
 use super::{Cell, CellSet, House, Known, KnownSet};
 

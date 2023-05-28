@@ -8,7 +8,7 @@ use super::Cell;
 pub struct Bit(u128);
 
 impl Bit {
-    pub const MAX: u128 = 1 << Cell::COUNT - 1;
+    pub const MAX: u128 = 1 << (Cell::COUNT - 1);
     pub const ALL: u128 = (1 << Cell::COUNT) - 1;
 
     pub const fn new(bit: u128) -> Self {

@@ -66,7 +66,7 @@ impl Set {
     }
 
     pub const fn has(&self, known: Known) -> bool {
-        self.0 & (known.bit() as u16) != 0
+        self.0 & known.bit() != 0
     }
 
     pub const fn iter(&self) -> Iter {

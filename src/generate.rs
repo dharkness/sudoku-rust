@@ -1,6 +1,5 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use ctrlc;
 use rand::rngs::ThreadRng;
 use rand::seq::SliceRandom;
 
@@ -49,8 +48,8 @@ impl Generator {
         while !stack.is_empty() {
             println!(
                 "{}{}",
-                FILLED[..stack.len() + 1].to_string(),
-                EMPTY[stack.len() + 1..].to_string()
+                &FILLED[..stack.len() + 1],
+                &EMPTY[stack.len() + 1..]
             );
 
             let Entry {
@@ -81,7 +80,7 @@ impl Generator {
                 continue;
             }
 
-            let mut clone = board.clone();
+            let mut clone = board;
             let mut effects = Effects::new();
             clone.set_known(cell, candidate, &mut effects);
             if !effects.apply_all(&mut clone) {
@@ -146,6 +145,7 @@ struct Entry {
     candidates: Vec<Known>,
 }
 
+#[allow(dead_code)]
 pub fn generate_board() {
     let mut generator = Generator::new();
 

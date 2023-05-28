@@ -350,10 +350,7 @@ impl Iterator for Iter {
     type Item = Cell;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.iter.next() {
-            Some(bit) => Some(bit.cell()),
-            None => None,
-        }
+        self.iter.next().map(|bit| bit.cell())
     }
 }
 

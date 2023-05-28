@@ -7,8 +7,8 @@ pub fn index_from_label(label: &str) -> u8 {
         panic!("Invalid cell: {}", label);
     }
     let mut chars = label.chars();
-    let row = chars.next().unwrap() as u8 - b'A' as u8;
-    let col = chars.next().unwrap() as u8 - b'1' as u8;
+    let row = chars.next().unwrap() as u8 - b'A';
+    let col = chars.next().unwrap() as u8 - b'1';
 
     // row H is 9 and ok, becomes 8 below
     if row > 9 || col >= 9 {
