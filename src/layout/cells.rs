@@ -1,4 +1,5 @@
-///! Provides Cell and Set to track collections of cells and methods to manipulate them.
+//! Provides [`Cell`] and [`Set`] to track collections of cells and methods to manipulate them.
+
 mod bit;
 mod cell;
 mod label;

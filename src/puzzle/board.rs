@@ -8,13 +8,18 @@ use super::{Effects, Error, Strategy};
 /// Tracks the full state of a puzzle in play.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Board {
+    // Cells that were solved at the start.
     givens: CellSet,
+    // Solved cells.
     knowns: CellSet,
+    // Values for all cells.
     values: [u8; 81],
-    known_candidates: [KnownSet; 81],
-    cell_candidates: [CellSet; 9],
-    cell_knowns: [CellSet; 9],
-    valid: bool,
+    // Knowns that are still possible for each cell.
+    candidate_knowns: [KnownSet; 81],
+    // Cells that are still possible for each known.
+    candidate_cells: [CellSet; 9],
+    // Cells that have been solved for each known.
+    known_cells: [CellSet; 9],
 }
 
 impl Board {
@@ -23,10 +28,9 @@ impl Board {
             givens: CellSet::empty(),
             knowns: CellSet::empty(),
             values: [Known::UNKNOWN; 81],
-            known_candidates: [KnownSet::full(); 81],
-            cell_candidates: [CellSet::full(); 9],
-            cell_knowns: [CellSet::empty(); 9],
-            valid: true,
+            candidate_knowns: [KnownSet::full(); 81],
+            candidate_cells: [CellSet::full(); 9],
+            known_cells: [CellSet::empty(); 9],
         }
     }
 
@@ -54,10 +58,6 @@ impl Board {
         self.knowns.is_full()
     }
 
-    pub fn is_valid(&self) -> bool {
-        self.valid
-    }
-
     pub fn all_candidates(&self, cells: CellSet) -> KnownSet {
         cells
             .iter()
@@ -65,26 +65,25 @@ impl Board {
     }
 
     pub fn candidates(&self, cell: Cell) -> KnownSet {
-        self.known_candidates[cell.usize()]
+        self.candidate_knowns[cell.usize()]
     }
 
     pub fn is_candidate(&self, cell: Cell, known: Known) -> bool {
-        self.known_candidates[cell.usize()][known]
+        self.candidate_knowns[cell.usize()][known]
     }
 
     pub fn remove_candidate(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> bool {
-        let knowns = &mut self.known_candidates[cell.usize()];
+        let knowns = &mut self.candidate_knowns[cell.usize()];
         if knowns[known] {
             // println!("remove candidate {} from {}", known, cell);
             *knowns -= known;
             if knowns.is_empty() {
-                self.valid = false;
                 effects.add_error(Error::UnsolvableCell(cell));
             } else if knowns.size() == 1 {
                 effects.add_set(Strategy::NakedSingle, cell, knowns.iter().next().unwrap());
             }
 
-            let cells = &mut self.cell_candidates[known.usize()];
+            let cells = &mut self.candidate_cells[known.usize()];
             debug_assert!(cells[cell]);
             *cells -= cell;
             self.remove_candidate_cell_from_houses(cell, known, effects);
@@ -100,13 +99,12 @@ impl Board {
         known: Known,
         effects: &mut Effects,
     ) {
-        let all_candidates = self.cell_candidates[known.usize()];
+        let all_candidates = self.candidate_cells[known.usize()];
         for house in cell.houses() {
             let house_cells = house.cells();
-            if (self.cell_knowns[known.usize()] & house_cells).is_empty() {
+            if (self.known_cells[known.usize()] & house_cells).is_empty() {
                 let candidates = all_candidates & house_cells;
                 if candidates.is_empty() {
-                    self.valid = false;
                     effects.add_error(Error::UnsolvableHouse(house, known));
                 } else if candidates.size() == 1 {
                     effects.add_set(
@@ -145,17 +143,17 @@ impl Board {
 
         self.values[cell.usize()] = known.value();
         self.knowns += cell;
-        self.cell_knowns[known.usize()] += cell;
-        self.cell_candidates[known.usize()] -= cell;
+        self.known_cells[known.usize()] += cell;
+        self.candidate_cells[known.usize()] -= cell;
 
-        let candidates = self.known_candidates[cell.usize()] - known;
-        self.known_candidates[cell.usize()] = KnownSet::empty();
+        let candidates = self.candidate_knowns[cell.usize()] - known;
+        self.candidate_knowns[cell.usize()] = KnownSet::empty();
         for known in candidates.iter() {
-            self.cell_candidates[known.usize()] -= cell;
+            self.candidate_cells[known.usize()] -= cell;
             self.remove_candidate_cell_from_houses(cell, known, effects);
         }
 
-        for neighbor in (self.cell_candidates[known.usize()] & cell.neighbors()).iter() {
+        for neighbor in (self.candidate_cells[known.usize()] & cell.neighbors()).iter() {
             effects.add_erase(Strategy::Neighbor, neighbor, known);
         }
 

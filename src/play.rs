@@ -1,3 +1,5 @@
+//! Provides a text-based interface for creating and playing Sudoku puzzles.
+
 use std::io::{stdout, Write};
 
 use crate::layout::{Cell, Known};
