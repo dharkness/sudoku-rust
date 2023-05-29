@@ -5,7 +5,6 @@ use rand::seq::SliceRandom;
 
 use crate::layout::{Cell, Known, KnownSet};
 use crate::printers::{print_candidates, print_values};
-use crate::solvers::deadly_rectangles::creates_deadly_rectangles;
 use crate::solvers::intersection_removals::find_intersection_removals;
 
 use super::{Board, Effects};
@@ -78,14 +77,14 @@ impl Generator {
             let mut clone = board;
             let mut effects = Effects::new();
             clone.set_known(cell, candidate, &mut effects);
-            if let Some(_) = effects.apply_all(&mut clone) {
+            if effects.apply_all(&mut clone).is_some() {
                 // print_candidates(&clone);
                 // println!("intersection removals caused errors");
                 continue;
             }
 
             effects = find_intersection_removals(&clone);
-            if let Some(_) = effects.apply_all(&mut clone) {
+            if effects.apply_all(&mut clone).is_some() {
                 // print_candidates(&clone);
                 // println!("intersection removals caused errors");
                 continue;
