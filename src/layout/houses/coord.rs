@@ -21,6 +21,22 @@ impl Coord {
     pub const fn label(&self) -> char {
         (b'1' + self.0) as char
     }
+
+    pub const fn min(self, other: Self) -> Self {
+        if self.0 <= other.0 {
+            self
+        } else {
+            other
+        }
+    }
+
+    pub const fn max(self, other: Self) -> Self {
+        if self.0 >= other.0 {
+            self
+        } else {
+            other
+        }
+    }
 }
 
 impl From<i32> for Coord {

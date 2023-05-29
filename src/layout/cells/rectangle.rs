@@ -17,12 +17,10 @@ impl Rectangle {
         }
     }
 
-    pub fn from(cells: [Cell; 4]) -> Rectangle {
-        let mut sorted = cells;
-        sorted.sort();
+    pub fn from(c1: Cell, c2: Cell, c3: Cell, c4: Cell) -> Rectangle {
         Rectangle {
-            top_left: sorted[0],
-            bottom_right: sorted[3],
+            top_left: c1.min(c2).min(c3).min(c4),
+            bottom_right: c1.max(c2).max(c3).max(c4),
         }
     }
 }
