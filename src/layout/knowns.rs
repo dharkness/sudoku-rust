@@ -1,7 +1,7 @@
-//! Provides [`Known`] and [`Set`] to track collections of knowns and methods to manipulate them.
+//! Provides [`Known`] and [`KnownSet`] to track collections of knowns and methods to manipulate them.
 
-mod known;
-mod set;
+pub mod known;
+pub mod set;
 
 pub use known::Known;
-pub use set::Set;
+pub use set::KnownSet;

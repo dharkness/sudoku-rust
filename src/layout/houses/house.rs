@@ -1,6 +1,8 @@
 use std::cmp::Ordering;
 use std::fmt;
 
+use crate::layout::cells::set::cells;
+use crate::layout::houses::coord::coord;
 use crate::layout::{Cell, CellSet, Coord, Shape};
 
 /// One of the nine rows, columns, or blocks on the board.
@@ -56,8 +58,8 @@ impl House {
         self.coord.usize()
     }
 
-    pub const fn label(&self) -> char {
-        self.coord.label()
+    pub const fn label(&self) -> &str {
+        LABELS[self.shape.usize()][self.coord.usize()]
     }
 
     pub const fn cell(&self, coord: Coord) -> Cell {
@@ -69,7 +71,8 @@ impl House {
     }
 
     pub fn intersect(&self, other: House) -> CellSet {
-        self.cells() & other.cells()
+        INTERSECTIONS[self.shape.usize()][self.coord.usize()][other.shape.usize()]
+            [other.coord.usize()]
     }
 
     pub const fn rows(&self) -> &[House] {
@@ -116,9 +119,37 @@ impl PartialOrd<Self> for House {
 
 impl fmt::Display for House {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{} {}", self.shape, self.coord)
+        write!(f, "{}", self.label())
     }
 }
+
+macro_rules! row {
+    ($c:expr) => {
+        House::row(coord!($c))
+    };
+}
+
+// column! is a built-in macro :(
+macro_rules! col {
+    ($c:expr) => {
+        House::column(coord!($c))
+    };
+}
+
+macro_rules! block {
+    ($c:expr) => {
+        House::block(coord!($c))
+    };
+}
+
+pub(crate) use {block, col, row};
+
+#[rustfmt::skip]
+pub const LABELS: [[&str; 9]; 3] = [
+    ["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6", "Row 7", "Row 8", "Row 9"],
+    ["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8", "Col 9"],
+    ["Box 1", "Box 2", "Box 3", "Box 4", "Box 5", "Box 6", "Box 7", "Box 8", "Box 9"],
+];
 
 pub const ROWS: [House; 9] = make_houses(Shape::Row);
 pub const COLUMNS: [House; 9] = make_houses(Shape::Column);
@@ -146,6 +177,31 @@ pub const ALL: [House; 27] = {
         i += 1;
     }
     houses
+};
+
+pub const INTERSECTIONS: [[[[CellSet; 9]; 3]; 9]; 3] = {
+    let mut sets: [[[[CellSet; 9]; 3]; 9]; 3] = [[[[CellSet::empty(); 9]; 3]; 9]; 3];
+
+    let mut i = 0;
+    while i < 3 {
+        let mut ii = 0;
+        while ii < 9 {
+            let mut j = 0;
+            while j < 3 {
+                let mut jj = 0;
+                while jj < 9 {
+                    sets[i][ii][j][jj] = House::new(Shape::new(i as u8), Coord::new(ii as u8))
+                        .cells()
+                        .intersect(House::new(Shape::new(j as u8), Coord::new(jj as u8)).cells());
+                    jj += 1;
+                }
+                j += 1;
+            }
+            ii += 1;
+        }
+        i += 1;
+    }
+    sets
 };
 
 #[rustfmt::skip]
@@ -214,9 +270,9 @@ mod tests {
     #[test]
     fn houses() {
         let groups = [
-            (Shape::Row, ROWS),
-            (Shape::Column, COLUMNS),
-            (Shape::Block, BLOCKS),
+            (Shape::Row, House::all_rows()),
+            (Shape::Column, House::all_columns()),
+            (Shape::Block, House::all_blocks()),
         ];
 
         for group in groups {
@@ -224,9 +280,11 @@ mod tests {
             let mut all = CellSet::empty();
 
             for (i, h) in houses.iter().enumerate() {
+                assert_eq!(h, &House::new(shape, Coord::new(i as u8)));
                 assert_eq!(shape, h.shape());
                 assert_eq!(Coord::new(i as u8), h.coord());
                 assert_eq!(i, h.usize());
+                assert_eq!(format!("{} {}", shape, i + 1), h.label());
 
                 let mut house = CellSet::empty();
                 (0..9).for_each(|c| {
@@ -244,122 +302,47 @@ mod tests {
     }
 
     #[test]
+    fn intersect() {
+        assert_eq!(cells!("A1 A2 A3"), row!(0).intersect(block!(0)));
+        assert_eq!(cells!("A1 A2 A3"), row!(0).intersect(block!(0)));
+    }
+
+    #[test]
     fn row_cells() {
-        assert_eq!(
-            "( A1 A2 A3 A4 A5 A6 A7 A8 A9 )",
-            format!("{}", House::row(0.into()).cells())
-        );
-        assert_eq!(
-            "( B1 B2 B3 B4 B5 B6 B7 B8 B9 )",
-            format!("{}", House::row(1.into()).cells())
-        );
-        assert_eq!(
-            "( C1 C2 C3 C4 C5 C6 C7 C8 C9 )",
-            format!("{}", House::row(2.into()).cells())
-        );
-        assert_eq!(
-            "( D1 D2 D3 D4 D5 D6 D7 D8 D9 )",
-            format!("{}", House::row(3.into()).cells())
-        );
-        assert_eq!(
-            "( E1 E2 E3 E4 E5 E6 E7 E8 E9 )",
-            format!("{}", House::row(4.into()).cells())
-        );
-        assert_eq!(
-            "( F1 F2 F3 F4 F5 F6 F7 F8 F9 )",
-            format!("{}", House::row(5.into()).cells())
-        );
-        assert_eq!(
-            "( G1 G2 G3 G4 G5 G6 G7 G8 G9 )",
-            format!("{}", House::row(6.into()).cells())
-        );
-        assert_eq!(
-            "( H1 H2 H3 H4 H5 H6 H7 H8 H9 )",
-            format!("{}", House::row(7.into()).cells())
-        );
-        assert_eq!(
-            "( J1 J2 J3 J4 J5 J6 J7 J8 J9 )",
-            format!("{}", House::row(8.into()).cells())
-        );
+        assert_eq!(cells!("A1 A2 A3 A4 A5 A6 A7 A8 A9"), row!(0).cells());
+        assert_eq!(cells!("B1 B2 B3 B4 B5 B6 B7 B8 B9"), row!(1).cells());
+        assert_eq!(cells!("C1 C2 C3 C4 C5 C6 C7 C8 C9"), row!(2).cells());
+        assert_eq!(cells!("D1 D2 D3 D4 D5 D6 D7 D8 D9"), row!(3).cells());
+        assert_eq!(cells!("E1 E2 E3 E4 E5 E6 E7 E8 E9"), row!(4).cells());
+        assert_eq!(cells!("F1 F2 F3 F4 F5 F6 F7 F8 F9"), row!(5).cells());
+        assert_eq!(cells!("G1 G2 G3 G4 G5 G6 G7 G8 G9"), row!(6).cells());
+        assert_eq!(cells!("H1 H2 H3 H4 H5 H6 H7 H8 H9"), row!(7).cells());
+        assert_eq!(cells!("J1 J2 J3 J4 J5 J6 J7 J8 J9"), row!(8).cells());
     }
 
     #[test]
     fn column_cells() {
-        assert_eq!(
-            "( A1 B1 C1 D1 E1 F1 G1 H1 J1 )",
-            format!("{}", House::column(0.into()).cells())
-        );
-        assert_eq!(
-            "( A2 B2 C2 D2 E2 F2 G2 H2 J2 )",
-            format!("{}", House::column(1.into()).cells())
-        );
-        assert_eq!(
-            "( A3 B3 C3 D3 E3 F3 G3 H3 J3 )",
-            format!("{}", House::column(2.into()).cells())
-        );
-        assert_eq!(
-            "( A4 B4 C4 D4 E4 F4 G4 H4 J4 )",
-            format!("{}", House::column(3.into()).cells())
-        );
-        assert_eq!(
-            "( A5 B5 C5 D5 E5 F5 G5 H5 J5 )",
-            format!("{}", House::column(4.into()).cells())
-        );
-        assert_eq!(
-            "( A6 B6 C6 D6 E6 F6 G6 H6 J6 )",
-            format!("{}", House::column(5.into()).cells())
-        );
-        assert_eq!(
-            "( A7 B7 C7 D7 E7 F7 G7 H7 J7 )",
-            format!("{}", House::column(6.into()).cells())
-        );
-        assert_eq!(
-            "( A8 B8 C8 D8 E8 F8 G8 H8 J8 )",
-            format!("{}", House::column(7.into()).cells())
-        );
-        assert_eq!(
-            "( A9 B9 C9 D9 E9 F9 G9 H9 J9 )",
-            format!("{}", House::column(8.into()).cells())
-        );
+        assert_eq!(cells!("A1 B1 C1 D1 E1 F1 G1 H1 J1"), col!(0).cells());
+        assert_eq!(cells!("A2 B2 C2 D2 E2 F2 G2 H2 J2"), col!(1).cells());
+        assert_eq!(cells!("A3 B3 C3 D3 E3 F3 G3 H3 J3"), col!(2).cells());
+        assert_eq!(cells!("A4 B4 C4 D4 E4 F4 G4 H4 J4"), col!(3).cells());
+        assert_eq!(cells!("A5 B5 C5 D5 E5 F5 G5 H5 J5"), col!(4).cells());
+        assert_eq!(cells!("A6 B6 C6 D6 E6 F6 G6 H6 J6"), col!(5).cells());
+        assert_eq!(cells!("A7 B7 C7 D7 E7 F7 G7 H7 J7"), col!(6).cells());
+        assert_eq!(cells!("A8 B8 C8 D8 E8 F8 G8 H8 J8"), col!(7).cells());
+        assert_eq!(cells!("A9 B9 C9 D9 E9 F9 G9 H9 J9"), col!(8).cells());
     }
 
     #[test]
     fn block_cells() {
-        assert_eq!(
-            "( A1 A2 A3 B1 B2 B3 C1 C2 C3 )",
-            format!("{}", House::block(0.into()).cells())
-        );
-        assert_eq!(
-            "( A4 A5 A6 B4 B5 B6 C4 C5 C6 )",
-            format!("{}", House::block(1.into()).cells())
-        );
-        assert_eq!(
-            "( A7 A8 A9 B7 B8 B9 C7 C8 C9 )",
-            format!("{}", House::block(2.into()).cells())
-        );
-        assert_eq!(
-            "( D1 D2 D3 E1 E2 E3 F1 F2 F3 )",
-            format!("{}", House::block(3.into()).cells())
-        );
-        assert_eq!(
-            "( D4 D5 D6 E4 E5 E6 F4 F5 F6 )",
-            format!("{}", House::block(4.into()).cells())
-        );
-        assert_eq!(
-            "( D7 D8 D9 E7 E8 E9 F7 F8 F9 )",
-            format!("{}", House::block(5.into()).cells())
-        );
-        assert_eq!(
-            "( G1 G2 G3 H1 H2 H3 J1 J2 J3 )",
-            format!("{}", House::block(6.into()).cells())
-        );
-        assert_eq!(
-            "( G4 G5 G6 H4 H5 H6 J4 J5 J6 )",
-            format!("{}", House::block(7.into()).cells())
-        );
-        assert_eq!(
-            "( G7 G8 G9 H7 H8 H9 J7 J8 J9 )",
-            format!("{}", House::block(8.into()).cells())
-        );
+        assert_eq!(cells!("A1 A2 A3 B1 B2 B3 C1 C2 C3"), block!(0).cells());
+        assert_eq!(cells!("A4 A5 A6 B4 B5 B6 C4 C5 C6"), block!(1).cells());
+        assert_eq!(cells!("A7 A8 A9 B7 B8 B9 C7 C8 C9"), block!(2).cells());
+        assert_eq!(cells!("D1 D2 D3 E1 E2 E3 F1 F2 F3"), block!(3).cells());
+        assert_eq!(cells!("D4 D5 D6 E4 E5 E6 F4 F5 F6"), block!(4).cells());
+        assert_eq!(cells!("D7 D8 D9 E7 E8 E9 F7 F8 F9"), block!(5).cells());
+        assert_eq!(cells!("G1 G2 G3 H1 H2 H3 J1 J2 J3"), block!(6).cells());
+        assert_eq!(cells!("G4 G5 G6 H4 H5 H6 J4 J5 J6"), block!(7).cells());
+        assert_eq!(cells!("G7 G8 G9 H7 H8 H9 J7 J8 J9"), block!(8).cells());
     }
 }

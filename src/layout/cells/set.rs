@@ -17,8 +17,8 @@ type Size = u8;
 type SizeAndBits = u128;
 
 /// A set of cells implemented using a bit field.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct Set(SizeAndBits);
+#[derive(Clone, Copy, Default, Eq, PartialEq)]
+pub struct CellSet(SizeAndBits);
 
 const ALL_CELLS: std::ops::Range<Size> = 0..Cell::COUNT;
 
@@ -36,20 +36,20 @@ const fn pack(bits: Bits, size: Size) -> SizeAndBits {
     (((size as Bits) << SIZE_SHIFT) + bits) as SizeAndBits
 }
 
-impl Set {
-    pub const fn empty() -> Set {
-        Set(0)
+impl CellSet {
+    pub const fn empty() -> CellSet {
+        CellSet(0)
     }
 
-    pub const fn full() -> Set {
-        Set(FULL)
+    pub const fn full() -> CellSet {
+        CellSet(FULL)
     }
 
-    pub const fn new(bits: Bits) -> Set {
-        Set(pack(bits, bits.count_ones() as Size))
+    pub const fn new(bits: Bits) -> CellSet {
+        CellSet(pack(bits, bits.count_ones() as Size))
     }
 
-    pub const fn of<const N: usize>(cells: &[Cell; N]) -> Set {
+    pub const fn of<const N: usize>(cells: &[Cell; N]) -> CellSet {
         let mut bits: Bits = 0;
         let mut i = 0;
 
@@ -57,7 +57,7 @@ impl Set {
             bits |= cells[i].bit().bit();
             i += 1;
         }
-        Set::new(bits)
+        CellSet::new(bits)
     }
 
     pub const fn is_empty(&self) -> bool {
@@ -81,7 +81,7 @@ impl Set {
         self.0 & cell.bit().bit() != 0
     }
 
-    pub const fn with(&self, cell: Cell) -> Set {
+    pub const fn with(&self, cell: Cell) -> CellSet {
         if self.has(cell) {
             return *self;
         }
@@ -96,7 +96,7 @@ impl Set {
         }
     }
 
-    pub const fn without(&self, cell: Cell) -> Set {
+    pub const fn without(&self, cell: Cell) -> CellSet {
         if !self.has(cell) {
             return *self;
         }
@@ -111,11 +111,11 @@ impl Set {
         }
     }
 
-    pub const fn union(&self, set: Self) -> Set {
+    pub const fn union(&self, set: Self) -> CellSet {
         if self.0 == set.0 {
             *self
         } else {
-            Set::new((self.0 | set.0) & CELLS_MASK)
+            CellSet::new((self.0 | set.0) & CELLS_MASK)
         }
     }
 
@@ -123,11 +123,11 @@ impl Set {
         *self = self.union(set)
     }
 
-    pub const fn intersect(&self, set: Self) -> Set {
+    pub const fn intersect(&self, set: Self) -> CellSet {
         if self.0 == set.0 {
             *self
         } else {
-            Set::new((self.0 & set.0) & CELLS_MASK)
+            CellSet::new((self.0 & set.0) & CELLS_MASK)
         }
     }
 
@@ -135,11 +135,11 @@ impl Set {
         *self = self.intersect(set)
     }
 
-    pub const fn minus(&self, set: Self) -> Set {
+    pub const fn minus(&self, set: Self) -> CellSet {
         if self.0 == set.0 {
-            Set::empty()
+            CellSet::empty()
         } else {
-            Set::new((self.0 & !set.0) & CELLS_MASK)
+            CellSet::new((self.0 & !set.0) & CELLS_MASK)
         }
     }
 
@@ -147,11 +147,11 @@ impl Set {
         *self = self.minus(set)
     }
 
-    pub const fn inverted(&self) -> Set {
+    pub const fn inverted(&self) -> CellSet {
         match self.0 {
-            0 => Set::full(),
-            FULL => Set::empty(),
-            _ => Set::new(!self.0 & CELLS_MASK),
+            0 => CellSet::full(),
+            FULL => CellSet::empty(),
+            _ => CellSet::new(!self.0 & CELLS_MASK),
         }
     }
 
@@ -174,13 +174,31 @@ impl Set {
     }
 }
 
-impl From<House> for Set {
-    fn from(house: House) -> Set {
+impl From<House> for CellSet {
+    fn from(house: House) -> CellSet {
         house.cells()
     }
 }
 
-impl Index<Bit> for Set {
+impl From<&str> for CellSet {
+    fn from(labels: &str) -> CellSet {
+        let mut cells = CellSet::empty();
+        for label in labels.split(' ') {
+            cells.add_assign(Cell::from(label));
+        }
+        cells
+    }
+}
+
+macro_rules! cells {
+    ($s:expr) => {{
+        CellSet::from($s)
+    }};
+}
+
+pub(crate) use cells;
+
+impl Index<Bit> for CellSet {
     type Output = bool;
 
     fn index(&self, bit: Bit) -> &bool {
@@ -192,7 +210,7 @@ impl Index<Bit> for Set {
     }
 }
 
-impl Index<Cell> for Set {
+impl Index<Cell> for CellSet {
     type Output = bool;
 
     fn index(&self, cell: Cell) -> &bool {
@@ -204,127 +222,159 @@ impl Index<Cell> for Set {
     }
 }
 
-impl Add<Bit> for Set {
+impl Index<&str> for CellSet {
+    type Output = bool;
+
+    fn index(&self, cell: &str) -> &bool {
+        if self.has(Cell::from(cell)) {
+            &true
+        } else {
+            &false
+        }
+    }
+}
+
+impl Add<Bit> for CellSet {
     type Output = Self;
 
-    fn add(self, rhs: Bit) -> Set {
+    fn add(self, rhs: Bit) -> CellSet {
         self.with(rhs.cell())
     }
 }
 
-impl Add<Cell> for Set {
+impl Add<Cell> for CellSet {
     type Output = Self;
 
-    fn add(self, rhs: Cell) -> Set {
+    fn add(self, rhs: Cell) -> CellSet {
         self.with(rhs)
     }
 }
 
-impl Add<&str> for Set {
+impl Add<&str> for CellSet {
     type Output = Self;
 
-    fn add(self, rhs: &str) -> Set {
+    fn add(self, rhs: &str) -> CellSet {
         self.with(Cell::from(rhs))
     }
 }
 
-impl AddAssign<Bit> for Set {
+impl AddAssign<Bit> for CellSet {
     fn add_assign(&mut self, rhs: Bit) {
         self.add(rhs.cell())
     }
 }
 
-impl AddAssign<Cell> for Set {
+impl AddAssign<Cell> for CellSet {
     fn add_assign(&mut self, rhs: Cell) {
         self.add(rhs)
     }
 }
 
-impl AddAssign<&str> for Set {
+impl AddAssign<&str> for CellSet {
     fn add_assign(&mut self, rhs: &str) {
         self.add(Cell::from(rhs))
     }
 }
 
-impl Sub<Bit> for Set {
+impl Sub<Bit> for CellSet {
     type Output = Self;
 
-    fn sub(self, rhs: Bit) -> Set {
+    fn sub(self, rhs: Bit) -> CellSet {
         self.without(rhs.cell())
     }
 }
 
-impl Sub<Cell> for Set {
+impl Sub<Cell> for CellSet {
     type Output = Self;
 
-    fn sub(self, rhs: Cell) -> Set {
+    fn sub(self, rhs: Cell) -> CellSet {
         self.without(rhs)
     }
 }
 
-impl SubAssign<Bit> for Set {
+impl Sub<&str> for CellSet {
+    type Output = Self;
+
+    fn sub(self, rhs: &str) -> CellSet {
+        self.without(Cell::from(rhs))
+    }
+}
+
+impl SubAssign<Bit> for CellSet {
     fn sub_assign(&mut self, rhs: Bit) {
         self.remove(rhs.cell())
     }
 }
 
-impl SubAssign<Cell> for Set {
+impl SubAssign<Cell> for CellSet {
     fn sub_assign(&mut self, rhs: Cell) {
         self.remove(rhs)
     }
 }
 
-impl Not for Set {
+impl SubAssign<&str> for CellSet {
+    fn sub_assign(&mut self, rhs: &str) {
+        self.remove(Cell::from(rhs))
+    }
+}
+
+impl Not for CellSet {
     type Output = Self;
 
-    fn not(self) -> Set {
+    fn not(self) -> CellSet {
         self.inverted()
     }
 }
 
-impl BitOr for Set {
+impl BitOr for CellSet {
     type Output = Self;
 
-    fn bitor(self, rhs: Self) -> Set {
+    fn bitor(self, rhs: Self) -> CellSet {
         self.union(rhs)
     }
 }
 
-impl BitOrAssign for Set {
+impl BitOrAssign for CellSet {
     fn bitor_assign(&mut self, rhs: Self) {
         self.union_with(rhs)
     }
 }
 
-impl BitAnd for Set {
+impl BitAnd for CellSet {
     type Output = Self;
 
-    fn bitand(self, rhs: Self) -> Set {
+    fn bitand(self, rhs: Self) -> CellSet {
         self.intersect(rhs)
     }
 }
 
-impl BitAndAssign for Set {
+impl BitAndAssign for CellSet {
     fn bitand_assign(&mut self, rhs: Self) {
         self.intersect_with(rhs)
     }
 }
 
-impl Sub for Set {
+impl Sub for CellSet {
     type Output = Self;
 
-    fn sub(self, rhs: Self) -> Set {
+    fn sub(self, rhs: Self) -> CellSet {
         self.minus(rhs)
     }
 }
 
-impl SubAssign for Set {
+impl SubAssign for CellSet {
     fn sub_assign(&mut self, rhs: Self) {
         self.subtract(rhs)
     }
 }
 
-impl fmt::Display for Set {
+impl fmt::Debug for CellSet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self)
+    }
+}
+
+impl fmt::Display for CellSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.is_empty() {
             write!(f, "{}", EMPTY)
@@ -378,7 +428,7 @@ mod tests {
 
     #[test]
     fn empty_returns_an_empty_set() {
-        let set = Set::empty();
+        let set = CellSet::empty();
 
         assert!(set.is_empty());
         assert_eq!(0, set.size());
@@ -389,7 +439,7 @@ mod tests {
 
     #[test]
     fn full_returns_a_full_set() {
-        let set = Set::full();
+        let set = CellSet::full();
 
         assert!(!set.is_empty());
         assert_eq!(Cell::COUNT, set.size());
@@ -400,7 +450,7 @@ mod tests {
 
     #[test]
     fn new_returns_a_set_with_the_given_bits() {
-        let set = Set::new(
+        let set = CellSet::new(
             0b101010101010101010101010101010101010101010101010101010101010101010101010101010101,
         );
 
@@ -412,101 +462,94 @@ mod tests {
     }
 
     #[test]
-    fn add_returns_the_same_set_when_the_cell_is_present() {
-        let set = Set::new(0b10000001000001 as Bits);
+    fn from() {
+        assert_eq!(CellSet::new(0b111), cells!("A1 A2 A3"));
+        assert_eq!(CellSet::new(0b101010), cells!("A2 A4 A6"));
+    }
 
-        let got = set + Cell::new(6);
+    #[test]
+    fn add_returns_the_same_set_when_the_cell_is_present() {
+        let set = CellSet::new(0b10000001000001 as Bits);
+
+        let got = set + "A7";
         assert_eq!(set, got);
     }
 
     #[test]
     fn add_returns_a_new_set_when_the_cell_is_not_present() {
-        let set = Set::new(0b10000001000001 as Bits);
+        let set = CellSet::new(0b10000001000001 as Bits);
 
-        let got = set + Cell::new(42);
+        let got = set + "G3";
         assert_ne!(set, got);
-        assert!(got[Cell::new(42)]);
+        assert!(got["G3"]);
     }
 
     #[test]
     fn sub_returns_the_same_set_when_the_cell_is_not_present() {
-        let set = Set::new(0b10000001000001 as Bits);
+        let set = CellSet::new(0b10000001000001 as Bits);
 
-        let got = set - Cell::new(42);
+        let got = set - "G3";
         assert_eq!(set, got);
     }
 
     #[test]
     fn sub_returns_the_same_set_when_the_cell_is_present() {
-        let set = Set::new(0b10000001000001 as Bits);
+        let set = CellSet::new(0b10000001000001 as Bits);
 
-        let got = set - Cell::new(6);
+        let got = set - "A7";
         assert_ne!(set, got);
-        assert!(!got[Cell::new(6)]);
+        assert!(!got["A7"]);
     }
 
     #[test]
     fn not_returns_an_inverted_set() {
-        assert_eq!(Set::full(), !Set::empty());
-        assert_eq!(Set::empty(), !Set::full());
+        assert_eq!(CellSet::full(), !CellSet::empty());
+        assert_eq!(CellSet::empty(), !CellSet::full());
 
-        assert_eq!(
-            Set::new(
-                0b100101010101010101010101101001011010100110101010101010101101010101010011001010101
-            ),
-            !Set::new(
-                0b011010101010101010101010010110100101011001010101010101010010101010101100110101010
-            )
-        );
-        assert_eq!(
-            Set::new(
-                0b011010101010101010101010010110100101011001010101010101010010101010101100110101010
-            ),
-            !Set::new(
-                0b100101010101010101010101101001011010100110101010101010101101010101010011001010101
-            )
-        );
+        assert_eq!(CellSet::full() - "A5" - "C9" - "G2", !cells!("A5 C9 G2"));
     }
 
     #[test]
     fn unions() {
-        assert_eq!(Set::empty(), Set::empty() | Set::empty());
-        assert_eq!(Set::full(), Set::full() | Set::empty());
-        assert_eq!(Set::full(), Set::empty() | Set::full());
-        assert_eq!(Set::full(), Set::full() | Set::full());
+        assert_eq!(CellSet::empty(), CellSet::empty() | CellSet::empty());
+        assert_eq!(CellSet::full(), CellSet::full() | CellSet::empty());
+        assert_eq!(CellSet::full(), CellSet::empty() | CellSet::full());
+        assert_eq!(CellSet::full(), CellSet::full() | CellSet::full());
 
-        let mut set = Set::empty();
-        set |= Set::full();
-        assert!(set.is_full());
+        assert_eq!(
+            cells!("A5 B2 C9 D7 G2 J5"),
+            cells!("A5 C9 G2") | cells!("B2 D7 J5")
+        );
     }
 
     #[test]
     fn intersections() {
-        assert_eq!(Set::empty(), Set::empty() & Set::empty());
-        assert_eq!(Set::empty(), Set::full() & Set::empty());
-        assert_eq!(Set::empty(), Set::empty() & Set::full());
-        assert_eq!(Set::full(), Set::full() & Set::full());
+        assert_eq!(CellSet::empty(), CellSet::empty() & CellSet::empty());
+        assert_eq!(CellSet::empty(), CellSet::full() & CellSet::empty());
+        assert_eq!(CellSet::empty(), CellSet::empty() & CellSet::full());
+        assert_eq!(CellSet::full(), CellSet::full() & CellSet::full());
 
-        let mut set = Set::full();
-        set &= Set::empty();
-        assert!(set.is_empty());
+        assert_eq!(
+            cells!("A5 C9 G2"),
+            cells!("A5 B6 C9 F3 G2 J2") & cells!("A5 B2 C9 D7 G2 J5")
+        );
     }
 
     #[test]
     fn differences() {
-        assert_eq!(Set::empty(), Set::empty() - Set::empty());
-        assert_eq!(Set::full(), Set::full() - Set::empty());
-        assert_eq!(Set::empty(), Set::empty() - Set::full());
-        assert_eq!(Set::empty(), Set::full() - Set::full());
+        assert_eq!(CellSet::empty(), CellSet::empty() - CellSet::empty());
+        assert_eq!(CellSet::full(), CellSet::full() - CellSet::empty());
+        assert_eq!(CellSet::empty(), CellSet::empty() - CellSet::full());
+        assert_eq!(CellSet::empty(), CellSet::full() - CellSet::full());
 
-        let mut set = Set::full();
-        set -= Set::full();
+        let mut set = CellSet::full();
+        set -= CellSet::full();
         assert!(set.is_empty());
     }
 
     #[test]
     fn strings() {
-        let mut set = Set::empty();
+        let mut set = CellSet::empty();
 
         assert_eq!(EMPTY, set.to_string());
 

@@ -3,7 +3,7 @@ use std::fmt;
 use crate::layout::{Coord, House, Shape};
 
 use super::label::{index_from_label, label_from_index};
-use super::{Bit, Set};
+use super::{Bit, CellSet};
 
 /// Specifies a single cell by its index from left to right and top to bottom.
 #[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
@@ -61,7 +61,7 @@ impl Cell {
         HOUSES_COORDS[self.usize()][Shape::Block.usize()]
     }
 
-    pub const fn neighbors(&self) -> Set {
+    pub const fn neighbors(&self) -> CellSet {
         NEIGHBORS[self.usize()]
     }
 
@@ -109,6 +109,14 @@ impl fmt::Display for Cell {
     }
 }
 
+macro_rules! cell {
+    ($l:expr) => {
+        Cell::from($l)
+    };
+}
+
+pub(crate) use cell;
+
 const HOUSES: [[House; 3]; 81] = {
     let mut houses = [[House::new(Shape::Row, Coord::new(0)); 3]; 81];
     let mut cell = 0;
@@ -141,13 +149,13 @@ const HOUSES_COORDS: [[Coord; 3]; 81] = {
 
 /// Holds the neighbors for every unique cell.
 /// A cell's neighbors are all the cells in the same row, column and block, excluding the cell itself.
-const NEIGHBORS: [Set; 81] = {
-    let mut sets: [Set; 81] = [Set::empty(); 81];
+const NEIGHBORS: [CellSet; 81] = {
+    let mut sets: [CellSet; 81] = [CellSet::empty(); 81];
     let mut i = 0;
 
     while i < 81 {
         let cell = Cell::new(i as u8);
-        sets[i] = Set::empty()
+        sets[i] = CellSet::empty()
             .union(cell.row().cells())
             .union(cell.column().cells())
             .union(cell.block().cells())

@@ -4,9 +4,9 @@
 //! Each [`House`] has a [`Shape`] and a unique [`Coord`].
 //! In a valid puzzle, each `House` must contain exactly one of each [`Known`][crate::layout::Known].
 
-mod coord;
-mod house;
-mod shape;
+pub mod coord;
+pub mod house;
+pub mod shape;
 
 pub use coord::Coord;
 pub use house::House;

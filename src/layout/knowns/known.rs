@@ -1,6 +1,6 @@
 use std::fmt;
 
-/// Specifies a single known value using its zero-based index.
+/// Holds one of the possible known values.
 #[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Known(u8);
 
@@ -64,3 +64,11 @@ impl fmt::Display for Known {
         write!(f, "{}", self.label())
     }
 }
+
+macro_rules! known {
+    ($k:expr) => {
+        Known::new(1 + $k as u8)
+    };
+}
+
+pub(crate) use known;

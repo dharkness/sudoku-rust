@@ -2,7 +2,7 @@ use crate::layout::{Cell, CellSet, Coord};
 use std::fmt;
 
 /// The three house shapes on the board.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Copy, Default, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Shape {
     #[default]
     Row,
@@ -11,6 +11,16 @@ pub enum Shape {
 }
 
 impl Shape {
+    pub const fn new(index: u8) -> Self {
+        debug_assert!(index <= 2);
+        match index {
+            0 => Self::Row,
+            1 => Self::Column,
+            2 => Self::Block,
+            _ => unreachable!(),
+        }
+    }
+
     pub const fn usize(&self) -> usize {
         *self as usize
     }
@@ -37,6 +47,12 @@ impl Shape {
 }
 
 impl fmt::Display for Shape {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.label())
+    }
+}
+
+impl fmt::Debug for Shape {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.label())
     }

@@ -9,8 +9,8 @@ type Bits = u16;
 type SizeAndBits = u16;
 
 /// A set of knowns implemented using a bit field.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct Set(SizeAndBits);
+#[derive(Clone, Copy, Default, Eq, PartialEq)]
+pub struct KnownSet(SizeAndBits);
 
 const BITS_MASK: Bits = (1 << 9) - 1;
 const SIZE_SHIFT: u16 = 16 - 4;
@@ -27,21 +27,21 @@ const fn pack(knowns: Bits, size: Size) -> SizeAndBits {
     ((size << SIZE_SHIFT) + knowns) as SizeAndBits
 }
 
-impl Set {
-    pub const fn empty() -> Set {
-        Set(0)
+impl KnownSet {
+    pub const fn empty() -> KnownSet {
+        KnownSet(0)
     }
 
-    pub const fn full() -> Set {
-        Set(FULL)
+    pub const fn full() -> KnownSet {
+        KnownSet(FULL)
     }
 
-    pub const fn new(knowns: Bits) -> Set {
-        Set(pack(knowns, knowns.count_ones() as Size))
+    pub const fn new(knowns: Bits) -> KnownSet {
+        KnownSet(pack(knowns, knowns.count_ones() as Size))
     }
 
-    pub fn from(knowns: &str) -> Set {
-        let mut set = Set::empty();
+    pub fn from(knowns: &str) -> KnownSet {
+        let mut set = KnownSet::empty();
         for c in knowns.chars() {
             set += Known::from(c);
         }
@@ -78,7 +78,7 @@ impl Set {
     }
 }
 
-impl Index<Known> for Set {
+impl Index<Known> for KnownSet {
     type Output = bool;
 
     fn index(&self, known: Known) -> &bool {
@@ -90,27 +90,27 @@ impl Index<Known> for Set {
     }
 }
 
-impl Add<Known> for Set {
+impl Add<Known> for KnownSet {
     type Output = Self;
 
-    fn add(self, rhs: Known) -> Set {
+    fn add(self, rhs: Known) -> KnownSet {
         if self.has(rhs) {
             self
         } else {
-            Set(self.0 + rhs.bit() + SIZE_BIT)
+            KnownSet(self.0 + rhs.bit() + SIZE_BIT)
         }
     }
 }
 
-impl Add<&str> for Set {
+impl Add<&str> for KnownSet {
     type Output = Self;
 
-    fn add(self, rhs: &str) -> Set {
+    fn add(self, rhs: &str) -> KnownSet {
         self.add(Known::from(rhs))
     }
 }
 
-impl AddAssign<Known> for Set {
+impl AddAssign<Known> for KnownSet {
     fn add_assign(&mut self, rhs: Known) {
         if !self.has(rhs) {
             self.0 += rhs.bit() + SIZE_BIT
@@ -118,25 +118,25 @@ impl AddAssign<Known> for Set {
     }
 }
 
-impl AddAssign<&str> for Set {
+impl AddAssign<&str> for KnownSet {
     fn add_assign(&mut self, rhs: &str) {
         self.add_assign(Known::from(rhs))
     }
 }
 
-impl Sub<Known> for Set {
+impl Sub<Known> for KnownSet {
     type Output = Self;
 
-    fn sub(self, rhs: Known) -> Set {
+    fn sub(self, rhs: Known) -> KnownSet {
         if !self.has(rhs) {
             self
         } else {
-            Set(self.0 - rhs.bit() - SIZE_BIT)
+            KnownSet(self.0 - rhs.bit() - SIZE_BIT)
         }
     }
 }
 
-impl SubAssign<Known> for Set {
+impl SubAssign<Known> for KnownSet {
     fn sub_assign(&mut self, rhs: Known) {
         if self.has(rhs) {
             self.0 -= rhs.bit() + SIZE_BIT
@@ -144,73 +144,73 @@ impl SubAssign<Known> for Set {
     }
 }
 
-impl Not for Set {
+impl Not for KnownSet {
     type Output = Self;
 
-    fn not(self) -> Set {
+    fn not(self) -> KnownSet {
         match self.0 {
-            0 => Set(FULL),
-            FULL => Set(0),
-            _ => Set::new(!self.0 & BITS_MASK),
+            0 => KnownSet(FULL),
+            FULL => KnownSet(0),
+            _ => KnownSet::new(!self.0 & BITS_MASK),
         }
     }
 }
 
-impl BitOr for Set {
+impl BitOr for KnownSet {
     type Output = Self;
 
-    fn bitor(self, rhs: Self) -> Set {
+    fn bitor(self, rhs: Self) -> KnownSet {
         if self == rhs {
             self
         } else {
-            Set::new((self.0 | rhs.0) & BITS_MASK)
+            KnownSet::new((self.0 | rhs.0) & BITS_MASK)
         }
     }
 }
 
-impl BitOrAssign for Set {
+impl BitOrAssign for KnownSet {
     fn bitor_assign(&mut self, rhs: Self) {
         if self.0 != rhs.0 {
-            *self = Set::new((self.0 | rhs.0) & BITS_MASK)
+            *self = KnownSet::new((self.0 | rhs.0) & BITS_MASK)
         }
     }
 }
 
-impl BitAnd for Set {
+impl BitAnd for KnownSet {
     type Output = Self;
 
-    fn bitand(self, rhs: Self) -> Set {
+    fn bitand(self, rhs: Self) -> KnownSet {
         if self == rhs {
             self
         } else {
-            Set::new((self.0 & rhs.0) & BITS_MASK)
+            KnownSet::new((self.0 & rhs.0) & BITS_MASK)
         }
     }
 }
 
-impl BitAndAssign for Set {
+impl BitAndAssign for KnownSet {
     fn bitand_assign(&mut self, rhs: Self) {
         if self.0 != rhs.0 {
-            *self = Set::new((self.0 & rhs.0) & BITS_MASK)
+            *self = KnownSet::new((self.0 & rhs.0) & BITS_MASK)
         }
     }
 }
 
-impl Sub for Set {
+impl Sub for KnownSet {
     type Output = Self;
 
-    fn sub(self, rhs: Self) -> Set {
-        Set::new((self.0 & !rhs.0) & BITS_MASK)
+    fn sub(self, rhs: Self) -> KnownSet {
+        KnownSet::new((self.0 & !rhs.0) & BITS_MASK)
     }
 }
 
-impl SubAssign for Set {
+impl SubAssign for KnownSet {
     fn sub_assign(&mut self, rhs: Self) {
-        *self = Set::new((self.0 & !rhs.0) & BITS_MASK)
+        *self = KnownSet::new((self.0 & !rhs.0) & BITS_MASK)
     }
 }
 
-impl fmt::Display for Set {
+impl fmt::Display for KnownSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.is_empty() {
             write!(f, "{}", EMPTY)
@@ -228,6 +228,12 @@ impl fmt::Display for Set {
             s.push(')');
             write!(f, "{}", s)
         }
+    }
+}
+
+impl fmt::Debug for KnownSet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self)
     }
 }
 
@@ -249,13 +255,21 @@ impl Iterator for Iter {
     }
 }
 
+macro_rules! knowns {
+    ($s:expr) => {{
+        KnownSet::from($s)
+    }};
+}
+
+pub(crate) use knowns;
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn empty_returns_an_empty_set() {
-        let set = Set::empty();
+        let set = KnownSet::empty();
 
         assert!(set.is_empty());
         assert_eq!(0, set.size());
@@ -266,7 +280,7 @@ mod tests {
 
     #[test]
     fn full_returns_a_full_set() {
-        let set = Set::full();
+        let set = KnownSet::full();
 
         assert!(!set.is_empty());
         assert_eq!(9, set.size());
@@ -277,7 +291,7 @@ mod tests {
 
     #[test]
     fn new_returns_a_set_with_the_given_bits() {
-        let set = Set::new(0b101010101);
+        let set = KnownSet::new(0b101010101);
 
         assert!(!set.is_empty());
         assert_eq!(5, set.size());
@@ -288,7 +302,7 @@ mod tests {
 
     #[test]
     fn add_returns_the_same_set_when_the_known_is_present() {
-        let set = Set::from("2589");
+        let set = KnownSet::from("2589");
 
         let got = set + Known::from("5");
         assert_eq!(set, got);
@@ -296,7 +310,7 @@ mod tests {
 
     #[test]
     fn add_returns_a_new_set_when_the_known_is_not_present() {
-        let set = Set::from("2589");
+        let set = KnownSet::from("2589");
 
         let got = set + Known::from("6");
         assert_ne!(set, got);
@@ -305,7 +319,7 @@ mod tests {
 
     #[test]
     fn sub_returns_the_same_set_when_the_known_is_not_present() {
-        let set = Set::from("2589");
+        let set = KnownSet::from("2589");
 
         let got = set - Known::from("6");
         assert_eq!(set, got);
@@ -313,7 +327,7 @@ mod tests {
 
     #[test]
     fn sub_returns_the_same_set_when_the_known_is_present() {
-        let set = Set::from("2589");
+        let set = KnownSet::from("2589");
 
         let got = set - Known::from("5");
         assert_ne!(set, got);
@@ -322,51 +336,51 @@ mod tests {
 
     #[test]
     fn not_returns_an_inverted_set() {
-        assert_eq!(Set::full(), !Set::empty());
-        assert_eq!(Set::empty(), !Set::full());
+        assert_eq!(KnownSet::full(), !KnownSet::empty());
+        assert_eq!(KnownSet::empty(), !KnownSet::full());
 
-        assert_eq!(Set::from("2589"), !Set::from("13467"));
+        assert_eq!(KnownSet::from("2589"), !KnownSet::from("13467"));
     }
 
     #[test]
     fn unions() {
-        assert_eq!(Set::empty(), Set::empty() | Set::empty());
-        assert_eq!(Set::full(), Set::full() | Set::empty());
-        assert_eq!(Set::full(), Set::empty() | Set::full());
-        assert_eq!(Set::full(), Set::full() | Set::full());
+        assert_eq!(KnownSet::empty(), KnownSet::empty() | KnownSet::empty());
+        assert_eq!(KnownSet::full(), KnownSet::full() | KnownSet::empty());
+        assert_eq!(KnownSet::full(), KnownSet::empty() | KnownSet::full());
+        assert_eq!(KnownSet::full(), KnownSet::full() | KnownSet::full());
 
-        let mut set = Set::empty();
-        set |= Set::full();
+        let mut set = KnownSet::empty();
+        set |= KnownSet::full();
         assert!(set.is_full());
     }
 
     #[test]
     fn intersections() {
-        assert_eq!(Set::empty(), Set::empty() & Set::empty());
-        assert_eq!(Set::empty(), Set::full() & Set::empty());
-        assert_eq!(Set::empty(), Set::empty() & Set::full());
-        assert_eq!(Set::full(), Set::full() & Set::full());
+        assert_eq!(KnownSet::empty(), KnownSet::empty() & KnownSet::empty());
+        assert_eq!(KnownSet::empty(), KnownSet::full() & KnownSet::empty());
+        assert_eq!(KnownSet::empty(), KnownSet::empty() & KnownSet::full());
+        assert_eq!(KnownSet::full(), KnownSet::full() & KnownSet::full());
 
-        let mut set = Set::full();
-        set &= Set::empty();
+        let mut set = KnownSet::full();
+        set &= KnownSet::empty();
         assert!(set.is_empty());
     }
 
     #[test]
     fn differences() {
-        assert_eq!(Set::empty(), Set::empty() - Set::empty());
-        assert_eq!(Set::full(), Set::full() - Set::empty());
-        assert_eq!(Set::empty(), Set::empty() - Set::full());
-        assert_eq!(Set::empty(), Set::full() - Set::full());
+        assert_eq!(KnownSet::empty(), KnownSet::empty() - KnownSet::empty());
+        assert_eq!(KnownSet::full(), KnownSet::full() - KnownSet::empty());
+        assert_eq!(KnownSet::empty(), KnownSet::empty() - KnownSet::full());
+        assert_eq!(KnownSet::empty(), KnownSet::full() - KnownSet::full());
 
-        let mut set = Set::full();
-        set -= Set::full();
+        let mut set = KnownSet::full();
+        set -= KnownSet::full();
         assert!(set.is_empty());
     }
 
     #[test]
     fn strings() {
-        let mut set = Set::empty();
+        let mut set = KnownSet::empty();
 
         assert_eq!(EMPTY, set.to_string());
 

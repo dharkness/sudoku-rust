@@ -233,6 +233,7 @@ const CELL_COORDS: [[(CoordPair, CoordPair); 27]; 2] = {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::layout::knowns::known::known;
     use crate::puzzle::Effects;
 
     #[test]
@@ -248,10 +249,10 @@ mod tests {
                     let mut board = Board::new();
                     let mut effects = Effects::new();
 
-                    board.set_known(tl, Known::new(1), &mut effects);
-                    board.set_known(tr, Known::new(2), &mut effects);
-                    board.set_known(br, Known::new(1), &mut effects);
-                    board.set_known(bl, Known::new(2), &mut effects);
+                    board.set_known(tl, known!(1), &mut effects);
+                    board.set_known(tr, known!(2), &mut effects);
+                    board.set_known(br, known!(1), &mut effects);
+                    board.set_known(bl, known!(2), &mut effects);
 
                     let found = find_deadly_rectangles(&board);
                     let want = Rectangle::new(tl, br);
@@ -267,7 +268,7 @@ mod tests {
 
     #[test]
     fn creates() {
-        const KNOWNS: [Known; 4] = [Known::new(1), Known::new(2), Known::new(1), Known::new(2)];
+        const KNOWNS: [Known; 4] = [known!(1), known!(2), known!(1), known!(2)];
 
         fn test(cells: [Cell; 4]) {
             let want = Rectangle::new(cells[0], cells[2]);

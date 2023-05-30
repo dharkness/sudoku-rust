@@ -2,12 +2,12 @@
 //! the [`Action`]s that can be taken to solve it,
 //! and any [`Error`]s that arise due to those actions.
 
-mod action;
-mod board;
-mod effects;
-mod error;
-mod generate;
-mod strategy;
+pub mod action;
+pub mod board;
+pub mod effects;
+pub mod error;
+pub mod generate;
+pub mod strategy;
 
 pub use action::Action;
 pub use board::Board;
