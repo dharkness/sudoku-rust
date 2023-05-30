@@ -13,7 +13,7 @@ pub struct House {
 }
 
 impl House {
-    pub const fn all_houses() -> &'static [House; 27] {
+    pub const fn all() -> &'static [House; 27] {
         &ALL
     }
 

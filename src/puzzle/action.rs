@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use crate::layout::{Cell, Known, KnownSet};
+use crate::layout::{Cell, CellSet, Known, KnownSet};
 
 use super::{Board, Effects, Strategy};
 
@@ -48,6 +48,14 @@ impl Action {
 
     pub fn erase(&mut self, cell: Cell, known: Known) {
         *self.erase.entry(cell).or_insert_with(KnownSet::empty) += known;
+    }
+
+    pub fn erase_cells(&mut self, cells: CellSet, known: Known) {
+        cells.iter().for_each(|cell| self.erase(cell, known));
+    }
+
+    pub fn erase_knowns(&mut self, cell: Cell, knowns: KnownSet) {
+        knowns.iter().for_each(|known| self.erase(cell, known));
     }
 
     pub fn apply(&self, board: &mut Board, effects: &mut Effects) {

@@ -8,17 +8,17 @@ use super::{Effects, Error, Strategy};
 /// Tracks the full state of a puzzle in play.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Board {
-    // Cells that were solved at the start.
+    /// Cells that were solved at the start.
     givens: CellSet,
-    // Solved cells.
+    /// Solved cells.
     knowns: CellSet,
-    // Values for all cells.
+    /// Values for all cells.
     values: [u8; 81],
-    // Knowns that are still possible for each cell.
+    /// Knowns that are still possible for each cell.
     candidate_knowns: [KnownSet; 81],
-    // Cells that are still possible for each known.
+    /// Cells that are still possible for each known.
     candidate_cells: [CellSet; 9],
-    // Cells that have been solved for each known.
+    /// Cells that have been solved for each known.
     known_cells: [CellSet; 9],
 }
 
@@ -64,6 +64,12 @@ impl Board {
             .fold(KnownSet::empty(), |acc, cell| acc | self.candidates(cell))
     }
 
+    pub fn common_candidates(&self, cells: CellSet) -> KnownSet {
+        cells
+            .iter()
+            .fold(KnownSet::full(), |acc, cell| acc & self.candidates(cell))
+    }
+
     pub fn candidates(&self, cell: Cell) -> KnownSet {
         self.candidate_knowns[cell.usize()]
     }
@@ -72,10 +78,13 @@ impl Board {
         self.candidate_knowns[cell.usize()][known]
     }
 
+    pub fn candidate_cells(&self, known: Known) -> CellSet {
+        self.candidate_cells[known.usize()]
+    }
+
     pub fn remove_candidate(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> bool {
         let knowns = &mut self.candidate_knowns[cell.usize()];
         if knowns[known] {
-            // println!("remove candidate {} from {}", known, cell);
             *knowns -= known;
             if knowns.is_empty() {
                 effects.add_error(Error::UnsolvableCell(cell));
