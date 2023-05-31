@@ -2,11 +2,11 @@
 
 pub mod bit;
 pub mod cell;
+pub mod cell_set;
 pub mod label;
 pub mod rectangle;
-pub mod set;
 
 pub use bit::Bit;
 pub use cell::Cell;
+pub use cell_set::{Bits, CellSet};
 pub use rectangle::Rectangle;
-pub use set::{Bits, CellSet};

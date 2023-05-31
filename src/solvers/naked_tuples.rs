@@ -152,8 +152,8 @@ fn erase_knowns_from_cells(
 mod tests {
     use super::*;
     use crate::layout::cells::cell::cell;
-    use crate::layout::cells::set::cells;
-    use crate::layout::knowns::set::knowns;
+    use crate::layout::cells::cell_set::cells;
+    use crate::layout::values::known_set::knowns;
 
     #[test]
     fn naked_pairs() {

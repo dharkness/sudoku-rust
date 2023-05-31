@@ -233,7 +233,7 @@ const CELL_COORDS: [[(CoordPair, CoordPair); 27]; 2] = {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::layout::knowns::known::known;
+    use crate::layout::values::known::known;
     use crate::puzzle::Effects;
 
     #[test]

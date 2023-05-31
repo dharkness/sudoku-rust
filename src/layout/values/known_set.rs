@@ -351,7 +351,7 @@ impl Iterator for Iter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::layout::knowns::known::known;
+    use crate::layout::values::known::known;
 
     #[test]
     fn empty_returns_an_empty_set() {

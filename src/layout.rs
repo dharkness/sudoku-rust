@@ -2,8 +2,8 @@
 
 pub mod cells;
 pub mod houses;
-pub mod knowns;
+pub mod values;
 
 pub use cells::{Bits, Cell, CellSet, Rectangle};
 pub use houses::{Coord, House, Shape};
-pub use knowns::{Known, KnownSet, Value};
+pub use values::{Known, KnownSet, Value};

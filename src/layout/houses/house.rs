@@ -279,7 +279,7 @@ const BLOCK_BLOCKS: [[House; 1]; 9] = [
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::layout::cells::set::cells;
+    use crate::layout::cells::cell_set::cells;
     use crate::layout::houses::coord::coord;
 
     #[test]
