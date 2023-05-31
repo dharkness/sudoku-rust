@@ -390,12 +390,14 @@ impl fmt::Debug for CellSet {
     }
 }
 
+#[allow(unused_macros)]
 macro_rules! cells {
     ($s:expr) => {{
         CellSet::from($s)
     }};
 }
 
+#[allow(unused_imports)]
 pub(crate) use cells;
 
 pub struct Iter {

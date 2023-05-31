@@ -64,10 +64,12 @@ impl fmt::Display for Coord {
     }
 }
 
+#[allow(unused_macros)]
 macro_rules! coord {
     ($c:expr) => {
         Coord::new($c as u8)
     };
 }
 
+#[allow(unused_imports)]
 pub(crate) use coord;

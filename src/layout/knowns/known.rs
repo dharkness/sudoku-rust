@@ -1,6 +1,8 @@
 use std::fmt;
 use std::ops::{Add, Neg};
 
+use super::KnownSet;
+
 /// Holds one of the possible known values.
 #[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Known(u8);
@@ -85,11 +87,12 @@ impl fmt::Display for Known {
     }
 }
 
+#[allow(unused_macros)]
 macro_rules! known {
     ($k:expr) => {
         Known::new($k as u8)
     };
 }
 
-use crate::layout::KnownSet;
+#[allow(unused_imports)]
 pub(crate) use known;

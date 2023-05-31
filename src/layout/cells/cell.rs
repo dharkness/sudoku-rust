@@ -126,12 +126,14 @@ impl fmt::Display for Cell {
     }
 }
 
+#[allow(unused_macros)]
 macro_rules! cell {
     ($l:expr) => {
         Cell::from($l)
     };
 }
 
+#[allow(unused_imports)]
 pub(crate) use cell;
 
 const HOUSES: [[House; 3]; 81] = {

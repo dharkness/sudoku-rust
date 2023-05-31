@@ -121,6 +121,7 @@ impl fmt::Display for House {
     }
 }
 
+#[allow(unused_macros)]
 macro_rules! row {
     ($c:expr) => {
         House::row(coord!($c))
@@ -128,18 +129,21 @@ macro_rules! row {
 }
 
 // column! is a built-in macro :(
+#[allow(unused_macros)]
 macro_rules! col {
     ($c:expr) => {
         House::column(coord!($c))
     };
 }
 
+#[allow(unused_macros)]
 macro_rules! block {
     ($c:expr) => {
         House::block(coord!($c))
     };
 }
 
+#[allow(unused_imports)]
 pub(crate) use {block, col, row};
 
 #[rustfmt::skip]

@@ -321,12 +321,14 @@ impl fmt::Debug for KnownSet {
     }
 }
 
+#[allow(unused_macros)]
 macro_rules! knowns {
     ($s:expr) => {{
         KnownSet::from($s)
     }};
 }
 
+#[allow(unused_imports)]
 pub(crate) use knowns;
 
 pub struct Iter {
