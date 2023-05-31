@@ -1,8 +1,11 @@
-use super::Known;
 use std::fmt;
 use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Neg, Not, Sub, SubAssign,
 };
+
+use crate::symbols::{EMPTY_SET, MISSING};
+
+use super::Known;
 
 type Size = u16;
 type Bits = u16;
@@ -17,9 +20,6 @@ const SIZE_SHIFT: u16 = 16 - 4;
 const SIZE_BIT: Bits = 1 << SIZE_SHIFT;
 
 const FULL: SizeAndBits = pack(BITS_MASK, 9);
-
-const MISSING: char = '·';
-const EMPTY: &str = "∅";
 
 const fn pack(knowns: Bits, size: Size) -> SizeAndBits {
     debug_assert!(knowns <= BITS_MASK);
@@ -297,18 +297,17 @@ impl SubAssign for KnownSet {
 impl fmt::Display for KnownSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.is_empty() {
-            write!(f, "{}", EMPTY)
+            write!(f, "{}", EMPTY_SET)
         } else {
             let mut s = String::with_capacity(2 + 9);
             s.push('(');
-            for k in 0..9 {
-                let known = Known::from(k);
-                if self.has(known) {
-                    s.push(known.label());
+            Known::ALL.into_iter().for_each(|k| {
+                if self.has(k) {
+                    s.push(k.label());
                 } else {
                     s.push(MISSING)
                 }
-            }
+            });
             s.push(')');
             write!(f, "{}", s)
         }
@@ -475,7 +474,7 @@ mod tests {
     fn strings() {
         let mut set = KnownSet::empty();
 
-        assert_eq!(EMPTY, set.to_string());
+        assert_eq!(EMPTY_SET, set.to_string());
 
         set += "4";
         set += "2";

@@ -141,6 +141,7 @@ mod tests {
     use crate::layout::cells::cell::cell;
     use crate::layout::cells::set::cells;
     use crate::layout::knowns::set::knowns;
+    use crate::layout::Cell;
 
     #[test]
     fn hidden_pairs() {

@@ -2,26 +2,18 @@
 
 use crate::layout::{House, Known};
 use crate::puzzle::Board;
-
-const MISSING: char = '·';
-const ROW_COORDS: [char; 9] = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J'];
-const VALUES: [char; 10] = [MISSING, '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+use crate::symbols::{MISSING, ROW_COORDS};
 
 pub fn print_values(board: &Board) {
     println!("  ¹²³⁴⁵⁶⁷⁸⁹");
-    for (r, coord) in ROW_COORDS.iter().enumerate() {
-        let row = House::row(r.into());
-        print!("{} ", coord);
-        for c in 0..9 {
-            let value = board.value(row.cell(c.into()));
-            if value == Known::UNKNOWN {
-                print!("{}", MISSING);
-            } else {
-                print!("{}", value);
-            }
-        }
+    House::all_rows().iter().for_each(|row| {
+        print!("{} ", row.console_label());
+        row.cells().iter().for_each(|cell| {
+            let value = board.value(cell);
+            print!("{}", value);
+        });
         println!();
-    }
+    });
 }
 
 pub fn print_candidates(board: &Board) {
@@ -37,23 +29,18 @@ pub fn print_candidates(board: &Board) {
             let cell = row.cell(c.into());
             let value = board.value(cell);
             let candidates = board.candidates(cell);
-            if value == Known::UNKNOWN {
+            if !value {
                 for k in Known::ALL {
                     let line = k.usize() / 3;
                     if candidates[k] {
-                        lines[line].push(VALUES[k.value() as usize]);
+                        lines[line].push(k.label());
                     } else {
-                        lines[line].push('·');
+                        lines[line].push(MISSING);
                     }
                 }
             } else {
-                // for line in lines.iter_mut().take(3) {
-                //     line.push(VALUES[value as usize]);
-                //     line.push(VALUES[value as usize]);
-                //     line.push(VALUES[value as usize]);
-                // }
                 lines[0].push_str("   ");
-                lines[1].push_str(&format!(" {} ", VALUES[value as usize]));
+                lines[1].push_str(&format!(" {} ", value));
                 lines[2].push_str("   ");
             }
             if c % 3 == 2 {

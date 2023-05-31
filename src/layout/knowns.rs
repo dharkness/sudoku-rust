@@ -2,6 +2,8 @@
 
 pub mod known;
 pub mod set;
+pub mod value;
 
 pub use known::Known;
 pub use set::KnownSet;
+pub use value::Value;

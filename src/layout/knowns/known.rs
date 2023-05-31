@@ -1,14 +1,13 @@
 use std::fmt;
 use std::ops::{Add, Neg};
 
-use super::KnownSet;
+use super::{KnownSet, Value};
 
 /// Holds one of the possible known values.
 #[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Known(u8);
 
 impl Known {
-    pub const UNKNOWN: u8 = 0;
     pub const ALL: [Known; 9] = [
         known!(1),
         known!(2),
@@ -34,8 +33,8 @@ impl Known {
         1u16 << self.0
     }
 
-    pub const fn value(&self) -> u8 {
-        self.0 + 1
+    pub const fn value(&self) -> Value {
+        Value::new(self.0 + 1)
     }
 
     pub const fn label(&self) -> char {

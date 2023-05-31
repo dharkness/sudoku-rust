@@ -131,7 +131,7 @@ pub fn play() {
 fn print_help() {
     println!(concat!(
         "\n==> Help\n\n",
-        "N                - start a new puzzle\n",
+        "N                - start or input a new puzzle\n",
         "G                - generate a random puzzle\n",
         "P                - print the puzzle\n",
         "E <cell> <value> - erase candidate\n",

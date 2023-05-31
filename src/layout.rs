@@ -6,4 +6,4 @@ pub mod knowns;
 
 pub use cells::{Bits, Cell, CellSet, Rectangle};
 pub use houses::{Coord, House, Shape};
-pub use knowns::{Known, KnownSet};
+pub use knowns::{Known, KnownSet, Value};

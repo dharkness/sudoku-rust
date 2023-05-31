@@ -9,6 +9,7 @@ use std::ops::{
 };
 
 use crate::layout::House;
+use crate::symbols::EMPTY_SET;
 
 use super::{Bit, Cell};
 
@@ -27,8 +28,6 @@ const SIZE_SHIFT: u32 = 128 - 32;
 const SIZE_BIT: Bits = 1 << SIZE_SHIFT;
 
 const FULL: SizeAndBits = pack(Bit::ALL, Cell::COUNT);
-
-const EMPTY: &str = "∅";
 
 const fn pack(bits: Bits, size: Size) -> SizeAndBits {
     debug_assert!(bits <= BITS_MASK);
@@ -369,7 +368,7 @@ impl SubAssign for CellSet {
 impl fmt::Display for CellSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.is_empty() {
-            write!(f, "{}", EMPTY)
+            write!(f, "{}", EMPTY_SET)
         } else {
             let mut s = String::with_capacity(3 * self.size() as usize + 2);
             s.push('(');
@@ -565,7 +564,7 @@ mod tests {
     fn strings() {
         let mut set = CellSet::empty();
 
-        assert_eq!(EMPTY, set.to_string());
+        assert_eq!(EMPTY_SET, set.to_string());
 
         set += "C4";
         set += "B8";

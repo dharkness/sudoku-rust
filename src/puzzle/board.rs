@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::layout::{Cell, CellSet, House, Known, KnownSet};
+use crate::layout::{Cell, CellSet, House, Known, KnownSet, Value};
 use crate::solvers::deadly_rectangles::creates_deadly_rectangles;
 
 use super::{Effects, Error, Strategy};
@@ -13,7 +13,7 @@ pub struct Board {
     /// Solved cells.
     knowns: CellSet,
     /// Values for all cells.
-    values: [u8; 81],
+    values: [Value; 81],
     /// Knowns that are still possible for each cell.
     candidate_knowns: [KnownSet; 81],
     /// Cells that are still possible for each known.
@@ -27,7 +27,7 @@ impl Board {
         Board {
             givens: CellSet::empty(),
             knowns: CellSet::empty(),
-            values: [Known::UNKNOWN; 81],
+            values: [Value::unknown(); 81],
             candidate_knowns: [KnownSet::full(); 81],
             candidate_cells: [CellSet::full(); 9],
             known_cells: [CellSet::empty(); 9],
@@ -161,7 +161,7 @@ impl Board {
         })
     }
 
-    pub fn value(&self, cell: Cell) -> u8 {
+    pub fn value(&self, cell: Cell) -> Value {
         self.values[cell.usize()]
     }
 
@@ -208,22 +208,14 @@ impl Board {
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut first = true;
-        for r in 0..9 {
-            let row = House::row(r.into());
+        House::all_rows().iter().try_for_each(|row| {
             if !first {
                 write!(f, " ")?;
             }
             first = false;
-            for c in 0..9 {
-                let cell = row.cell(c.into());
-                let value = self.value(cell);
-                if value == Known::UNKNOWN {
-                    write!(f, ".")?;
-                } else {
-                    write!(f, "{}", value)?;
-                }
-            }
-        }
-        Ok(())
+            row.cells()
+                .iter()
+                .try_for_each(|cell| write!(f, "{}", self.value(cell).console_label()))
+        })
     }
 }

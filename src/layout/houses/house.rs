@@ -60,6 +60,10 @@ impl House {
         LABELS[self.shape.usize()][self.coord.usize()]
     }
 
+    pub const fn console_label(&self) -> char {
+        CONSOLE_LABELS[self.shape.usize()][self.coord.usize()]
+    }
+
     pub const fn cell(&self, coord: Coord) -> Cell {
         self.shape.cell(self.coord, coord)
     }
@@ -151,6 +155,13 @@ pub const LABELS: [[&str; 9]; 3] = [
     ["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6", "Row 7", "Row 8", "Row 9"],
     ["Col 1", "Col 2", "Col 3", "Col 4", "Col 5", "Col 6", "Col 7", "Col 8", "Col 9"],
     ["Box 1", "Box 2", "Box 3", "Box 4", "Box 5", "Box 6", "Box 7", "Box 8", "Box 9"],
+];
+
+#[rustfmt::skip]
+pub const CONSOLE_LABELS: [[char; 9]; 3] = [
+    ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J'],
+    ['¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹'],
+    ['❶', '❷', '❸', '❹', '❺', '❻', '❼', '❽', '❾'],
 ];
 
 pub const ROWS: [House; 9] = make_houses(Shape::Row);
