@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use std::fmt;
+use std::fmt::Write;
 
 use crate::layout::{Cell, CellSet, Known, KnownSet};
+use crate::symbols::{EMPTY_SET, REMOVE_CANDIDATE, SET_KNOWN};
 
 use super::{Board, Effects, Strategy};
 
@@ -75,27 +77,27 @@ impl Action {
 impl fmt::Display for Action {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.is_empty() {
-            write!(f, "∅")
+            f.write_str(EMPTY_SET)
         } else {
             let mut first = true;
             for (cell, knowns) in &self.erase {
                 if first {
                     first = false;
                 } else {
-                    write!(f, ", ")?;
+                    f.write_str(", ")?;
                 }
-                write!(f, "{} × ", cell)?;
+                write!(f, "{} {} ", cell, REMOVE_CANDIDATE)?;
                 for known in knowns.iter() {
-                    write!(f, "{}", known)?;
+                    f.write_char(known.label())?;
                 }
             }
             for (cell, known) in &self.set {
                 if first {
                     first = false;
                 } else {
-                    write!(f, ", ")?;
+                    f.write_str(", ")?;
                 }
-                write!(f, "{} ⇨ {}", cell, known)?;
+                write!(f, "{} {} {}", cell, SET_KNOWN, known)?;
             }
             Ok(())
         }

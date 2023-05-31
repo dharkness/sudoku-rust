@@ -48,14 +48,6 @@ impl Value {
             (b'0' + self.0) as char
         }
     }
-
-    pub const fn console_label(&self) -> char {
-        if self.0 == 0 {
-            '.'
-        } else {
-            (b'0' + self.0) as char
-        }
-    }
 }
 
 impl From<Known> for Value {

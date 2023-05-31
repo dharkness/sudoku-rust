@@ -5,6 +5,9 @@ use std::io::{stdout, Write};
 use crate::layout::{Cell, Known};
 use crate::printers::print_candidates;
 use crate::puzzle::{Board, Effects, Generator};
+use crate::symbols::UNKNOWN_VALUE;
+
+const URL: &str = "https://www.sudokuwiki.org/sudoku.htm?bd=";
 
 pub fn play() {
     let mut boards = vec![Board::new()];
@@ -57,6 +60,16 @@ pub fn play() {
             "P" => {
                 println!();
                 show = true
+            }
+            "X" => {
+                let mut unknown = UNKNOWN_VALUE;
+                if input.len() >= 2 {
+                    unknown = input[1].chars().next().unwrap_or(unknown);
+                }
+                println!("\n==> {}\n", board.packed_string(unknown));
+            }
+            "W" => {
+                println!("\n==> {}{}\n", URL, board.url_string().replace(' ', ""));
             }
             "E" => {
                 if input.len() != 3 {
@@ -133,10 +146,12 @@ fn print_help() {
         "\n==> Help\n\n",
         "N                - start or input a new puzzle\n",
         "G                - generate a random puzzle\n",
-        "P                - print the puzzle\n",
-        "E <cell> <value> - erase candidate\n",
-        "S <cell> <value> - solve cell\n",
-        "Z                - undo last move\n",
+        "P                - print the full puzzle with knowns and candidates\n",
+        "X [char]         - export the puzzle with optional character for unsolved cells\n",
+        "W                - print URL to play on SudokuWiki.org\n",
+        "E <cell> <value> - erase a candidate\n",
+        "S <cell> <value> - solve a cell\n",
+        "Z                - undo last change\n",
         "H                - this help message\n",
         "Q                - quit\n\n",
         "Note: commands and cells are not case-sensitive\n"

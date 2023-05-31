@@ -2,6 +2,7 @@ use std::fmt;
 
 use crate::layout::{Cell, CellSet, House, Known, KnownSet, Value};
 use crate::solvers::deadly_rectangles::creates_deadly_rectangles;
+use crate::symbols::UNKNOWN_VALUE;
 
 use super::{Effects, Error, Strategy};
 
@@ -203,19 +204,38 @@ impl Board {
 
         true
     }
+
+    pub fn packed_string(&self, unknown: char) -> String {
+        let mut result = String::new();
+        House::all_rows().iter().for_each(|row| {
+            result += " ";
+            row.cells().iter().for_each(|cell| {
+                let value = self.value(cell);
+                if !value {
+                    result.push(unknown);
+                } else {
+                    result.push(value.label());
+                }
+            })
+        });
+        result[1..].to_string()
+    }
+
+    pub fn fancy_string(&self) -> String {
+        self.packed_string(UNKNOWN_VALUE)
+    }
+
+    pub fn console_string(&self) -> String {
+        self.packed_string('.')
+    }
+
+    pub fn url_string(&self) -> String {
+        self.packed_string('0')
+    }
 }
 
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut first = true;
-        House::all_rows().iter().try_for_each(|row| {
-            if !first {
-                write!(f, " ")?;
-            }
-            first = false;
-            row.cells()
-                .iter()
-                .try_for_each(|cell| write!(f, "{}", self.value(cell).console_label()))
-        })
+        f.write_str(&self.fancy_string())
     }
 }
