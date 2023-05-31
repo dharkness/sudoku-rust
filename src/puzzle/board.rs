@@ -126,6 +126,41 @@ impl Board {
         }
     }
 
+    pub fn remove_candidates(
+        &mut self,
+        cell: Cell,
+        knowns: KnownSet,
+        effects: &mut Effects,
+    ) -> bool {
+        knowns.iter().fold(false, |acc, known| {
+            self.remove_candidate(cell, known, effects) || acc
+        })
+    }
+
+    pub fn remove_many_candidate(
+        &mut self,
+        cells: CellSet,
+        known: Known,
+        effects: &mut Effects,
+    ) -> bool {
+        cells.iter().fold(false, |acc, cell| {
+            self.remove_candidate(cell, known, effects) || acc
+        })
+    }
+
+    pub fn remove_many_candidates(
+        &mut self,
+        cells: CellSet,
+        knowns: KnownSet,
+        effects: &mut Effects,
+    ) -> bool {
+        cells.iter().fold(false, |acc, cell| {
+            knowns.iter().fold(false, |acc, known| {
+                self.remove_candidate(cell, known, effects) || acc
+            }) || acc
+        })
+    }
+
     pub fn value(&self, cell: Cell) -> u8 {
         self.values[cell.usize()]
     }

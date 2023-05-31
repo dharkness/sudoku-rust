@@ -1,4 +1,5 @@
 use std::fmt;
+use std::ops::{Add, Neg};
 
 use crate::layout::{Coord, House, Shape};
 
@@ -99,6 +100,22 @@ impl From<String> for Cell {
 impl From<Bit> for Cell {
     fn from(bit: Bit) -> Self {
         bit.cell()
+    }
+}
+
+impl Add<Cell> for Cell {
+    type Output = CellSet;
+
+    fn add(self, rhs: Cell) -> CellSet {
+        CellSet::empty() + self + rhs
+    }
+}
+
+impl Neg for Cell {
+    type Output = CellSet;
+
+    fn neg(self) -> CellSet {
+        CellSet::full() - self
     }
 }
 

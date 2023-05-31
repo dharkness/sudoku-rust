@@ -4,7 +4,7 @@ use super::Cell;
 
 pub fn index_from_label(label: &str) -> u8 {
     if label.len() != 2 {
-        panic!("Invalid cell: {}", label);
+        panic!("Invalid cell: \"{}\"", label);
     }
     let mut chars = label.chars();
     let row = chars.next().unwrap() as u8 - b'A';
@@ -12,7 +12,7 @@ pub fn index_from_label(label: &str) -> u8 {
 
     // row H is 9 and ok, becomes 8 below
     if row > 9 || col >= 9 {
-        panic!("Invalid cell: {}", label);
+        panic!("Invalid cell: \"{}\"", label);
     }
     if row == 9 {
         8 * 9 + col

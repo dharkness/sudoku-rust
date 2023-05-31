@@ -29,10 +29,21 @@ pub enum Strategy {
     /// Two cells in a house and with the same two candidates remaining
     /// may remove those candidates from all other cells in that house.
     NakedPair,
+    /// Two candidates remaining in two cells in a house
+    /// may remove all other candidates in those cells.
+    HiddenPair,
+
     /// Three cells in a house and with the same three candidates remaining
     /// may remove those candidates from all other cells in that house.
     NakedTriple,
+    /// Three candidates remaining in three cells in a house
+    /// may remove all other candidates in those cells.
+    HiddenTriple,
+
     /// Four cells in a house and with the same four candidates remaining
     /// may remove those candidates from all other cells in that house.
     NakedQuad,
+    /// Four candidates remaining in four cells in a house
+    /// may remove all other candidates in those cells.
+    HiddenQuad,
 }

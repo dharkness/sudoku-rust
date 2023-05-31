@@ -1,4 +1,5 @@
 use std::fmt;
+use std::ops::{Add, Neg};
 
 /// Holds one of the possible known values.
 #[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
@@ -7,15 +8,15 @@ pub struct Known(u8);
 impl Known {
     pub const UNKNOWN: u8 = 0;
     pub const ALL: [Known; 9] = [
-        Known::new(1),
-        Known::new(2),
-        Known::new(3),
-        Known::new(4),
-        Known::new(5),
-        Known::new(6),
-        Known::new(7),
-        Known::new(8),
-        Known::new(9),
+        known!(1),
+        known!(2),
+        known!(3),
+        known!(4),
+        known!(5),
+        known!(6),
+        known!(7),
+        known!(8),
+        known!(9),
     ];
 
     pub const fn new(value: u8) -> Self {
@@ -43,19 +44,38 @@ impl Known {
 impl From<u8> for Known {
     fn from(index: u8) -> Self {
         assert!(index < 9);
-        Known::ALL[index as usize]
+        Known::new(index + 1)
     }
 }
 
 impl From<char> for Known {
     fn from(label: char) -> Self {
-        Known::ALL[(label as u8 - b'1') as usize]
+        if !('1'..='9').contains(&label) {
+            panic!("Invalid known \"{}\"", label);
+        }
+        Known::new(label as u8 - b'0')
     }
 }
 
 impl From<&str> for Known {
     fn from(label: &str) -> Self {
         Known::from(label.chars().next().unwrap())
+    }
+}
+
+impl Add<Known> for Known {
+    type Output = KnownSet;
+
+    fn add(self, rhs: Known) -> KnownSet {
+        KnownSet::empty() + self + rhs
+    }
+}
+
+impl Neg for Known {
+    type Output = KnownSet;
+
+    fn neg(self) -> KnownSet {
+        KnownSet::full() - self
     }
 }
 
@@ -67,8 +87,9 @@ impl fmt::Display for Known {
 
 macro_rules! known {
     ($k:expr) => {
-        Known::new(1 + $k as u8)
+        Known::new($k as u8)
     };
 }
 
+use crate::layout::KnownSet;
 pub(crate) use known;

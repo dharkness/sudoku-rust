@@ -1,10 +1,11 @@
-use crate::layout::*;
+use crate::layout::{Cell, CellSet, House, KnownSet};
 use crate::puzzle::{Action, Board, Effects, Strategy};
-use std::ops::Range;
+
+use super::distinct_tuples::*;
 
 type CellCandidates = (Cell, KnownSet);
 
-pub fn find_naked_pairs(board: &Board) -> Effects {
+pub fn find_naked_pairs(board: &Board) -> Option<Effects> {
     let mut effects = Effects::new();
 
     for house in House::all() {
@@ -16,28 +17,27 @@ pub fn find_naked_pairs(board: &Board) -> Effects {
             .collect::<Vec<_>>();
 
         for candidates in distinct_pairs(&cell_candidates) {
-            let knowns = [candidates.0 .1, candidates.1 .1];
-            let union = knowns[0] | knowns[1];
-            if union.size() != 2 {
+            let known_sets = vec![candidates.0 .1, candidates.1 .1];
+            let knowns = known_sets
+                .iter()
+                .fold(KnownSet::empty(), |acc, ks| acc | *ks);
+            if knowns.size() != 2 {
                 continue;
             }
 
-            let cells = CellSet::empty() + candidates.0 .0 + candidates.1 .0;
-            add_action_to_erase_knowns(
-                board,
-                house,
-                cells,
-                union,
-                Strategy::NakedPair,
-                &mut effects,
-            );
+            let cells = house.cells() - candidates.0 .0 - candidates.1 .0;
+            erase_knowns_from_cells(board, cells, knowns, Strategy::NakedPair, &mut effects);
         }
     }
 
-    effects
+    if effects.has_actions() {
+        Some(effects)
+    } else {
+        None
+    }
 }
 
-pub fn find_naked_triples(board: &Board) -> Effects {
+pub fn find_naked_triples(board: &Board) -> Option<Effects> {
     let mut effects = Effects::new();
 
     for house in House::all() {
@@ -49,34 +49,33 @@ pub fn find_naked_triples(board: &Board) -> Effects {
             .collect::<Vec<_>>();
 
         for candidates in distinct_triples(&cell_candidates) {
-            let knowns = vec![candidates.0 .1, candidates.1 .1, candidates.2 .1];
-            let union = knowns.iter().fold(KnownSet::empty(), |acc, ks| acc | *ks);
-            if union.size() != 3 {
+            let known_sets = vec![candidates.0 .1, candidates.1 .1, candidates.2 .1];
+            let knowns = known_sets
+                .iter()
+                .fold(KnownSet::empty(), |acc, ks| acc | *ks);
+            if knowns.size() != 3 {
                 continue;
             }
-            if distinct_pairs(&knowns)
+            if distinct_pairs(&known_sets)
                 .iter()
                 .any(|(ks1, ks2)| (*ks1 | *ks2).size() < 3)
             {
                 continue;
             }
 
-            let cells = CellSet::empty() + candidates.0 .0 + candidates.1 .0 + candidates.2 .0;
-            add_action_to_erase_knowns(
-                board,
-                house,
-                cells,
-                union,
-                Strategy::NakedPair,
-                &mut effects,
-            );
+            let cells = house.cells() - candidates.0 .0 - candidates.1 .0 - candidates.2 .0;
+            erase_knowns_from_cells(board, cells, knowns, Strategy::NakedPair, &mut effects);
         }
     }
 
-    effects
+    if effects.has_actions() {
+        Some(effects)
+    } else {
+        None
+    }
 }
 
-pub fn find_naked_quads(board: &Board) -> Effects {
+pub fn find_naked_quads(board: &Board) -> Option<Effects> {
     let mut effects = Effects::new();
 
     for house in House::all() {
@@ -90,101 +89,119 @@ pub fn find_naked_quads(board: &Board) -> Effects {
             .collect::<Vec<_>>();
 
         for candidates in distinct_quads(&cell_candidates) {
-            let knowns = vec![
+            let known_sets = vec![
                 candidates.0 .1,
                 candidates.1 .1,
                 candidates.2 .1,
                 candidates.3 .1,
             ];
-            let union = knowns.iter().fold(KnownSet::empty(), |acc, ks| acc | *ks);
-            if union.size() != 4 {
+            let knowns = known_sets
+                .iter()
+                .fold(KnownSet::empty(), |acc, ks| acc | *ks);
+            if knowns.size() != 4 {
                 continue;
             }
-            if distinct_pairs(&knowns)
+            if distinct_pairs(&known_sets)
                 .iter()
                 .any(|(ks1, ks2)| (*ks1 | *ks2).size() < 3)
             {
                 continue;
             }
-            if distinct_triples(&knowns)
+            if distinct_triples(&known_sets)
                 .iter()
                 .any(|(ks1, ks2, ks3)| (*ks1 | *ks2 | *ks3).size() < 4)
             {
                 continue;
             }
 
-            let cells = CellSet::empty()
-                + candidates.0 .0
-                + candidates.1 .0
-                + candidates.2 .0
-                + candidates.3 .0;
-            add_action_to_erase_knowns(
-                board,
-                house,
-                cells,
-                union,
-                Strategy::NakedPair,
-                &mut effects,
-            );
+            let cells = house.cells()
+                - candidates.0 .0
+                - candidates.1 .0
+                - candidates.2 .0
+                - candidates.3 .0;
+            erase_knowns_from_cells(board, cells, knowns, Strategy::NakedPair, &mut effects);
         }
     }
 
-    effects
+    if effects.has_actions() {
+        Some(effects)
+    } else {
+        None
+    }
 }
 
-fn add_action_to_erase_knowns(
+fn erase_knowns_from_cells(
     board: &Board,
-    house: &House,
     cells: CellSet,
     knowns: KnownSet,
     strategy: Strategy,
     effects: &mut Effects,
 ) {
     let mut action = Action::new(strategy);
-    for k in knowns.iter() {
-        let diff = house.cells() & board.candidate_cells(k) - cells;
-        if !diff.is_empty() {
-            action.erase_cells(diff, k);
-        }
-    }
+
+    knowns
+        .iter()
+        .for_each(|k| action.erase_cells(cells & board.candidate_cells(k), k));
 
     if !action.is_empty() {
         effects.add_action(action);
     }
 }
 
-fn distinct_pairs<T: Copy>(items: &Vec<T>) -> Vec<(T, T)> {
-    let mut pairs = Vec::new();
-    for i in 0..items.len() {
-        for j in i + 1..items.len() {
-            pairs.push((items[i], items[j]));
-        }
-    }
-    pairs
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::layout::cells::cell::cell;
+    use crate::layout::cells::set::cells;
+    use crate::layout::knowns::set::knowns;
 
-fn distinct_triples<T: Copy>(items: &Vec<T>) -> Vec<(T, T, T)> {
-    let mut pairs = Vec::new();
-    for i in 0..items.len() {
-        for j in i + 1..items.len() {
-            for k in j + 1..items.len() {
-                pairs.push((items[i], items[j], items[k]));
-            }
-        }
-    }
-    pairs
-}
+    #[test]
+    fn naked_pairs() {
+        let mut board = Board::new();
+        let mut effects = Effects::new();
 
-fn distinct_quads<T: Copy>(items: &Vec<T>) -> Vec<(T, T, T, T)> {
-    let mut pairs = Vec::new();
-    for i in 0..items.len() {
-        for j in i + 1..items.len() {
-            for k in j + 1..items.len() {
-                for l in k + 1..items.len() {
-                    pairs.push((items[i], items[j], items[k], items[l]));
-                }
-            }
-        }
+        let knowns = knowns!("1 2 3 4 5 6 7");
+        board.remove_many_candidates(cells!("A1 A2"), knowns, &mut effects);
+
+        find_naked_pairs(&board).unwrap().apply_all(&mut board);
+
+        assert_eq!(-knowns, board.candidates(cell!("A1")));
+        assert_eq!(-knowns, board.candidates(cell!("A2")));
+        assert_eq!(knowns, board.candidates(cell!("A5")));
+        assert_eq!(knowns, board.candidates(cell!("B3")));
+        assert_eq!(knowns, board.candidates(cell!("C2")));
     }
-    pairs
+
+    #[test]
+    fn naked_triples() {
+        let mut board = Board::new();
+        let mut effects = Effects::new();
+
+        let knowns = knowns!("1 2 3 4 5 6");
+        board.remove_many_candidates(cells!("A1 A2 A5"), knowns, &mut effects);
+
+        find_naked_triples(&board).unwrap().apply_all(&mut board);
+
+        assert_eq!(-knowns, board.candidates(cell!("A1")));
+        assert_eq!(knowns, board.candidates(cell!("A8")));
+        assert_eq!(KnownSet::full(), board.candidates(cell!("B3")));
+        assert_eq!(KnownSet::full(), board.candidates(cell!("C2")));
+    }
+
+    #[test]
+    fn naked_quads() {
+        let mut board = Board::new();
+        let mut effects = Effects::new();
+
+        let knowns = knowns!("1 2 3 4 5");
+        board.remove_many_candidates(cells!("A1 A2 A5 A8"), knowns, &mut effects);
+
+        find_naked_quads(&board).unwrap().apply_all(&mut board);
+
+        assert_eq!(-knowns, board.candidates(cell!("A1")));
+        assert_eq!(-knowns, board.candidates(cell!("A2")));
+        assert_eq!(knowns, board.candidates(cell!("A9")));
+        assert_eq!(KnownSet::full(), board.candidates(cell!("B3")));
+        assert_eq!(KnownSet::full(), board.candidates(cell!("C2")));
+    }
 }

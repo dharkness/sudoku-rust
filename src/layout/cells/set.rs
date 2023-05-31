@@ -5,7 +5,7 @@
 
 use std::fmt;
 use std::ops::{
-    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Not, Sub, SubAssign,
+    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Neg, Not, Sub, SubAssign,
 };
 
 use crate::layout::House;
@@ -22,7 +22,7 @@ pub struct CellSet(SizeAndBits);
 
 const ALL_CELLS: std::ops::Range<Size> = 0..Cell::COUNT;
 
-const CELLS_MASK: Bits = (1 << Cell::COUNT) - 1;
+const BITS_MASK: Bits = (1 << Cell::COUNT) - 1;
 const SIZE_SHIFT: u32 = 128 - 32;
 const SIZE_BIT: Bits = 1 << SIZE_SHIFT;
 
@@ -31,7 +31,7 @@ const FULL: SizeAndBits = pack(Bit::ALL, Cell::COUNT);
 const EMPTY: &str = "∅";
 
 const fn pack(bits: Bits, size: Size) -> SizeAndBits {
-    debug_assert!(bits <= CELLS_MASK);
+    debug_assert!(bits <= BITS_MASK);
     debug_assert!(size <= Cell::COUNT);
     (((size as Bits) << SIZE_SHIFT) + bits) as SizeAndBits
 }
@@ -74,7 +74,7 @@ impl CellSet {
     }
 
     pub const fn bits(&self) -> Bits {
-        self.0 & CELLS_MASK
+        self.0 & BITS_MASK
     }
 
     pub const fn has(&self, cell: Cell) -> bool {
@@ -115,7 +115,7 @@ impl CellSet {
         if self.0 == set.0 {
             *self
         } else {
-            CellSet::new((self.0 | set.0) & CELLS_MASK)
+            CellSet::new((self.0 | set.0) & BITS_MASK)
         }
     }
 
@@ -127,7 +127,7 @@ impl CellSet {
         if self.0 == set.0 {
             *self
         } else {
-            CellSet::new((self.0 & set.0) & CELLS_MASK)
+            CellSet::new((self.0 & set.0) & BITS_MASK)
         }
     }
 
@@ -139,7 +139,7 @@ impl CellSet {
         if self.0 == set.0 {
             CellSet::empty()
         } else {
-            CellSet::new((self.0 & !set.0) & CELLS_MASK)
+            CellSet::new((self.0 & !set.0) & BITS_MASK)
         }
     }
 
@@ -151,7 +151,7 @@ impl CellSet {
         match self.0 {
             0 => CellSet::full(),
             FULL => CellSet::empty(),
-            _ => CellSet::new(!self.0 & CELLS_MASK),
+            _ => CellSet::new(!self.0 & BITS_MASK),
         }
     }
 
@@ -182,21 +182,11 @@ impl From<House> for CellSet {
 
 impl From<&str> for CellSet {
     fn from(labels: &str) -> CellSet {
-        let mut cells = CellSet::empty();
-        for label in labels.split(' ') {
-            cells.add_assign(Cell::from(label));
-        }
-        cells
+        labels
+            .split(' ')
+            .fold(CellSet::empty(), |set, label| set + Cell::from(label))
     }
 }
-
-macro_rules! cells {
-    ($s:expr) => {{
-        CellSet::from($s)
-    }};
-}
-
-pub(crate) use cells;
 
 impl Index<Bit> for CellSet {
     type Output = bool;
@@ -319,9 +309,17 @@ impl SubAssign<&str> for CellSet {
 }
 
 impl Not for CellSet {
+    type Output = bool;
+
+    fn not(self) -> bool {
+        self.is_empty()
+    }
+}
+
+impl Neg for CellSet {
     type Output = Self;
 
-    fn not(self) -> CellSet {
+    fn neg(self) -> CellSet {
         self.inverted()
     }
 }
@@ -368,12 +366,6 @@ impl SubAssign for CellSet {
     }
 }
 
-impl fmt::Debug for CellSet {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self)
-    }
-}
-
 impl fmt::Display for CellSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.is_empty() {
@@ -391,6 +383,20 @@ impl fmt::Display for CellSet {
         }
     }
 }
+
+impl fmt::Debug for CellSet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.debug())
+    }
+}
+
+macro_rules! cells {
+    ($s:expr) => {{
+        CellSet::from($s)
+    }};
+}
+
+pub(crate) use cells;
 
 pub struct Iter {
     iter: BitIter,
@@ -502,11 +508,17 @@ mod tests {
     }
 
     #[test]
-    fn not_returns_an_inverted_set() {
-        assert_eq!(CellSet::full(), !CellSet::empty());
-        assert_eq!(CellSet::empty(), !CellSet::full());
+    fn not_returns_is_empty() {
+        assert_eq!(true, !CellSet::empty());
+        assert_eq!(false, !CellSet::full());
+    }
 
-        assert_eq!(CellSet::full() - "A5" - "C9" - "G2", !cells!("A5 C9 G2"));
+    #[test]
+    fn neg_returns_an_inverted_set() {
+        assert_eq!(CellSet::full(), -CellSet::empty());
+        assert_eq!(CellSet::empty(), -CellSet::full());
+
+        assert_eq!(CellSet::full() - "A5" - "C9" - "G2", -cells!("A5 C9 G2"));
     }
 
     #[test]

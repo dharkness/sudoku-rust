@@ -1,8 +1,6 @@
 use std::cmp::Ordering;
 use std::fmt;
 
-use crate::layout::cells::set::cells;
-use crate::layout::houses::coord::coord;
 use crate::layout::{Cell, CellSet, Coord, Shape};
 
 /// One of the nine rows, columns, or blocks on the board.
@@ -266,6 +264,8 @@ const BLOCK_BLOCKS: [[House; 1]; 9] = [
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::layout::cells::set::cells;
+    use crate::layout::houses::coord::coord;
 
     #[test]
     fn houses() {
