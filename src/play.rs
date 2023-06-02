@@ -19,6 +19,15 @@ const SOLVERS: [Solver; 7] = [
     crate::solvers::hidden_tuples::find_hidden_triples,
     crate::solvers::hidden_tuples::find_hidden_quads,
 ];
+const SOLVER_LABELS: [&str; 7] = [
+    "intersection removal",
+    "naked pair",
+    "naked triple",
+    "naked quad",
+    "hidden pair",
+    "hidden triple",
+    "hidden quad",
+];
 
 pub fn play() {
     let mut boards = vec![Board::new()];
@@ -138,13 +147,55 @@ pub fn play() {
                     show = true;
                 }
             }
-            "D" => {
-                SOLVERS.iter().for_each(|solver| {
+            "F" => {
+                let mut found = false;
+                SOLVERS.iter().enumerate().for_each(|(i, solver)| {
                     if let Some(effects) = solver(board) {
-                        println!("\n==> Found deductions\n");
+                        found = true;
+                        println!(
+                            "\n==> Found {}\n",
+                            pluralize(effects.action_count(), SOLVER_LABELS[i])
+                        );
                         effects.print_actions();
                     }
                 });
+
+                if !found {
+                    println!("\n==> No deductions found\n");
+                } else {
+                    println!();
+                }
+            }
+            "A" => {
+                let mut found = false;
+                let mut clone = *board;
+                let _ = SOLVERS.iter().enumerate().try_for_each(|(i, solver)| {
+                    if let Some(effects) = solver(board) {
+                        found = true;
+                        if let Some(errors) = effects.apply_all(&mut clone) {
+                            println!(
+                                "\n==> Found errors while applying {}\n",
+                                pluralize(effects.action_count(), SOLVER_LABELS[i])
+                            );
+                            errors.print_errors();
+                            println!();
+                            return Err(());
+                        }
+                        println!(
+                            "\n==> Applied {}",
+                            pluralize(effects.action_count(), SOLVER_LABELS[i])
+                        );
+                    }
+                    Ok(())
+                });
+
+                if found {
+                    boards.push(clone);
+                    show = true;
+                    println!();
+                } else {
+                    println!("\n==> No deductions found\n");
+                }
             }
             "Z" => {
                 if boards.len() > 1 {
@@ -170,7 +221,8 @@ fn print_help() {
         "W                - print URL to play on SudokuWiki.org\n",
         "E <cell> <value> - erase a candidate\n",
         "S <cell> <value> - solve a cell\n",
-        "D                - find and print deductions\n",
+        "F                - find deductions\n",
+        "A                - apply deductions\n",
         "Z                - undo last change\n",
         "H                - this help message\n",
         "Q                - quit\n\n",
@@ -230,4 +282,12 @@ fn create_new_puzzle() -> Option<Board> {
     }
 
     None
+}
+
+fn pluralize(count: usize, label: &str) -> String {
+    if count == 1 {
+        format!("{} {}", count, label)
+    } else {
+        format!("{} {}s", count, label)
+    }
 }

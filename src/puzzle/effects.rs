@@ -23,6 +23,10 @@ impl Effects {
         !self.errors.is_empty()
     }
 
+    pub fn error_count(&self) -> usize {
+        self.errors.len()
+    }
+
     pub fn clear_errors(&mut self) {
         self.errors = vec![];
     }
@@ -37,6 +41,10 @@ impl Effects {
 
     pub fn has_actions(&self) -> bool {
         !self.actions.is_empty()
+    }
+
+    pub fn action_count(&self) -> usize {
+        self.actions.len()
     }
 
     pub fn clear_actions(&mut self) {

@@ -1,5 +1,5 @@
 use crate::layout::{House, Known};
-use crate::puzzle::{Board, Effects, Strategy};
+use crate::puzzle::{Action, Board, Effects, Strategy};
 
 pub fn find_intersection_removals(board: &Board) -> Option<Effects> {
     let mut effects = Effects::new();
@@ -30,27 +30,26 @@ fn check_intersection(board: &Board, block: House, other: House, effects: &mut E
 
     for known in Known::ALL {
         if segment_candidates[known] {
+            let candidate_cells = board.candidate_cells(known);
             if block_disjoint_candidates[known] {
                 if !other_disjoint_candidates[known] {
-                    for cell in block_disjoint.iter() {
-                        if board.is_candidate(cell, known) {
-                            effects.add_erase(Strategy::BoxLineReduction, cell, known);
-                        }
+                    let erase = block_disjoint & candidate_cells;
+                    if !erase.is_empty() {
+                        let mut action = Action::new(Strategy::BoxLineReduction);
+                        action.erase_cells(erase, known);
+                        effects.add_action(action);
                     }
                 }
             } else if other_disjoint_candidates[known] {
-                for cell in other_disjoint.iter() {
-                    if board.is_candidate(cell, known) {
-                        effects.add_erase(
-                            if segment_candidates.size() == 3 {
-                                Strategy::PointingTriple
-                            } else {
-                                Strategy::PointingPair
-                            },
-                            cell,
-                            known,
-                        );
+                let erase = other_disjoint & candidate_cells;
+                if !erase.is_empty() {
+                    let mut strategy = Strategy::PointingPair;
+                    if segment_candidates.size() == 3 {
+                        strategy = Strategy::PointingTriple;
                     }
+                    let mut action = Action::new(strategy);
+                    action.erase_cells(erase, known);
+                    effects.add_action(action);
                 }
             }
         }
