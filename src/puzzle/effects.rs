@@ -31,6 +31,10 @@ impl Effects {
         self.errors.push(error);
     }
 
+    pub fn print_errors(&self) {
+        self.errors.iter().for_each(|error| println!("- {}", error));
+    }
+
     pub fn has_actions(&self) -> bool {
         !self.actions.is_empty()
     }
@@ -95,8 +99,10 @@ impl Effects {
         }
     }
 
-    pub fn print_errors(&self) {
-        self.errors.iter().for_each(|error| println!("- {}", error));
+    pub fn print_actions(&self) {
+        self.actions
+            .iter()
+            .for_each(|action| println!("- {}", action));
     }
 }
 

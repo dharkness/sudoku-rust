@@ -1,19 +1,23 @@
 use crate::layout::{House, Known};
 use crate::puzzle::{Board, Effects, Strategy};
 
-pub fn find_intersection_removals(board: &Board) -> Effects {
+pub fn find_intersection_removals(board: &Board) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    for block in House::all_blocks() {
-        for row in block.rows() {
-            check_intersection(board, *block, *row, &mut effects)
-        }
-        for column in block.columns() {
-            check_intersection(board, *block, *column, &mut effects)
-        }
-    }
+    House::all_blocks().iter().for_each(|block| {
+        block.rows().iter().for_each(|row| {
+            check_intersection(board, *block, *row, &mut effects);
+        });
+        block.columns().iter().for_each(|column| {
+            check_intersection(board, *block, *column, &mut effects);
+        });
+    });
 
-    effects
+    if effects.has_actions() {
+        Some(effects)
+    } else {
+        None
+    }
 }
 
 fn check_intersection(board: &Board, block: House, other: House, effects: &mut Effects) {

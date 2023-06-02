@@ -83,11 +83,12 @@ impl Generator {
                 continue;
             }
 
-            effects = find_intersection_removals(&clone);
-            if effects.apply_all(&mut clone).is_some() {
-                // print_candidates(&clone);
-                // println!("intersection removals caused errors");
-                continue;
+            if let Some(effects) = find_intersection_removals(&clone) {
+                if effects.apply_all(&mut clone).is_some() {
+                    // print_candidates(&clone);
+                    // println!("intersection removals caused errors");
+                    continue;
+                }
             }
             // if !clone.is_valid() {
             //     println!("invalid with error");

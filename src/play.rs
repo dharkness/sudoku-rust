@@ -5,9 +5,20 @@ use std::io::{stdout, Write};
 use crate::layout::{Cell, Known};
 use crate::printers::print_candidates;
 use crate::puzzle::{Board, Effects, Generator, Parser};
+use crate::solvers::Solver;
 use crate::symbols::UNKNOWN_VALUE;
 
 const URL: &str = "https://www.sudokuwiki.org/sudoku.htm?bd=";
+
+const SOLVERS: [Solver; 7] = [
+    crate::solvers::intersection_removals::find_intersection_removals,
+    crate::solvers::naked_tuples::find_naked_pairs,
+    crate::solvers::naked_tuples::find_naked_triples,
+    crate::solvers::naked_tuples::find_naked_quads,
+    crate::solvers::hidden_tuples::find_hidden_pairs,
+    crate::solvers::hidden_tuples::find_hidden_triples,
+    crate::solvers::hidden_tuples::find_hidden_quads,
+];
 
 pub fn play() {
     let mut boards = vec![Board::new()];
@@ -127,6 +138,14 @@ pub fn play() {
                     show = true;
                 }
             }
+            "D" => {
+                SOLVERS.iter().for_each(|solver| {
+                    if let Some(effects) = solver(board) {
+                        println!("\n==> Found deductions\n");
+                        effects.print_actions();
+                    }
+                });
+            }
             "Z" => {
                 if boards.len() > 1 {
                     println!("\n==> Undoing last move\n");
@@ -151,6 +170,7 @@ fn print_help() {
         "W                - print URL to play on SudokuWiki.org\n",
         "E <cell> <value> - erase a candidate\n",
         "S <cell> <value> - solve a cell\n",
+        "D                - find and print deductions\n",
         "Z                - undo last change\n",
         "H                - this help message\n",
         "Q                - quit\n\n",
