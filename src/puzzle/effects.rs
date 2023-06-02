@@ -23,12 +23,20 @@ impl Effects {
         !self.errors.is_empty()
     }
 
+    pub fn clear_errors(&mut self) {
+        self.errors = vec![];
+    }
+
     pub fn add_error(&mut self, error: Error) {
         self.errors.push(error);
     }
 
     pub fn has_actions(&self) -> bool {
         !self.actions.is_empty()
+    }
+
+    pub fn clear_actions(&mut self) {
+        self.actions = vec![];
     }
 
     pub fn add_action(&mut self, action: Action) {
@@ -49,6 +57,14 @@ impl Effects {
             .for_each(|action| action.apply(board, effects));
     }
 
+    pub fn apply_strategy(&self, board: &mut Board, strategy: Strategy, effects: &mut Effects) {
+        self.actions.iter().for_each(|action| {
+            if action.has_strategy(strategy) {
+                action.apply(board, effects);
+            }
+        });
+    }
+
     pub fn apply_all(&self, board: &mut Board) -> Option<Effects> {
         let mut effects = self.clone();
         loop {
@@ -64,13 +80,23 @@ impl Effects {
         }
     }
 
-    pub fn print_errors(&self) {
-        if self.has_errors() {
-            println!("Errors:");
-            for error in &self.errors {
-                println!("- {}", error);
+    pub fn apply_all_strategy(&self, board: &mut Board, strategy: Strategy) -> Option<Effects> {
+        let mut effects = self.clone();
+        loop {
+            if effects.has_errors() {
+                return Some(effects);
             }
+            if !effects.has_actions() {
+                return None;
+            }
+            let mut next = Effects::new();
+            effects.apply_strategy(board, strategy, &mut next);
+            effects = next;
         }
+    }
+
+    pub fn print_errors(&self) {
+        self.errors.iter().for_each(|error| println!("- {}", error));
     }
 }
 
@@ -78,18 +104,18 @@ impl fmt::Display for Effects {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.has_errors() {
             write!(f, "Errors:")?;
-            for error in &self.errors {
-                write!(f, "\n- {}", error)?;
-            }
+            self.errors
+                .iter()
+                .try_for_each(|error| write!(f, "\n- {}", error))?;
         }
         if self.has_actions() {
             if self.has_errors() {
                 write!(f, "\n\n")?;
             }
             write!(f, "Actions:")?;
-            for action in &self.actions {
-                write!(f, "\n- {}", action)?;
-            }
+            self.actions
+                .iter()
+                .try_for_each(|action| write!(f, "\n- {}", action))?;
         }
         Ok(())
     }

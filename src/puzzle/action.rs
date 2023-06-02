@@ -44,6 +44,10 @@ impl Action {
         self.set.is_empty() && self.erase.is_empty()
     }
 
+    pub fn has_strategy(&self, strategy: Strategy) -> bool {
+        self.strategy == strategy
+    }
+
     pub fn set(&mut self, cell: Cell, known: Known) {
         self.set.insert(cell, known);
     }

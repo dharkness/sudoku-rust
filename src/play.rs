@@ -4,7 +4,7 @@ use std::io::{stdout, Write};
 
 use crate::layout::{Cell, Known};
 use crate::printers::print_candidates;
-use crate::puzzle::{Board, Effects, Generator};
+use crate::puzzle::{Board, Effects, Generator, Parser};
 use crate::symbols::UNKNOWN_VALUE;
 
 const URL: &str = "https://www.sudokuwiki.org/sudoku.htm?bd=";
@@ -194,34 +194,16 @@ fn create_new_puzzle() -> Option<Board> {
             continue;
         }
 
-        let mut board = Board::new();
-        for (i, char) in input.chars().enumerate() {
-            if char == '.' || char == '0' {
-                continue;
-            }
+        let parser = Parser::new(true, false);
+        let (board, effects, failure) = parser.parse(&input);
 
-            if !('1'..='9').contains(&char) {
-                println!("\n==> Expected digit or period, got {}\n", char);
-                break 'input;
-            }
-
-            let cell = Cell::from(i);
-            let known = Known::from(char);
-            if !board.is_candidate(cell, known) {
-                println!("\n==> {} is not a candidate for {}\n", known, cell);
-                break 'input;
-            }
-
-            let mut effects = Effects::new();
-            board.set_known(cell, known, &mut effects);
-            if let Some(errors) = effects.apply_all(&mut board) {
-                println!("\n==> Invalid puzzle after setting {} to {}\n", cell, known);
-                print_candidates(&board);
-                println!();
-                errors.print_errors();
-                println!();
-                break 'input;
-            }
+        if let Some((cell, known)) = failure {
+            println!("\n==> Setting {} to {} caused errors\n", cell, known);
+            effects.print_errors();
+            println!();
+            print_candidates(&board);
+            println!();
+            break 'input;
         }
 
         return Some(board);

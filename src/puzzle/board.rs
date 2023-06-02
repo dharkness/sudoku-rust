@@ -199,7 +199,8 @@ impl Board {
         }
 
         for neighbor in (self.candidate_cells[known.usize()] & cell.neighbors()).iter() {
-            effects.add_erase(Strategy::Neighbor, neighbor, known);
+            self.remove_candidate(neighbor, known, effects);
+            // effects.add_erase(Strategy::Neighbor, neighbor, known);
         }
 
         true

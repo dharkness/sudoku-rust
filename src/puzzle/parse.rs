@@ -1,5 +1,64 @@
 use crate::layout::{Cell, Known};
-use crate::puzzle::{Board, Effects};
+use crate::puzzle::{Board, Effects, Error, Strategy};
+
+pub struct Parser {
+    stop_on_error: bool,
+    apply_deductions: bool,
+}
+
+impl Parser {
+    pub fn new(stop_on_error: bool, apply_deductions: bool) -> Self {
+        Parser {
+            stop_on_error,
+            apply_deductions,
+        }
+    }
+
+    pub fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>) {
+        let mut board = Board::new();
+        let mut effects = Effects::new();
+        let mut c = 0;
+
+        for char in input.chars() {
+            match char {
+                ' ' | '\r' | '\n' | '|' | '_' => continue,
+                '1'..='9' => {
+                    let cell = Cell::new(c);
+                    let known = Known::from(char);
+                    let current = board.value(cell);
+                    if current == known.value() {
+                        continue;
+                    }
+
+                    if board.is_candidate(cell, known) {
+                        board.set_known(cell, known, &mut effects);
+                        if effects.has_errors() && self.stop_on_error {
+                            return (board, effects, Some((cell, known)));
+                        }
+                        if self.apply_deductions {
+                            effects.apply_all(&mut board);
+                        } else {
+                            effects.apply_all_strategy(&mut board, Strategy::Neighbor);
+                        }
+                        effects.clear_actions();
+                    } else if self.stop_on_error {
+                        if current.is_known() {
+                            effects.add_error(Error::AlreadySolved(cell, known, current.known()));
+                        } else {
+                            effects.add_error(Error::NotCandidate(cell, known));
+                        }
+                        return (board, effects, Some((cell, known)));
+                    }
+                }
+                _ => (),
+            }
+
+            c += 1;
+        }
+
+        (board, effects, None)
+    }
+}
 
 /// Builds a new [`Board`] using the input string to set some cells,
 /// and returns it along with any [`Action`]s and [`Error`]s that arise.

@@ -15,5 +15,5 @@ pub use board::Board;
 pub use effects::Effects;
 pub use error::Error;
 pub use generate::Generator;
-pub use parse::parse_puzzle;
+pub use parse::{Parser, parse_puzzle};
 pub use strategy::Strategy;
