@@ -1,5 +1,4 @@
-use crate::layout::{House, Known};
-use crate::puzzle::{Action, Board, Effects, Strategy};
+use super::*;
 
 pub fn find_intersection_removals(board: &Board) -> Option<Effects> {
     let mut effects = Effects::new();

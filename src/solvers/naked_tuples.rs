@@ -1,7 +1,4 @@
-use crate::layout::{Cell, CellSet, House, KnownSet};
-use crate::puzzle::{Action, Board, Effects, Strategy};
-
-use super::distinct_tuples::*;
+use super::*;
 
 type CellCandidates = (Cell, KnownSet);
 

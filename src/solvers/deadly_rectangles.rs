@@ -1,5 +1,4 @@
-use crate::layout::{Cell, Coord, House, Known, Rectangle};
-use crate::puzzle::Board;
+use super::*;
 
 /// Finds all existing deadly rectangles in the board.
 ///
@@ -241,10 +240,10 @@ mod tests {
         for horiz_vert in 0..2 {
             for (from, to) in BLOCKS[horiz_vert] {
                 for ((tl, bl), (tr, br)) in CELL_COORDS[horiz_vert] {
-                    let tl = from.cell(tl.into());
-                    let br = to.cell(br.into());
-                    let bl = from.cell(bl.into());
-                    let tr = to.cell(tr.into());
+                    let tl = from.cell(tl);
+                    let br = to.cell(br);
+                    let bl = from.cell(bl);
+                    let tr = to.cell(tr);
 
                     let mut board = Board::new();
                     let mut effects = Effects::new();
@@ -295,12 +294,7 @@ mod tests {
         for horiz_vert in 0..2 {
             for (from, to) in BLOCKS[horiz_vert] {
                 for ((tl, bl), (tr, br)) in CELL_COORDS[horiz_vert] {
-                    test([
-                        from.cell(tl.into()),
-                        to.cell(tr.into()),
-                        to.cell(br.into()),
-                        from.cell(bl.into()),
-                    ]);
+                    test([from.cell(tl), to.cell(tr), to.cell(br), from.cell(bl)]);
                 }
             }
         }
