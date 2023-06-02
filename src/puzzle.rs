@@ -7,6 +7,7 @@ pub mod board;
 pub mod effects;
 pub mod error;
 pub mod generate;
+pub mod parse;
 pub mod strategy;
 
 pub use action::Action;
@@ -14,4 +15,5 @@ pub use board::Board;
 pub use effects::Effects;
 pub use error::Error;
 pub use generate::Generator;
+pub use parse::parse_puzzle;
 pub use strategy::Strategy;

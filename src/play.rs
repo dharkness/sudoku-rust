@@ -39,10 +39,10 @@ pub fn play() {
         match input[0] {
             "N" => {
                 if let Some(board) = create_new_puzzle() {
-                    boards.push(board)
+                    boards.push(board);
+                    println!();
+                    show = true
                 }
-                println!();
-                show = true
             }
             "G" => {
                 println!();
@@ -183,7 +183,11 @@ fn create_new_puzzle() -> Option<Board> {
         }
         if input.len() > 81 {
             println!(
-                "\n==> Expected 81 digits, got {} - |{}|\n",
+                concat!(
+                    "\n==> Expected at most 81 digits, got {}\n\n",
+                    "{}\n",
+                    "        |        |        |        |        |        |        |        |        |\n",
+                ),
                 input.len(),
                 input
             );
@@ -212,8 +216,10 @@ fn create_new_puzzle() -> Option<Board> {
             board.set_known(cell, known, &mut effects);
             if let Some(errors) = effects.apply_all(&mut board) {
                 println!("\n==> Invalid puzzle after setting {} to {}\n", cell, known);
+                print_candidates(&board);
                 println!();
                 errors.print_errors();
+                println!();
                 break 'input;
             }
         }
