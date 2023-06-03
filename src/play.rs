@@ -10,7 +10,7 @@ use crate::symbols::UNKNOWN_VALUE;
 
 const URL: &str = "https://www.sudokuwiki.org/sudoku.htm?bd=";
 
-const SOLVERS: [Solver; 7] = [
+const SOLVERS: [Solver; 8] = [
     crate::solvers::intersection_removals::find_intersection_removals,
     crate::solvers::naked_tuples::find_naked_pairs,
     crate::solvers::naked_tuples::find_naked_triples,
@@ -18,8 +18,9 @@ const SOLVERS: [Solver; 7] = [
     crate::solvers::hidden_tuples::find_hidden_pairs,
     crate::solvers::hidden_tuples::find_hidden_triples,
     crate::solvers::hidden_tuples::find_hidden_quads,
+    crate::solvers::fish::x_wings,
 ];
-const SOLVER_LABELS: [&str; 7] = [
+const SOLVER_LABELS: [&str; 8] = [
     "intersection removal",
     "naked pair",
     "naked triple",
@@ -27,6 +28,7 @@ const SOLVER_LABELS: [&str; 7] = [
     "hidden pair",
     "hidden triple",
     "hidden quad",
+    "x-wing",
 ];
 
 pub fn play() {
@@ -291,3 +293,19 @@ fn pluralize(count: usize, label: &str) -> String {
         format!("{} {}s", count, label)
     }
 }
+/*
+e c1 1
+e c2 1
+e c4 1
+e c5 1
+e c7 1
+e c8 1
+e c9 1
+e d1 1
+e d2 1
+e d4 1
+e d5 1
+e d7 1
+e d8 1
+e d9 1
+*/

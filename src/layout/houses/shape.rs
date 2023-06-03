@@ -46,6 +46,17 @@ impl Shape {
     }
 }
 
+impl From<char> for Shape {
+    fn from(index: char) -> Self {
+        match index {
+            'R' => Shape::Row,
+            'C' => Shape::Column,
+            'B' => Shape::Block,
+            _ => panic!("Invalid shape type: {}", index),
+        }
+    }
+}
+
 impl fmt::Display for Shape {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.label())

@@ -46,4 +46,7 @@ pub enum Strategy {
     /// Four candidates remaining in four cells in a house
     /// may remove all other candidates in those cells.
     HiddenQuad,
+
+    /// TODO: Document X-Wing
+    XWing,
 }

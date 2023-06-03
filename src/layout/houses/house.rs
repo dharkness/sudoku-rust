@@ -1,7 +1,9 @@
 use std::cmp::Ordering;
 use std::fmt;
+use std::ops::{Add, Neg};
+use std::slice::Iter;
 
-use crate::layout::{Cell, CellSet, Coord, Shape};
+use crate::layout::{Cell, CellSet, Coord, HouseSet, Shape};
 
 /// One of the nine rows, columns, or blocks on the board.
 #[derive(Clone, Copy, Debug, Default)]
@@ -72,6 +74,20 @@ impl House {
         self.shape.cells(self.coord)
     }
 
+    pub fn crossing_houses(&self, cells: CellSet) -> HouseSet {
+        match self.shape() {
+            Shape::Row => cells
+                .iter()
+                .fold(HouseSet::empty(Shape::Column), |acc, cell| {
+                    acc + cell.column_coord()
+                }),
+            Shape::Column => cells.iter().fold(HouseSet::empty(Shape::Row), |acc, cell| {
+                acc + cell.row_coord()
+            }),
+            Shape::Block => panic!("Blocks do not have crossing houses"),
+        }
+    }
+
     pub fn intersect(&self, other: House) -> CellSet {
         INTERSECTIONS[self.shape.usize()][self.coord.usize()][other.shape.usize()]
             [other.coord.usize()]
@@ -102,6 +118,28 @@ impl House {
     }
 }
 
+impl From<&str> for House {
+    fn from(label: &str) -> Self {
+        if label.len() != 2 {
+            panic!("Invalid house: \"{}\"; must (R | C | B) and a digit", label);
+        }
+        let mut chars = label.chars();
+        let shape = chars.next().unwrap();
+        if shape != 'R' && shape != 'C' && shape != 'B' {
+            panic!("Invalid house shape: \"{}\"; must be (R | C | B)", label);
+        }
+        let coord = chars.next().unwrap() as u8 - b'1';
+        if coord > 9 {
+            panic!("Invalid house coord: \"{}\"; must be 1-9", label);
+        }
+
+        Self {
+            shape: Shape::from(shape),
+            coord: Coord::from(coord),
+        }
+    }
+}
+
 impl PartialEq<Self> for House {
     fn eq(&self, other: &Self) -> bool {
         self.shape == other.shape && self.coord == other.coord
@@ -116,6 +154,22 @@ impl PartialOrd<Self> for House {
             Some(Ordering::Equal) => self.coord.partial_cmp(&other.coord),
             result => result,
         }
+    }
+}
+
+impl Add<House> for House {
+    type Output = HouseSet;
+
+    fn add(self, rhs: House) -> HouseSet {
+        HouseSet::empty(self.shape) + self + rhs
+    }
+}
+
+impl Neg for House {
+    type Output = HouseSet;
+
+    fn neg(self) -> HouseSet {
+        HouseSet::full(self.shape) - self
     }
 }
 
@@ -281,6 +335,7 @@ mod tests {
     use super::*;
     use crate::layout::cells::cell_set::cells;
     use crate::layout::houses::coord::coord;
+    use crate::layout::houses::house_set::houses;
 
     #[test]
     fn houses() {
@@ -318,46 +373,64 @@ mod tests {
 
     #[test]
     fn intersect() {
-        assert_eq!(cells!("A1 A2 A3"), row!(0).intersect(block!(0)));
-        assert_eq!(cells!("A1 A2 A3"), row!(0).intersect(block!(0)));
+        assert_eq!(cells!("A1 A2 A3"), row!(1).intersect(block!(1)));
+        assert_eq!(cells!("A1 A2 A3"), row!(1).intersect(block!(1)));
     }
 
     #[test]
     fn row_cells() {
-        assert_eq!(cells!("A1 A2 A3 A4 A5 A6 A7 A8 A9"), row!(0).cells());
-        assert_eq!(cells!("B1 B2 B3 B4 B5 B6 B7 B8 B9"), row!(1).cells());
-        assert_eq!(cells!("C1 C2 C3 C4 C5 C6 C7 C8 C9"), row!(2).cells());
-        assert_eq!(cells!("D1 D2 D3 D4 D5 D6 D7 D8 D9"), row!(3).cells());
-        assert_eq!(cells!("E1 E2 E3 E4 E5 E6 E7 E8 E9"), row!(4).cells());
-        assert_eq!(cells!("F1 F2 F3 F4 F5 F6 F7 F8 F9"), row!(5).cells());
-        assert_eq!(cells!("G1 G2 G3 G4 G5 G6 G7 G8 G9"), row!(6).cells());
-        assert_eq!(cells!("H1 H2 H3 H4 H5 H6 H7 H8 H9"), row!(7).cells());
-        assert_eq!(cells!("J1 J2 J3 J4 J5 J6 J7 J8 J9"), row!(8).cells());
+        assert_eq!(cells!("A1 A2 A3 A4 A5 A6 A7 A8 A9"), row!(1).cells());
+        assert_eq!(cells!("B1 B2 B3 B4 B5 B6 B7 B8 B9"), row!(2).cells());
+        assert_eq!(cells!("C1 C2 C3 C4 C5 C6 C7 C8 C9"), row!(3).cells());
+        assert_eq!(cells!("D1 D2 D3 D4 D5 D6 D7 D8 D9"), row!(4).cells());
+        assert_eq!(cells!("E1 E2 E3 E4 E5 E6 E7 E8 E9"), row!(5).cells());
+        assert_eq!(cells!("F1 F2 F3 F4 F5 F6 F7 F8 F9"), row!(6).cells());
+        assert_eq!(cells!("G1 G2 G3 G4 G5 G6 G7 G8 G9"), row!(7).cells());
+        assert_eq!(cells!("H1 H2 H3 H4 H5 H6 H7 H8 H9"), row!(8).cells());
+        assert_eq!(cells!("J1 J2 J3 J4 J5 J6 J7 J8 J9"), row!(9).cells());
     }
 
     #[test]
     fn column_cells() {
-        assert_eq!(cells!("A1 B1 C1 D1 E1 F1 G1 H1 J1"), col!(0).cells());
-        assert_eq!(cells!("A2 B2 C2 D2 E2 F2 G2 H2 J2"), col!(1).cells());
-        assert_eq!(cells!("A3 B3 C3 D3 E3 F3 G3 H3 J3"), col!(2).cells());
-        assert_eq!(cells!("A4 B4 C4 D4 E4 F4 G4 H4 J4"), col!(3).cells());
-        assert_eq!(cells!("A5 B5 C5 D5 E5 F5 G5 H5 J5"), col!(4).cells());
-        assert_eq!(cells!("A6 B6 C6 D6 E6 F6 G6 H6 J6"), col!(5).cells());
-        assert_eq!(cells!("A7 B7 C7 D7 E7 F7 G7 H7 J7"), col!(6).cells());
-        assert_eq!(cells!("A8 B8 C8 D8 E8 F8 G8 H8 J8"), col!(7).cells());
-        assert_eq!(cells!("A9 B9 C9 D9 E9 F9 G9 H9 J9"), col!(8).cells());
+        assert_eq!(cells!("A1 B1 C1 D1 E1 F1 G1 H1 J1"), col!(1).cells());
+        assert_eq!(cells!("A2 B2 C2 D2 E2 F2 G2 H2 J2"), col!(2).cells());
+        assert_eq!(cells!("A3 B3 C3 D3 E3 F3 G3 H3 J3"), col!(3).cells());
+        assert_eq!(cells!("A4 B4 C4 D4 E4 F4 G4 H4 J4"), col!(4).cells());
+        assert_eq!(cells!("A5 B5 C5 D5 E5 F5 G5 H5 J5"), col!(5).cells());
+        assert_eq!(cells!("A6 B6 C6 D6 E6 F6 G6 H6 J6"), col!(6).cells());
+        assert_eq!(cells!("A7 B7 C7 D7 E7 F7 G7 H7 J7"), col!(7).cells());
+        assert_eq!(cells!("A8 B8 C8 D8 E8 F8 G8 H8 J8"), col!(8).cells());
+        assert_eq!(cells!("A9 B9 C9 D9 E9 F9 G9 H9 J9"), col!(9).cells());
     }
 
     #[test]
     fn block_cells() {
-        assert_eq!(cells!("A1 A2 A3 B1 B2 B3 C1 C2 C3"), block!(0).cells());
-        assert_eq!(cells!("A4 A5 A6 B4 B5 B6 C4 C5 C6"), block!(1).cells());
-        assert_eq!(cells!("A7 A8 A9 B7 B8 B9 C7 C8 C9"), block!(2).cells());
-        assert_eq!(cells!("D1 D2 D3 E1 E2 E3 F1 F2 F3"), block!(3).cells());
-        assert_eq!(cells!("D4 D5 D6 E4 E5 E6 F4 F5 F6"), block!(4).cells());
-        assert_eq!(cells!("D7 D8 D9 E7 E8 E9 F7 F8 F9"), block!(5).cells());
-        assert_eq!(cells!("G1 G2 G3 H1 H2 H3 J1 J2 J3"), block!(6).cells());
-        assert_eq!(cells!("G4 G5 G6 H4 H5 H6 J4 J5 J6"), block!(7).cells());
-        assert_eq!(cells!("G7 G8 G9 H7 H8 H9 J7 J8 J9"), block!(8).cells());
+        assert_eq!(cells!("A1 A2 A3 B1 B2 B3 C1 C2 C3"), block!(1).cells());
+        assert_eq!(cells!("A4 A5 A6 B4 B5 B6 C4 C5 C6"), block!(2).cells());
+        assert_eq!(cells!("A7 A8 A9 B7 B8 B9 C7 C8 C9"), block!(3).cells());
+        assert_eq!(cells!("D1 D2 D3 E1 E2 E3 F1 F2 F3"), block!(4).cells());
+        assert_eq!(cells!("D4 D5 D6 E4 E5 E6 F4 F5 F6"), block!(5).cells());
+        assert_eq!(cells!("D7 D8 D9 E7 E8 E9 F7 F8 F9"), block!(6).cells());
+        assert_eq!(cells!("G1 G2 G3 H1 H2 H3 J1 J2 J3"), block!(7).cells());
+        assert_eq!(cells!("G4 G5 G6 H4 H5 H6 J4 J5 J6"), block!(8).cells());
+        assert_eq!(cells!("G7 G8 G9 H7 H8 H9 J7 J8 J9"), block!(9).cells());
+    }
+
+    #[test]
+    fn columns_cross_rows() {
+        let main = row!(2);
+        let cells = cells!("B1 B2");
+        let got = main.crossing_houses(cells);
+
+        assert_eq!(houses!("C1 C2"), got);
+    }
+
+    #[test]
+    fn rows_cross_columns() {
+        let main = col!(6);
+        let cells = cells!("C6 F6");
+        let got = main.crossing_houses(cells);
+
+        assert_eq!(houses!("R3 R6"), got);
     }
 }

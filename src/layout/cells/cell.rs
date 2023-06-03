@@ -42,24 +42,36 @@ impl Cell {
         HOUSES[self.usize()][Shape::Row.usize()]
     }
 
+    pub const fn row_coord(&self) -> Coord {
+        HOUSE_COORDS[self.usize()][Shape::Row.usize()]
+    }
+
     pub const fn column(&self) -> House {
         HOUSES[self.usize()][Shape::Column.usize()]
+    }
+
+    pub const fn column_coord(&self) -> Coord {
+        HOUSE_COORDS[self.usize()][Shape::Column.usize()]
     }
 
     pub const fn block(&self) -> House {
         HOUSES[self.usize()][Shape::Block.usize()]
     }
 
+    pub const fn block_coord(&self) -> Coord {
+        HOUSE_COORDS[self.usize()][Shape::Block.usize()]
+    }
+
     pub const fn coord_in_row(&self) -> Coord {
-        HOUSES_COORDS[self.usize()][Shape::Row.usize()]
+        COORDS_IN_HOUSES[self.usize()][Shape::Row.usize()]
     }
 
     pub const fn coord_in_column(&self) -> Coord {
-        HOUSES_COORDS[self.usize()][Shape::Column.usize()]
+        COORDS_IN_HOUSES[self.usize()][Shape::Column.usize()]
     }
 
     pub const fn coord_in_block(&self) -> Coord {
-        HOUSES_COORDS[self.usize()][Shape::Block.usize()]
+        COORDS_IN_HOUSES[self.usize()][Shape::Block.usize()]
     }
 
     pub const fn neighbors(&self) -> CellSet {
@@ -136,24 +148,37 @@ macro_rules! cell {
 #[allow(unused_imports)]
 pub(crate) use cell;
 
-const HOUSES: [[House; 3]; 81] = {
-    let mut houses = [[House::new(Shape::Row, Coord::new(0)); 3]; 81];
+/// The coordinates of every cell's row, column and block.
+const HOUSE_COORDS: [[Coord; 3]; 81] = {
+    let mut coords = [[Coord::new(0); 3]; 81];
     let mut cell = 0;
     while cell < 81 {
         let row = cell / 9;
         let column = cell % 9;
         let block = (row / 3) * 3 + (column / 3);
+        coords[cell as usize] = [Coord::new(row), Coord::new(column), Coord::new(block)];
+        cell += 1;
+    }
+    coords
+};
+
+/// Every cell's row, column and block.
+const HOUSES: [[House; 3]; 81] = {
+    let mut houses = [[House::new(Shape::Row, Coord::new(0)); 3]; 81];
+    let mut cell = 0;
+    while cell < 81 {
         houses[cell as usize] = [
-            House::row(Coord::new(row)),
-            House::column(Coord::new(column)),
-            House::block(Coord::new(block)),
+            House::row(HOUSE_COORDS[cell as usize][Shape::Row.usize()]),
+            House::column(HOUSE_COORDS[cell as usize][Shape::Column.usize()]),
+            House::block(HOUSE_COORDS[cell as usize][Shape::Block.usize()]),
         ];
         cell += 1;
     }
     houses
 };
 
-const HOUSES_COORDS: [[Coord; 3]; 81] = {
+/// The coordinates of every cell within its row, column and block.
+const COORDS_IN_HOUSES: [[Coord; 3]; 81] = {
     let mut coords = [[Coord::new(0); 3]; 81];
     let mut cell = 0;
     while cell < 81 {

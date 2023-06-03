@@ -6,7 +6,7 @@ pub struct Coord(u8);
 /// Identifies a cell in a house.
 impl Coord {
     pub const fn new(coord: u8) -> Self {
-        debug_assert!(coord <= 8);
+        debug_assert!(coord < 9);
         Self(coord)
     }
 
@@ -16,6 +16,10 @@ impl Coord {
 
     pub const fn usize(&self) -> usize {
         self.0 as usize
+    }
+
+    pub const fn bit(&self) -> u16 {
+        1 << self.0
     }
 
     pub const fn label(&self) -> char {
@@ -67,7 +71,7 @@ impl fmt::Display for Coord {
 #[allow(unused_macros)]
 macro_rules! coord {
     ($c:expr) => {
-        Coord::new($c as u8)
+        Coord::new($c as u8 - 1)
     };
 }
 

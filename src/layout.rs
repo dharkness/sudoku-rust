@@ -5,5 +5,5 @@ pub mod houses;
 pub mod values;
 
 pub use cells::{Bits, Cell, CellSet, Rectangle};
-pub use houses::{Coord, House, Shape};
+pub use houses::{Coord, House, HouseSet, Shape};
 pub use values::{Known, KnownSet, Value};
