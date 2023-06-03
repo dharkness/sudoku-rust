@@ -18,7 +18,7 @@ pub fn print_values(board: &Board) {
 
 pub fn print_candidates(board: &Board) {
     println!("   ¹   ²   ³     ⁴   ⁵   ⁶     ⁷   ⁸   ⁹");
-    for (r, coord) in ROW_COORDS.iter().enumerate() {
+    ROW_COORDS.iter().enumerate().for_each(|(r, coord)| {
         let row = House::row(r.into());
         let mut lines = [
             String::from("  "),
@@ -45,14 +45,10 @@ pub fn print_candidates(board: &Board) {
             }
             if c % 3 == 2 {
                 if c < 8 {
-                    for line in lines.iter_mut().take(3) {
-                        line.push_str(" | ");
-                    }
+                    lines.iter_mut().for_each(|line| line.push_str(" | "));
                 }
             } else {
-                for line in lines.iter_mut().take(3) {
-                    line.push(' ');
-                }
+                lines.iter_mut().for_each(|line| line.push(' '));
             }
         }
         println!("{}", lines[0]);
@@ -65,6 +61,6 @@ pub fn print_candidates(board: &Board) {
         } else {
             println!("              |             |");
         }
-    }
+    });
     println!("   ₁   ₂   ₃     ₄   ₅   ₆     ₇   ₈   ₉");
 }
