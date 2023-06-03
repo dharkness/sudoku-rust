@@ -1,4 +1,5 @@
 use super::*;
+use itertools::Itertools;
 
 type KnownCandidates = (Known, CellSet);
 
@@ -6,22 +7,26 @@ pub fn find_hidden_pairs(board: &Board) -> Option<Effects> {
     let mut effects = Effects::new();
 
     for house in House::all() {
-        let cell_candidates: Vec<KnownCandidates> = Known::ALL
+        Known::ALL
             .into_iter()
-            .map(|k| (k, house.cells() & board.candidate_cells(k)))
-            .filter(|(_, candidates)| candidates.size() == 2)
-            .collect::<Vec<_>>();
+            .map(|k| (k, board.house_candidate_cells(*house, k)))
+            .filter(|(_, cs)| cs.size() == 2)
+            .combinations(2)
+            .for_each(|candidates| {
+                let cells: CellSet = candidates.iter().map(|(_, cs)| *cs).collect();
+                if cells.size() != 2 {
+                    return;
+                }
 
-        for candidates in distinct_pairs(&cell_candidates) {
-            let cell_sets = vec![candidates.0 .1, candidates.1 .1];
-            let cells = cell_sets.iter().fold(CellSet::empty(), |acc, cs| acc | *cs);
-            if cells.size() != 2 {
-                continue;
-            }
-
-            let knowns = candidates.0 .0 + candidates.1 .0;
-            erase_other_knowns_from_cells(board, cells, knowns, Strategy::NakedPair, &mut effects);
-        }
+                let knowns: KnownSet = candidates.iter().map(|(k, _)| *k).collect();
+                erase_other_knowns_from_cells(
+                    board,
+                    cells,
+                    knowns,
+                    Strategy::NakedPair,
+                    &mut effects,
+                );
+            });
     }
 
     if effects.has_actions() {
@@ -147,7 +152,7 @@ mod tests {
 
         let cells = cells!("A1 A2 A4 A5 A6 A8 A9");
         let knowns = knowns!("1 2");
-        board.remove_many_candidates(cells, knowns, &mut effects);
+        board.remove_candidates_from_cells(cells, knowns, &mut effects);
 
         find_hidden_pairs(&board).unwrap().apply_all(&mut board);
 
@@ -165,7 +170,7 @@ mod tests {
 
         let cells = cells!("A1 A2 A4 A6 A8 A9");
         let knowns = knowns!("1 2 3");
-        board.remove_many_candidates(cells, knowns, &mut effects);
+        board.remove_candidates_from_cells(cells, knowns, &mut effects);
 
         find_hidden_triples(&board).unwrap().apply_all(&mut board);
 
@@ -184,7 +189,7 @@ mod tests {
 
         let cells = cells!("A2 A4 A6 A8 A9");
         let knowns = knowns!("1 2 3 4");
-        board.remove_many_candidates(cells, knowns, &mut effects);
+        board.remove_candidates_from_cells(cells, knowns, &mut effects);
 
         find_hidden_quads(&board).unwrap().apply_all(&mut board);
 

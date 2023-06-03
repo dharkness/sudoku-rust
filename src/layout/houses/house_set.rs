@@ -16,10 +16,7 @@ pub struct HouseSet {
 
 impl HouseSet {
     pub const fn empty(shape: Shape) -> Self {
-        Self {
-            shape: shape,
-            coords: 0,
-        }
+        Self { shape, coords: 0 }
     }
 
     pub const fn full(shape: Shape) -> Self {
@@ -202,18 +199,82 @@ impl From<House> for HouseSet {
 
 impl From<&str> for HouseSet {
     fn from(labels: &str) -> Self {
+        labels.split(' ').map(House::from).union() as HouseSet
+    }
+}
+
+pub trait HouseIteratorUnion {
+    fn union(self) -> HouseSet;
+}
+
+impl<I> HouseIteratorUnion for I
+where
+    I: Iterator<Item = House>,
+{
+    fn union(self) -> HouseSet {
+        self.fold((true, HouseSet::empty(Shape::Row)), |(first, acc), h| {
+            (false, if first { h.into() } else { acc + h })
+        })
+        .1
+    }
+}
+
+pub trait HouseSetIteratorUnion {
+    fn union(self) -> HouseSet;
+}
+
+impl<I> HouseSetIteratorUnion for I
+where
+    I: Iterator<Item = HouseSet>,
+{
+    fn union(self) -> HouseSet {
+        self.reduce(|acc, set| acc | set)
+            .unwrap_or(HouseSet::empty(Shape::Row))
+    }
+}
+
+pub trait HouseSetIteratorIntersection {
+    fn intersection(self) -> HouseSet;
+}
+
+impl<I> HouseSetIteratorIntersection for I
+where
+    I: Iterator<Item = HouseSet>,
+{
+    fn intersection(self) -> HouseSet {
+        self.reduce(|acc, set| acc & set)
+            .unwrap_or(HouseSet::empty(Shape::Row))
+    }
+}
+
+impl FromIterator<House> for HouseSet {
+    fn from_iter<I: IntoIterator<Item = House>>(iter: I) -> Self {
+        let mut set = HouseSet::empty(Shape::Row);
         let mut first = true;
-        labels
-            .split(' ')
-            .fold(HouseSet::empty(Shape::Row), |set, label| {
-                let house = House::from(label);
-                if first {
-                    first = false;
-                    HouseSet::empty(house.shape()) + house
-                } else {
-                    set + house
-                }
-            })
+        for house in iter {
+            if first {
+                set = HouseSet::empty(house.shape());
+                first = false;
+            }
+            set += house;
+        }
+        set
+    }
+}
+
+impl FromIterator<HouseSet> for HouseSet {
+    fn from_iter<I: IntoIterator<Item = HouseSet>>(iter: I) -> Self {
+        let mut union = HouseSet::empty(Shape::Row);
+        let mut first = true;
+        for set in iter {
+            if first {
+                union = set;
+                first = false;
+            } else {
+                union |= set;
+            }
+        }
+        union
     }
 }
 

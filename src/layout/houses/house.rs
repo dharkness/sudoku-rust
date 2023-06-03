@@ -1,7 +1,6 @@
 use std::cmp::Ordering;
 use std::fmt;
 use std::ops::{Add, Neg};
-use std::slice::Iter;
 
 use crate::layout::{Cell, CellSet, Coord, HouseSet, Shape};
 
@@ -41,7 +40,6 @@ impl House {
         BLOCKS[coord.usize()]
     }
 
-    // TODO Add explicit const default() so this can stay private
     pub const fn new(shape: Shape, coord: Coord) -> Self {
         Self { shape, coord }
     }

@@ -5,5 +5,7 @@ pub mod known_set;
 pub mod value;
 
 pub use known::Known;
-pub use known_set::KnownSet;
+pub use known_set::{
+    KnownIteratorUnion, KnownSet, KnownSetIteratorIntersection, KnownSetIteratorUnion,
+};
 pub use value::Value;

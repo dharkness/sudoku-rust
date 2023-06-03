@@ -47,6 +47,7 @@ pub enum Strategy {
     /// may remove all other candidates in those cells.
     HiddenQuad,
 
-    /// TODO: Document X-Wing
     XWing,
+    Swordfish,
+    Jellyfish,
 }

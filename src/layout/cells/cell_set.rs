@@ -181,9 +181,66 @@ impl From<House> for CellSet {
 
 impl From<&str> for CellSet {
     fn from(labels: &str) -> CellSet {
-        labels
-            .split(' ')
-            .fold(CellSet::empty(), |set, label| set + Cell::from(label))
+        labels.split(' ').map(Cell::from).union() as CellSet
+    }
+}
+
+pub trait CellIteratorUnion {
+    fn union(self) -> CellSet;
+}
+
+impl<I> CellIteratorUnion for I
+where
+    I: Iterator<Item = Cell>,
+{
+    fn union(self) -> CellSet {
+        self.fold(CellSet::empty(), |acc, c| acc + c)
+    }
+}
+
+pub trait CellSetIteratorUnion {
+    fn union(self) -> CellSet;
+}
+
+impl<I> CellSetIteratorUnion for I
+where
+    I: Iterator<Item = CellSet>,
+{
+    fn union(self) -> CellSet {
+        self.fold(CellSet::empty(), |acc, c| acc | c)
+    }
+}
+
+pub trait CellSetIteratorIntersection {
+    fn intersection(self) -> CellSet;
+}
+
+impl<I> CellSetIteratorIntersection for I
+where
+    I: Iterator<Item = CellSet>,
+{
+    fn intersection(self) -> CellSet {
+        self.fold(CellSet::full(), |acc, c| acc & c)
+    }
+}
+
+impl FromIterator<Cell> for CellSet {
+    fn from_iter<I: IntoIterator<Item = Cell>>(iter: I) -> Self {
+        let mut set = CellSet::empty();
+        for house in iter {
+            set += house;
+        }
+        set
+    }
+}
+
+impl FromIterator<CellSet> for CellSet {
+    fn from_iter<I: IntoIterator<Item = CellSet>>(iter: I) -> Self {
+        let mut union = CellSet::empty();
+        for set in iter {
+            union |= set;
+        }
+        union
     }
 }
 

@@ -158,7 +158,7 @@ mod tests {
         let mut effects = Effects::new();
 
         let knowns = knowns!("1 2 3 4 5 6 7");
-        board.remove_many_candidates(cells!("A1 A2"), knowns, &mut effects);
+        board.remove_candidates_from_cells(cells!("A1 A2"), knowns, &mut effects);
 
         find_naked_pairs(&board).unwrap().apply_all(&mut board);
 
@@ -175,7 +175,7 @@ mod tests {
         let mut effects = Effects::new();
 
         let knowns = knowns!("1 2 3 4 5 6");
-        board.remove_many_candidates(cells!("A1 A2 A5"), knowns, &mut effects);
+        board.remove_candidates_from_cells(cells!("A1 A2 A5"), knowns, &mut effects);
 
         find_naked_triples(&board).unwrap().apply_all(&mut board);
 
@@ -191,7 +191,7 @@ mod tests {
         let mut effects = Effects::new();
 
         let knowns = knowns!("1 2 3 4 5");
-        board.remove_many_candidates(cells!("A1 A2 A5 A8"), knowns, &mut effects);
+        board.remove_candidates_from_cells(cells!("A1 A2 A5 A8"), knowns, &mut effects);
 
         find_naked_quads(&board).unwrap().apply_all(&mut board);
 

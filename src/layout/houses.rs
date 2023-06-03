@@ -11,5 +11,7 @@ pub mod shape;
 
 pub use coord::Coord;
 pub use house::House;
-pub use house_set::HouseSet;
+pub use house_set::{
+    HouseIteratorUnion, HouseSet, HouseSetIteratorIntersection, HouseSetIteratorUnion,
+};
 pub use shape::Shape;

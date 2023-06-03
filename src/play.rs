@@ -10,7 +10,7 @@ use crate::symbols::UNKNOWN_VALUE;
 
 const URL: &str = "https://www.sudokuwiki.org/sudoku.htm?bd=";
 
-const SOLVERS: [Solver; 8] = [
+const SOLVERS: [Solver; 10] = [
     crate::solvers::intersection_removals::find_intersection_removals,
     crate::solvers::naked_tuples::find_naked_pairs,
     crate::solvers::naked_tuples::find_naked_triples,
@@ -18,9 +18,11 @@ const SOLVERS: [Solver; 8] = [
     crate::solvers::hidden_tuples::find_hidden_pairs,
     crate::solvers::hidden_tuples::find_hidden_triples,
     crate::solvers::hidden_tuples::find_hidden_quads,
-    crate::solvers::fish::x_wings,
+    crate::solvers::fish::find_x_wings,
+    crate::solvers::fish::find_swordfish,
+    crate::solvers::fish::find_jellyfish,
 ];
-const SOLVER_LABELS: [&str; 8] = [
+const SOLVER_LABELS: [&str; 10] = [
     "intersection removal",
     "naked pair",
     "naked triple",
@@ -29,6 +31,8 @@ const SOLVER_LABELS: [&str; 8] = [
     "hidden triple",
     "hidden quad",
     "x-wing",
+    "swordfish",
+    "jellyfish",
 ];
 
 pub fn play() {
@@ -289,23 +293,11 @@ fn create_new_puzzle() -> Option<Board> {
 fn pluralize(count: usize, label: &str) -> String {
     if count == 1 {
         format!("{} {}", count, label)
+    } else if ES_SUFFIXES.iter().any(|suffix| label.ends_with(suffix)) {
+        format!("{} {}es", count, label)
     } else {
         format!("{} {}s", count, label)
     }
 }
-/*
-e c1 1
-e c2 1
-e c4 1
-e c5 1
-e c7 1
-e c8 1
-e c9 1
-e d1 1
-e d2 1
-e d4 1
-e d5 1
-e d7 1
-e d8 1
-e d9 1
-*/
+
+const ES_SUFFIXES: [&str; 1] = ["sh"];

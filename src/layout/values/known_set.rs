@@ -48,7 +48,7 @@ impl KnownSet {
         self.0 == FULL
     }
 
-    // FACTOR If u128.count_ones() is fast, no need to track size.
+    // FACTOR If u16.count_ones() is fast, no need to track size.
     pub const fn size(&self) -> Size {
         (self.0 >> SIZE_SHIFT) as Size
     }
@@ -150,9 +150,66 @@ impl KnownSet {
 
 impl From<&str> for KnownSet {
     fn from(labels: &str) -> KnownSet {
-        labels
-            .split(' ')
-            .fold(KnownSet::empty(), |set, label| set + Known::from(label))
+        labels.split(' ').map(Known::from).union()
+    }
+}
+
+pub trait KnownIteratorUnion {
+    fn union(self) -> KnownSet;
+}
+
+impl<I> KnownIteratorUnion for I
+where
+    I: Iterator<Item = Known>,
+{
+    fn union(self) -> KnownSet {
+        self.fold(KnownSet::empty(), |acc, h| acc + h)
+    }
+}
+
+pub trait KnownSetIteratorUnion {
+    fn union(self) -> KnownSet;
+}
+
+impl<I> KnownSetIteratorUnion for I
+where
+    I: Iterator<Item = KnownSet>,
+{
+    fn union(self) -> KnownSet {
+        self.fold(KnownSet::empty(), |acc, h| acc | h)
+    }
+}
+
+pub trait KnownSetIteratorIntersection {
+    fn intersection(self) -> KnownSet;
+}
+
+impl<I> KnownSetIteratorIntersection for I
+where
+    I: Iterator<Item = KnownSet>,
+{
+    fn intersection(self) -> KnownSet {
+        self.fold(KnownSet::full(), |acc, h| acc & h)
+    }
+}
+
+impl FromIterator<Known> for KnownSet {
+    fn from_iter<I: IntoIterator<Item = Known>>(iter: I) -> Self {
+        let mut set = KnownSet::empty();
+        for house in iter {
+            set += house;
+        }
+        set
+    }
+}
+
+impl FromIterator<KnownSet> for KnownSet {
+    fn from_iter<I: IntoIterator<Item = KnownSet>>(iter: I) -> Self {
+        let mut union = KnownSet::empty();
+        for set in iter {
+            union |= set;
+        }
+        union
     }
 }
 
@@ -422,8 +479,8 @@ mod tests {
 
     #[test]
     fn not() {
-        assert_eq!(true, !KnownSet::empty());
-        assert_eq!(false, !KnownSet::full());
+        assert!(!KnownSet::empty());
+        assert!(KnownSet::full());
     }
 
     #[test]

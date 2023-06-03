@@ -83,6 +83,10 @@ impl Board {
         self.candidate_cells[known.usize()]
     }
 
+    pub fn house_candidate_cells(&self, house: House, known: Known) -> CellSet {
+        house.cells() & self.candidate_cells(known)
+    }
+
     pub fn remove_candidate(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> bool {
         let knowns = &mut self.candidate_knowns[cell.usize()];
         if knowns[known] {
@@ -138,7 +142,7 @@ impl Board {
         })
     }
 
-    pub fn remove_many_candidate(
+    pub fn remove_candidate_from_cells(
         &mut self,
         cells: CellSet,
         known: Known,
@@ -149,7 +153,7 @@ impl Board {
         })
     }
 
-    pub fn remove_many_candidates(
+    pub fn remove_candidates_from_cells(
         &mut self,
         cells: CellSet,
         knowns: KnownSet,

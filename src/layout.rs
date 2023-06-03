@@ -4,6 +4,14 @@ pub mod cells;
 pub mod houses;
 pub mod values;
 
-pub use cells::{Bits, Cell, CellSet, Rectangle};
-pub use houses::{Coord, House, HouseSet, Shape};
-pub use values::{Known, KnownSet, Value};
+pub use cells::{
+    Bits, Cell, CellIteratorUnion, CellSet, CellSetIteratorIntersection, CellSetIteratorUnion,
+    Rectangle,
+};
+pub use houses::{
+    Coord, House, HouseIteratorUnion, HouseSet, HouseSetIteratorIntersection,
+    HouseSetIteratorUnion, Shape,
+};
+pub use values::{
+    Known, KnownIteratorUnion, KnownSet, KnownSetIteratorIntersection, KnownSetIteratorUnion, Value,
+};
