@@ -1,123 +1,49 @@
 use super::*;
 
-type CellCandidates = (Cell, KnownSet);
-
 pub fn find_naked_pairs(board: &Board) -> Option<Effects> {
-    let mut effects = Effects::new();
-
-    for house in House::all() {
-        let cell_candidates: Vec<CellCandidates> = house
-            .cells()
-            .iter()
-            .map(|cell| (cell, board.candidates(cell)))
-            .filter(|(_, candidates)| candidates.size() == 2)
-            .collect::<Vec<_>>();
-
-        for candidates in distinct_pairs(&cell_candidates) {
-            let known_sets = vec![candidates.0 .1, candidates.1 .1];
-            let knowns = known_sets
-                .iter()
-                .fold(KnownSet::empty(), |acc, ks| acc | *ks);
-            if knowns.size() != 2 {
-                continue;
-            }
-
-            let cells = house.cells() - candidates.0 .0 - candidates.1 .0;
-            erase_knowns_from_cells(board, cells, knowns, Strategy::NakedPair, &mut effects);
-        }
-    }
-
-    if effects.has_actions() {
-        Some(effects)
-    } else {
-        None
-    }
+    find_naked_tuples(board, 2, Strategy::NakedPair)
 }
 
 pub fn find_naked_triples(board: &Board) -> Option<Effects> {
-    let mut effects = Effects::new();
-
-    for house in House::all() {
-        let cell_candidates: Vec<CellCandidates> = house
-            .cells()
-            .iter()
-            .map(|cell| (cell, board.candidates(cell)))
-            .filter(|(_, candidates)| candidates.size() == 2 || candidates.size() == 3)
-            .collect::<Vec<_>>();
-
-        for candidates in distinct_triples(&cell_candidates) {
-            let known_sets = vec![candidates.0 .1, candidates.1 .1, candidates.2 .1];
-            let knowns = known_sets
-                .iter()
-                .fold(KnownSet::empty(), |acc, ks| acc | *ks);
-            if knowns.size() != 3 {
-                continue;
-            }
-            if distinct_pairs(&known_sets)
-                .iter()
-                .any(|(ks1, ks2)| (*ks1 | *ks2).size() < 3)
-            {
-                continue;
-            }
-
-            let cells = house.cells() - candidates.0 .0 - candidates.1 .0 - candidates.2 .0;
-            erase_knowns_from_cells(board, cells, knowns, Strategy::NakedPair, &mut effects);
-        }
-    }
-
-    if effects.has_actions() {
-        Some(effects)
-    } else {
-        None
-    }
+    find_naked_tuples(board, 3, Strategy::NakedTriple)
 }
 
 pub fn find_naked_quads(board: &Board) -> Option<Effects> {
+    find_naked_tuples(board, 4, Strategy::NakedQuad)
+}
+
+fn find_naked_tuples(board: &Board, size: usize, strategy: Strategy) -> Option<Effects> {
     let mut effects = Effects::new();
 
     for house in House::all() {
-        let cell_candidates: Vec<CellCandidates> = house
+        house
             .cells()
             .iter()
             .map(|cell| (cell, board.candidates(cell)))
-            .filter(|(_, candidates)| {
-                candidates.size() == 2 || candidates.size() == 3 || candidates.size() == 4
-            })
-            .collect::<Vec<_>>();
+            .filter(|(_, candidates)| 2 <= candidates.size() && candidates.size() as usize <= size)
+            .combinations(size)
+            .for_each(|candidates| {
+                let known_sets = candidates.iter().map(|(_, ks)| *ks).collect::<Vec<_>>();
+                let knowns = known_sets.iter().copied().union() as KnownSet;
+                if knowns.size() as usize != size
+                    || is_degenerate(&known_sets, size, 2)
+                    || is_degenerate(&known_sets, size, 3)
+                {
+                    return;
+                }
 
-        for candidates in distinct_quads(&cell_candidates) {
-            let known_sets = vec![
-                candidates.0 .1,
-                candidates.1 .1,
-                candidates.2 .1,
-                candidates.3 .1,
-            ];
-            let knowns = known_sets
-                .iter()
-                .fold(KnownSet::empty(), |acc, ks| acc | *ks);
-            if knowns.size() != 4 {
-                continue;
-            }
-            if distinct_pairs(&known_sets)
-                .iter()
-                .any(|(ks1, ks2)| (*ks1 | *ks2).size() < 3)
-            {
-                continue;
-            }
-            if distinct_triples(&known_sets)
-                .iter()
-                .any(|(ks1, ks2, ks3)| (*ks1 | *ks2 | *ks3).size() < 4)
-            {
-                continue;
-            }
+                let cells = house.cells() - candidates.iter().map(|(c, _)| *c).union() as CellSet;
+                let mut action = Action::new(strategy);
 
-            let cells = house.cells()
-                - candidates.0 .0
-                - candidates.1 .0
-                - candidates.2 .0
-                - candidates.3 .0;
-            erase_knowns_from_cells(board, cells, knowns, Strategy::NakedPair, &mut effects);
-        }
+                knowns
+                    .iter()
+                    .for_each(|k| action.erase_cells(cells & board.candidate_cells(k), k));
+
+                if !action.is_empty() {
+                    // TODO check for dupes (same pair in block and row or column)
+                    effects.add_action(action);
+                }
+            });
     }
 
     if effects.has_actions() {
@@ -127,22 +53,13 @@ pub fn find_naked_quads(board: &Board) -> Option<Effects> {
     }
 }
 
-fn erase_knowns_from_cells(
-    board: &Board,
-    cells: CellSet,
-    knowns: KnownSet,
-    strategy: Strategy,
-    effects: &mut Effects,
-) {
-    let mut action = Action::new(strategy);
-
-    knowns
-        .iter()
-        .for_each(|k| action.erase_cells(cells & board.candidate_cells(k), k));
-
-    if !action.is_empty() {
-        effects.add_action(action);
-    }
+fn is_degenerate(known_sets: &[KnownSet], size: usize, smaller_size: usize) -> bool {
+    size > smaller_size
+        && known_sets
+            .iter()
+            .combinations(smaller_size)
+            .map(|sets| sets.into_iter().copied().union())
+            .any(|set| (set.size() as usize) <= smaller_size)
 }
 
 #[cfg(test)]

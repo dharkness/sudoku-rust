@@ -1,31 +1,48 @@
 use super::*;
 use itertools::Itertools;
 
-type KnownCandidates = (Known, CellSet);
-
 pub fn find_hidden_pairs(board: &Board) -> Option<Effects> {
+    find_hidden_tuples(board, 2, Strategy::NakedPair)
+}
+
+pub fn find_hidden_triples(board: &Board) -> Option<Effects> {
+    find_hidden_tuples(board, 3, Strategy::NakedTriple)
+}
+
+pub fn find_hidden_quads(board: &Board) -> Option<Effects> {
+    find_hidden_tuples(board, 4, Strategy::NakedQuad)
+}
+
+pub fn find_hidden_tuples(board: &Board, size: usize, strategy: Strategy) -> Option<Effects> {
     let mut effects = Effects::new();
 
     for house in House::all() {
         Known::ALL
             .into_iter()
-            .map(|k| (k, board.house_candidate_cells(*house, k)))
-            .filter(|(_, cs)| cs.size() == 2)
-            .combinations(2)
+            .map(|k| (k, house.cells() & board.candidate_cells(k)))
+            .filter(|(_, candidates)| 2 <= candidates.size() && candidates.size() as usize <= size)
+            .combinations(size)
             .for_each(|candidates| {
-                let cells: CellSet = candidates.iter().map(|(_, cs)| *cs).collect();
-                if cells.size() != 2 {
+                let cell_sets = candidates.iter().map(|(_, cs)| *cs).collect::<Vec<_>>();
+                let cells = cell_sets.iter().copied().union() as CellSet;
+                if cells.size() as usize != size
+                    || is_degenerate(&cell_sets, size, 2)
+                    || is_degenerate(&cell_sets, size, 3)
+                {
                     return;
                 }
 
-                let knowns: KnownSet = candidates.iter().map(|(k, _)| *k).collect();
-                erase_other_knowns_from_cells(
-                    board,
-                    cells,
-                    knowns,
-                    Strategy::NakedPair,
-                    &mut effects,
-                );
+                let knowns = candidates.iter().map(|(k, _)| *k).union();
+                let mut action = Action::new(strategy);
+
+                cells
+                    .iter()
+                    .for_each(|c| action.erase_knowns(c, board.candidates(c) - knowns));
+
+                if !action.is_empty() {
+                    // TODO check for dupes (same pair in block and row or column)
+                    effects.add_action(action);
+                }
             });
     }
 
@@ -36,105 +53,13 @@ pub fn find_hidden_pairs(board: &Board) -> Option<Effects> {
     }
 }
 
-pub fn find_hidden_triples(board: &Board) -> Option<Effects> {
-    let mut effects = Effects::new();
-
-    for house in House::all() {
-        let cell_candidates: Vec<KnownCandidates> = Known::ALL
-            .into_iter()
-            .map(|k| (k, house.cells() & board.candidate_cells(k)))
-            .filter(|(_, candidates)| candidates.size() == 2 || candidates.size() == 3)
-            .collect::<Vec<_>>();
-
-        for candidates in distinct_triples(&cell_candidates) {
-            let cell_sets = vec![candidates.0 .1, candidates.1 .1, candidates.2 .1];
-            let cells = cell_sets.iter().fold(CellSet::empty(), |acc, cs| acc | *cs);
-            if cells.size() != 3 {
-                continue;
-            }
-            if distinct_pairs(&cell_sets)
-                .iter()
-                .any(|(cs1, cs2)| (*cs1 | *cs2).size() < 3)
-            {
-                continue;
-            }
-
-            let knowns = candidates.0 .0 + candidates.1 .0 + candidates.2 .0;
-            erase_other_knowns_from_cells(board, cells, knowns, Strategy::NakedPair, &mut effects);
-        }
-    }
-
-    if effects.has_actions() {
-        Some(effects)
-    } else {
-        None
-    }
-}
-
-pub fn find_hidden_quads(board: &Board) -> Option<Effects> {
-    let mut effects = Effects::new();
-
-    for house in House::all() {
-        let cell_candidates: Vec<KnownCandidates> = Known::ALL
-            .into_iter()
-            .map(|k| (k, house.cells() & board.candidate_cells(k)))
-            .filter(|(_, candidates)| {
-                candidates.size() == 2 || candidates.size() == 3 || candidates.size() == 4
-            })
-            .collect::<Vec<_>>();
-
-        for candidates in distinct_quads(&cell_candidates) {
-            let cell_sets = vec![
-                candidates.0 .1,
-                candidates.1 .1,
-                candidates.2 .1,
-                candidates.3 .1,
-            ];
-            let cells = cell_sets.iter().fold(CellSet::empty(), |acc, cs| acc | *cs);
-            if cells.size() != 4 {
-                continue;
-            }
-            if distinct_pairs(&cell_sets)
-                .iter()
-                .any(|(cs1, cs2)| (*cs1 | *cs2).size() < 3)
-            {
-                continue;
-            }
-            if distinct_triples(&cell_sets)
-                .iter()
-                .any(|(cs1, cs2, cs3)| (*cs1 | *cs2 | *cs3).size() < 4)
-            {
-                continue;
-            }
-
-            let knowns = candidates.0 .0 + candidates.1 .0 + candidates.2 .0 + candidates.3 .0;
-            erase_other_knowns_from_cells(board, cells, knowns, Strategy::NakedPair, &mut effects);
-        }
-    }
-
-    if effects.has_actions() {
-        Some(effects)
-    } else {
-        None
-    }
-}
-
-fn erase_other_knowns_from_cells(
-    board: &Board,
-    cells: CellSet,
-    except: KnownSet,
-    strategy: Strategy,
-    effects: &mut Effects,
-) {
-    let mut action = Action::new(strategy);
-
-    cells
-        .iter()
-        .for_each(|c| action.erase_knowns(c, board.candidates(c) - except));
-
-    if !action.is_empty() {
-        effects.add_action(action);
-    }
+fn is_degenerate(cell_sets: &[CellSet], size: usize, smaller_size: usize) -> bool {
+    size > smaller_size
+        && cell_sets
+            .iter()
+            .combinations(smaller_size)
+            .map(|sets| sets.into_iter().copied().union())
+            .any(|set| (set.size() as usize) <= smaller_size)
 }
 
 #[cfg(test)]
