@@ -373,7 +373,7 @@ impl fmt::Display for KnownSet {
 
 impl fmt::Debug for KnownSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.debug())
+        write!(f, "{}", self)
     }
 }
 

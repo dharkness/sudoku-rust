@@ -181,7 +181,11 @@ impl From<House> for CellSet {
 
 impl From<&str> for CellSet {
     fn from(labels: &str) -> CellSet {
-        labels.split(' ').map(Cell::from).union() as CellSet
+        if labels.is_empty() {
+            CellSet::empty()
+        } else {
+            labels.split(' ').map(Cell::from).union() as CellSet
+        }
     }
 }
 
@@ -442,7 +446,7 @@ impl fmt::Display for CellSet {
 
 impl fmt::Debug for CellSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.debug())
+        write!(f, "{}", self)
     }
 }
 

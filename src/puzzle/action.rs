@@ -64,6 +64,29 @@ impl Action {
         knowns.iter().for_each(|known| self.erase(cell, known));
     }
 
+    pub fn erases(&self, cell: Cell, known: Known) -> bool {
+        self.erase
+            .get(&cell)
+            .unwrap_or(&KnownSet::empty())
+            .has(known)
+    }
+
+    pub fn erases_from_cells(&self, known: Known) -> CellSet {
+        self.erase
+            .iter()
+            .fold(CellSet::empty(), |cells, (cell, knowns)| {
+                if knowns.has(known) {
+                    cells + *cell
+                } else {
+                    cells
+                }
+            })
+    }
+
+    pub fn erases_knowns_from(&self, cell: Cell) -> KnownSet {
+        self.erase[&cell]
+    }
+
     pub fn apply(&self, board: &mut Board, effects: &mut Effects) {
         for (cell, knowns) in &self.erase {
             for known in knowns.iter() {

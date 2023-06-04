@@ -1,6 +1,6 @@
 use core::fmt;
 
-use crate::layout::{Cell, Known};
+use crate::layout::{Cell, CellSet, Known, KnownSet};
 
 use super::{Action, Board, Error, Strategy};
 
@@ -17,6 +17,10 @@ impl Effects {
             errors: vec![],
             actions: vec![],
         }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.errors.is_empty() && self.actions.is_empty()
     }
 
     pub fn has_errors(&self) -> bool {
@@ -61,6 +65,22 @@ impl Effects {
 
     pub fn add_erase(&mut self, strategy: Strategy, cell: Cell, known: Known) {
         self.add_action(Action::new_erase(strategy, cell, known));
+    }
+
+    pub fn erases(&self, cell: Cell, known: Known) -> bool {
+        self.actions.iter().any(|action| action.erases(cell, known))
+    }
+
+    pub fn erases_from_cells(&self, known: Known) -> CellSet {
+        self.actions.iter().fold(CellSet::empty(), |acc, action| {
+            acc | action.erases_from_cells(known)
+        })
+    }
+
+    pub fn erases_knowns_from(&self, cell: Cell) -> KnownSet {
+        self.actions.iter().fold(KnownSet::empty(), |acc, action| {
+            acc | action.erases_knowns_from(cell)
+        })
     }
 
     pub fn apply(&self, board: &mut Board, effects: &mut Effects) {

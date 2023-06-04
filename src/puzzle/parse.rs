@@ -70,6 +70,16 @@ impl Parser {
     }
 }
 
+#[allow(unused_macros)]
+macro_rules! parse {
+    ($board:expr) => {
+        Parser::new(false, false).parse($board).0
+    };
+}
+
+#[allow(unused_imports)]
+pub(crate) use parse;
+
 #[cfg(test)]
 mod tests {
     use super::*;
