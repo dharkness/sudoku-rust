@@ -202,9 +202,9 @@ impl Board {
             self.remove_candidate_cell_from_houses(cell, known, effects);
         }
 
-        for neighbor in (self.candidate_cells[known.usize()] & cell.neighbors()).iter() {
-            self.remove_candidate(neighbor, known, effects);
-            // effects.add_erase(Strategy::Neighbor, neighbor, known);
+        for peer in (self.candidate_cells[known.usize()] & cell.peers()).iter() {
+            self.remove_candidate(peer, known, effects);
+            // effects.add_erase(Strategy::Peer, peer, known);
         }
 
         true

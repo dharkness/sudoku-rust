@@ -3,7 +3,7 @@
 pub enum Strategy {
     /// When a cell becomes solved, the value may be removed as a candidate
     /// from every cell in the same row, column or box.
-    Neighbor,
+    Peer,
 
     /// A candidate that may only appear in two cells in one segment of a block
     /// may be removed from the other two segments in the segment's row or column.

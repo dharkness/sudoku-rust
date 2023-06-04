@@ -74,8 +74,8 @@ impl Cell {
         COORDS_IN_HOUSES[self.usize()][Shape::Block.usize()]
     }
 
-    pub const fn neighbors(&self) -> CellSet {
-        NEIGHBORS[self.usize()]
+    pub const fn peers(&self) -> CellSet {
+        PEERS[self.usize()]
     }
 
     pub const fn label(&self) -> &'static str {
@@ -191,9 +191,10 @@ const COORDS_IN_HOUSES: [[Coord; 3]; 81] = {
     coords
 };
 
-/// Holds the neighbors for every unique cell.
-/// A cell's neighbors are all the cells in the same row, column and block, excluding the cell itself.
-const NEIGHBORS: [CellSet; 81] = {
+/// Holds the peers for every unique cell.
+///
+/// A cell's peers are all the cells in the same row, column and block, excluding the cell itself.
+const PEERS: [CellSet; 81] = {
     let mut sets: [CellSet; 81] = [CellSet::empty(); 81];
     let mut i = 0;
 

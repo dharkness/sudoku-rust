@@ -43,7 +43,7 @@ impl Parser {
                             if self.solve_singles {
                                 effects.apply_all(&mut board);
                             } else {
-                                effects.apply_all_strategy(&mut board, Strategy::Neighbor);
+                                effects.apply_all_strategy(&mut board, Strategy::Peer);
                             }
                             effects.clear_actions();
                         } else if self.stop_on_error {
