@@ -212,7 +212,7 @@ impl Board {
 
     pub fn packed_string(&self, unknown: char) -> String {
         let mut result = String::new();
-        House::all_rows().iter().for_each(|row| {
+        House::rows_iter().for_each(|row| {
             result += " ";
             row.cells().iter().for_each(|cell| {
                 let value = self.value(cell);

@@ -480,9 +480,7 @@ mod tests {
         assert!(set.is_empty());
         assert_eq!(0, set.size());
         assert!(set.iter().collect::<Vec<House>>().is_empty());
-        House::all_rows()
-            .iter()
-            .for_each(|house| assert!(!set.has(*house)));
+        House::rows_iter().for_each(|house| assert!(!set.has(house)));
     }
 
     #[test]
@@ -492,8 +490,6 @@ mod tests {
         assert!(!set.is_empty());
         assert_eq!(9, set.size());
         assert_eq!(9, set.iter().collect::<Vec<House>>().len());
-        House::all_rows()
-            .iter()
-            .for_each(|house| assert!(set.has(*house)));
+        House::rows_iter().for_each(|house| assert!(set.has(house)));
     }
 }

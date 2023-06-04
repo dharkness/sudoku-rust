@@ -1,12 +1,12 @@
 //! Provides functions for printing the state of a puzzle to the console.
 
-use crate::layout::{House, Known};
+use crate::layout::{Cell, House, Known};
 use crate::puzzle::Board;
-use crate::symbols::{MISSING, ROW_COORDS};
+use crate::symbols::MISSING;
 
 pub fn print_values(board: &Board) {
     println!("  ¹²³⁴⁵⁶⁷⁸⁹");
-    House::all_rows().iter().for_each(|row| {
+    House::rows_iter().for_each(|row| {
         print!("{} ", row.console_label());
         row.cells().iter().for_each(|cell| {
             let value = board.value(cell);
@@ -18,15 +18,14 @@ pub fn print_values(board: &Board) {
 
 pub fn print_candidates(board: &Board) {
     println!("   ¹   ²   ³     ⁴   ⁵   ⁶     ⁷   ⁸   ⁹");
-    ROW_COORDS.iter().enumerate().for_each(|(r, coord)| {
-        let row = House::row(r.into());
+    House::rows_iter().for_each(|row| {
         let mut lines = [
             String::from("  "),
-            coord.to_string() + " ",
+            format!("{} ", row.console_label()),
             String::from("  "),
         ];
-        for c in 0..9 {
-            let cell = row.cell(c.into());
+        House::columns_iter().for_each(|column| {
+            let cell = Cell::from_row_column(row, column);
             let value = board.value(cell);
             let candidates = board.candidates(cell);
             if !value {
@@ -43,19 +42,18 @@ pub fn print_candidates(board: &Board) {
                 lines[1].push_str(&format!(" {} ", value));
                 lines[2].push_str("   ");
             }
-            if c % 3 == 2 {
-                if c < 8 {
+            if column.is_block_right() {
+                if !column.is_right() {
                     lines.iter_mut().for_each(|line| line.push_str(" | "));
                 }
             } else {
                 lines.iter_mut().for_each(|line| line.push(' '));
             }
-        }
-        println!("{}", lines[0]);
-        println!("{} {}", lines[1], ROW_COORDS[r]);
-        println!("{}", lines[2]);
-        if r % 3 == 2 {
-            if r < 8 {
+        });
+        lines[1].push_str(&format!(" {}", row.console_label()));
+        lines.iter().for_each(|line| println!("{}", line));
+        if row.is_block_bottom() {
+            if !row.is_bottom() {
                 println!("  ------------+-------------+------------");
             }
         } else {

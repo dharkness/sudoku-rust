@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::fmt;
 use std::ops::{Add, Neg};
+use std::slice::Iter;
 
 use crate::layout::{Cell, CellSet, Coord, HouseSet, Shape};
 
@@ -16,8 +17,16 @@ impl House {
         &ALL
     }
 
+    pub fn all_iter() -> HousesIter {
+        HousesIter::new()
+    }
+
     pub const fn all_rows() -> &'static [House; 9] {
         &ROWS
+    }
+
+    pub fn rows_iter() -> HouseIter {
+        HouseIter::new(Shape::Row)
     }
 
     pub const fn row(coord: Coord) -> Self {
@@ -28,12 +37,20 @@ impl House {
         &COLUMNS
     }
 
+    pub fn columns_iter() -> HouseIter {
+        HouseIter::new(Shape::Column)
+    }
+
     pub const fn column(coord: Coord) -> Self {
         COLUMNS[coord.usize()]
     }
 
     pub const fn all_blocks() -> &'static [House; 9] {
         &BLOCKS
+    }
+
+    pub fn blocks_iter() -> HouseIter {
+        HouseIter::new(Shape::Block)
     }
 
     pub const fn block(coord: Coord) -> Self {
@@ -46,6 +63,18 @@ impl House {
 
     pub const fn shape(&self) -> Shape {
         self.shape
+    }
+
+    pub const fn is_row(&self) -> bool {
+        self.shape.is_row()
+    }
+
+    pub const fn is_column(&self) -> bool {
+        self.shape.is_column()
+    }
+
+    pub const fn is_block(&self) -> bool {
+        self.shape.is_block()
     }
 
     pub const fn coord(&self) -> Coord {
@@ -62,6 +91,38 @@ impl House {
 
     pub const fn console_label(&self) -> char {
         CONSOLE_LABELS[self.shape.usize()][self.coord.usize()]
+    }
+
+    pub const fn is_top(&self) -> bool {
+        self.is_row() && self.coord.u8() == 0
+    }
+
+    pub const fn is_block_top(&self) -> bool {
+        self.is_row() && self.coord.u8() % 3 == 0
+    }
+
+    pub const fn is_block_bottom(&self) -> bool {
+        self.is_row() && self.coord.u8() % 3 == 2
+    }
+
+    pub const fn is_bottom(&self) -> bool {
+        self.is_row() && self.coord.u8() == 8
+    }
+
+    pub const fn is_left(&self) -> bool {
+        self.is_column() && self.coord.u8() == 0
+    }
+
+    pub const fn is_block_left(&self) -> bool {
+        self.is_column() && self.coord.u8() % 3 == 0
+    }
+
+    pub const fn is_block_right(&self) -> bool {
+        self.is_column() && self.coord.u8() % 3 == 2
+    }
+
+    pub const fn is_right(&self) -> bool {
+        self.is_column() && self.coord.u8() == 8
     }
 
     pub const fn cell(&self, coord: Coord) -> Cell {
@@ -91,7 +152,7 @@ impl House {
             [other.coord.usize()]
     }
 
-    pub const fn rows(&self) -> &[House] {
+    pub const fn rows(&self) -> &'static [House] {
         match self.shape {
             Shape::Row => &ROW_ROWS[self.coord.usize()],
             Shape::Column => &COLUMN_ROWS[self.coord.usize()],
@@ -99,7 +160,11 @@ impl House {
         }
     }
 
-    pub const fn columns(&self) -> &[House] {
+    pub fn row_iter(&self) -> Iter<'static, House> {
+        self.rows().iter()
+    }
+
+    pub const fn columns(&self) -> &'static [House] {
         match self.shape {
             Shape::Row => &ROW_COLUMNS[self.coord.usize()],
             Shape::Column => &COLUMN_COLUMNS[self.coord.usize()],
@@ -107,12 +172,20 @@ impl House {
         }
     }
 
-    pub const fn blocks(&self) -> &[House] {
+    pub fn column_iter(&self) -> Iter<'static, House> {
+        self.columns().iter()
+    }
+
+    pub const fn blocks(&self) -> &'static [House] {
         match self.shape {
             Shape::Row => &ROW_BLOCKS[self.coord.usize()],
             Shape::Column => &COLUMN_BLOCKS[self.coord.usize()],
             Shape::Block => &BLOCK_BLOCKS[self.coord.usize()],
         }
+    }
+
+    pub fn block_iter(&self) -> Iter<'static, House> {
+        self.blocks().iter()
     }
 }
 
@@ -174,6 +247,84 @@ impl Neg for House {
 impl fmt::Display for House {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.label())
+    }
+}
+
+pub struct HouseIter {
+    shape: Shape,
+    coord: u8,
+}
+
+impl HouseIter {
+    pub const fn new(shape: Shape) -> Self {
+        Self { shape, coord: 0 }
+    }
+}
+
+impl Iterator for HouseIter {
+    type Item = House;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.coord == 9 {
+            None
+        } else {
+            let house = House::new(self.shape, self.coord.into());
+            self.coord += 1;
+            Some(house)
+        }
+    }
+}
+
+impl ExactSizeIterator for HouseIter {
+    fn len(&self) -> usize {
+        9 - self.coord as usize
+    }
+}
+
+pub struct HousesIter {
+    shape: Shape,
+    coord: u8,
+}
+
+impl HousesIter {
+    pub const fn new() -> Self {
+        Self {
+            shape: Shape::Row,
+            coord: 0,
+        }
+    }
+}
+
+impl Iterator for HousesIter {
+    type Item = House;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.coord == 9 {
+            match self.shape {
+                Shape::Row => {
+                    self.shape = Shape::Column;
+                    self.coord = 0;
+                }
+                Shape::Column => {
+                    self.shape = Shape::Block;
+                    self.coord = 0;
+                }
+                Shape::Block => return None,
+            }
+        }
+        let house = House::new(self.shape, self.coord.into());
+        self.coord += 1;
+        Some(house)
+    }
+}
+
+impl ExactSizeIterator for HousesIter {
+    fn len(&self) -> usize {
+        match self.shape {
+            Shape::Row => 18 + 9 - self.coord as usize,
+            Shape::Column => 9 + 9 - self.coord as usize,
+            Shape::Block => 9 - self.coord as usize,
+        }
     }
 }
 

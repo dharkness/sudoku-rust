@@ -15,9 +15,9 @@ pub fn find_naked_quads(board: &Board) -> Option<Effects> {
 fn find_naked_tuples(board: &Board, size: usize, strategy: Strategy) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    for house in House::all() {
-        house
-            .cells()
+    for house in House::all_iter() {
+        let house_cells = house.cells();
+        house_cells
             .iter()
             .map(|cell| (cell, board.candidates(cell)))
             .filter(|(_, candidates)| 2 <= candidates.size() && candidates.size() as usize <= size)
@@ -32,7 +32,7 @@ fn find_naked_tuples(board: &Board, size: usize, strategy: Strategy) -> Option<E
                     return;
                 }
 
-                let cells = house.cells() - candidates.iter().map(|(c, _)| *c).union() as CellSet;
+                let cells = house_cells - candidates.iter().map(|(c, _)| *c).union() as CellSet;
                 let mut action = Action::new(strategy);
 
                 knowns

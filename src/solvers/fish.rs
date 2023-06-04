@@ -15,8 +15,8 @@ pub fn find_jellyfish(board: &Board) -> Option<Effects> {
 fn find_fish(board: &Board, size: usize, strategy: Strategy) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    check_houses(board, size, strategy, House::all_rows(), &mut effects);
-    check_houses(board, size, strategy, House::all_columns(), &mut effects);
+    check_houses(board, size, strategy, Shape::Row, &mut effects);
+    check_houses(board, size, strategy, Shape::Column, &mut effects);
 
     if effects.has_actions() {
         Some(effects)
@@ -29,14 +29,14 @@ fn check_houses(
     board: &Board,
     size: usize,
     strategy: Strategy,
-    houses: &[House],
+    shape: Shape,
     effects: &mut Effects,
 ) {
     for k in Known::ALL {
         let candidate_cells = board.candidate_cells(k);
-        houses
+        shape
             .iter()
-            .map(|house| (*house, house.cells() & candidate_cells))
+            .map(|house| (house, house.cells() & candidate_cells))
             .filter(|(_, cells)| 2 <= cells.size() && cells.size() as usize <= size)
             .map(|(house, cells)| (house, cells, house.crossing_houses(cells)))
             .combinations(size)

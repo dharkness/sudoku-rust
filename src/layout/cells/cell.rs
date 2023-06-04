@@ -18,6 +18,14 @@ impl Cell {
         Self(index)
     }
 
+    pub const fn from_coords(row: Coord, column: Coord) -> Self {
+        Self::new(row.u8() * 9 + column.u8())
+    }
+
+    pub const fn from_row_column(row: House, column: House) -> Self {
+        Self::from_coords(row.coord(), column.coord())
+    }
+
     pub const fn index(&self) -> u8 {
         self.0
     }

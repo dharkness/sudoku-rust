@@ -1,5 +1,8 @@
-use crate::layout::{Cell, CellSet, Coord};
 use std::fmt;
+
+use crate::layout::{Cell, CellSet, Coord};
+
+use super::{House, HouseIter};
 
 /// The three house shapes on the board.
 #[derive(Clone, Copy, Default, Eq, PartialEq, Ord, PartialOrd)]
@@ -33,6 +36,22 @@ impl Shape {
         }
     }
 
+    pub const fn is_row(&self) -> bool {
+        matches!(self, Shape::Row)
+    }
+
+    pub const fn is_column(&self) -> bool {
+        matches!(self, Shape::Column)
+    }
+
+    pub const fn is_block(&self) -> bool {
+        matches!(self, Shape::Block)
+    }
+
+    pub const fn house(&self, house: Coord) -> House {
+        House::new(*self, house)
+    }
+
     pub const fn cells(&self, house: Coord) -> CellSet {
         CELL_SETS[self.usize()][house.usize()]
     }
@@ -41,8 +60,8 @@ impl Shape {
         CELLS[self.usize()][house.usize()][coord.usize()]
     }
 
-    pub const fn cell_list(&self, house: Coord) -> &'static [Cell; 9] {
-        &CELLS[self.usize()][house.usize()]
+    pub const fn iter(&self) -> HouseIter {
+        HouseIter::new(*self)
     }
 }
 

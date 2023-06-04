@@ -27,9 +27,9 @@ use super::*;
 pub fn find_intersection_removals(board: &Board) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    House::all_blocks().iter().for_each(|block| {
-        check_intersection(board, *block, block.rows(), &mut effects);
-        check_intersection(board, *block, block.columns(), &mut effects);
+    House::blocks_iter().for_each(|block| {
+        check_intersection(board, block, block.rows(), &mut effects);
+        check_intersection(board, block, block.columns(), &mut effects);
     });
 
     if effects.has_actions() {

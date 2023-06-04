@@ -10,7 +10,7 @@ pub mod house_set;
 pub mod shape;
 
 pub use coord::Coord;
-pub use house::House;
+pub use house::{House, HouseIter, HousesIter};
 pub use house_set::{
     HouseIteratorUnion, HouseSet, HouseSetIteratorIntersection, HouseSetIteratorUnion,
 };
