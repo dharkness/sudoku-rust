@@ -1,9 +1,11 @@
 use std::cmp::Ordering;
 use std::fmt;
 use std::ops::{Add, Neg};
-use std::slice::Iter;
 
-use crate::layout::{Cell, CellSet, Coord, HouseSet, Shape};
+use crate::layout::houses::house_set::{blocks, cols, rows};
+use crate::layout::{Cell, CellSet, Coord};
+
+use super::{HouseSet, HouseSetIter, Shape};
 
 /// One of the nine rows, columns, or blocks on the board.
 #[derive(Clone, Copy, Debug, Default)]
@@ -13,16 +15,12 @@ pub struct House {
 }
 
 impl House {
-    pub const fn all() -> &'static [House; 27] {
-        &ALL
-    }
-
-    pub fn all_iter() -> HousesIter {
+    pub fn iter() -> HousesIter {
         HousesIter::new()
     }
 
-    pub const fn all_rows() -> &'static [House; 9] {
-        &ROWS
+    pub const fn all_rows() -> HouseSet {
+        HouseSet::full(Shape::Row)
     }
 
     pub fn rows_iter() -> HouseIter {
@@ -33,8 +31,8 @@ impl House {
         ROWS[coord.usize()]
     }
 
-    pub const fn all_columns() -> &'static [House; 9] {
-        &COLUMNS
+    pub const fn all_columns() -> HouseSet {
+        HouseSet::full(Shape::Column)
     }
 
     pub fn columns_iter() -> HouseIter {
@@ -45,8 +43,8 @@ impl House {
         COLUMNS[coord.usize()]
     }
 
-    pub const fn all_blocks() -> &'static [House; 9] {
-        &BLOCKS
+    pub const fn all_blocks() -> HouseSet {
+        HouseSet::full(Shape::Block)
     }
 
     pub fn blocks_iter() -> HouseIter {
@@ -152,39 +150,39 @@ impl House {
             [other.coord.usize()]
     }
 
-    pub const fn rows(&self) -> &'static [House] {
+    pub const fn rows(&self) -> HouseSet {
         match self.shape {
-            Shape::Row => &ROW_ROWS[self.coord.usize()],
-            Shape::Column => &COLUMN_ROWS[self.coord.usize()],
-            Shape::Block => &BLOCK_ROWS[self.coord.usize()],
+            Shape::Row => ROW_ROWS[self.coord.usize()],
+            Shape::Column => COLUMN_ROWS[self.coord.usize()],
+            Shape::Block => BLOCK_ROWS[self.coord.usize()],
         }
     }
 
-    pub fn row_iter(&self) -> Iter<'static, House> {
+    pub fn row_iter(&self) -> HouseSetIter {
         self.rows().iter()
     }
 
-    pub const fn columns(&self) -> &'static [House] {
+    pub const fn columns(&self) -> HouseSet {
         match self.shape {
-            Shape::Row => &ROW_COLUMNS[self.coord.usize()],
-            Shape::Column => &COLUMN_COLUMNS[self.coord.usize()],
-            Shape::Block => &BLOCK_COLUMNS[self.coord.usize()],
+            Shape::Row => ROW_COLUMNS[self.coord.usize()],
+            Shape::Column => COLUMN_COLUMNS[self.coord.usize()],
+            Shape::Block => BLOCK_COLUMNS[self.coord.usize()],
         }
     }
 
-    pub fn column_iter(&self) -> Iter<'static, House> {
+    pub fn column_iter(&self) -> HouseSetIter {
         self.columns().iter()
     }
 
-    pub const fn blocks(&self) -> &'static [House] {
+    pub const fn blocks(&self) -> HouseSet {
         match self.shape {
-            Shape::Row => &ROW_BLOCKS[self.coord.usize()],
-            Shape::Column => &COLUMN_BLOCKS[self.coord.usize()],
-            Shape::Block => &BLOCK_BLOCKS[self.coord.usize()],
+            Shape::Row => ROW_BLOCKS[self.coord.usize()],
+            Shape::Column => COLUMN_BLOCKS[self.coord.usize()],
+            Shape::Block => BLOCK_BLOCKS[self.coord.usize()],
         }
     }
 
-    pub fn block_iter(&self) -> Iter<'static, House> {
+    pub fn block_iter(&self) -> HouseSetIter {
         self.blocks().iter()
     }
 }
@@ -420,63 +418,82 @@ pub const INTERSECTIONS: [[[[CellSet; 9]; 3]; 9]; 3] = {
     sets
 };
 
-#[rustfmt::skip]
-const ROW_ROWS: [[House; 1]; 9] = [
-    [ROWS[0]], [ROWS[1]], [ROWS[2]], [ROWS[3]], [ROWS[4]], [ROWS[5]], [ROWS[6]], [ROWS[7]], [ROWS[8]],
+const ROW_ROWS: [HouseSet; 9] = [
+    rows!(1),
+    rows!(2),
+    rows!(3),
+    rows!(4),
+    rows!(5),
+    rows!(6),
+    rows!(7),
+    rows!(8),
+    rows!(9),
 ];
 
-const COLUMN_ROWS: [[House; 9]; 9] = [ROWS; 9];
+const COLUMN_ROWS: [HouseSet; 9] = [House::all_rows(); 9];
 
 #[rustfmt::skip]
-const BLOCK_ROWS: [[House; 3]; 9] = [
-    [ROWS[0], ROWS[1], ROWS[2]], [ROWS[0], ROWS[1], ROWS[2]], [ROWS[0], ROWS[1], ROWS[2]],
-    [ROWS[3], ROWS[4], ROWS[5]], [ROWS[3], ROWS[4], ROWS[5]], [ROWS[3], ROWS[4], ROWS[5]],
-    [ROWS[6], ROWS[7], ROWS[8]], [ROWS[6], ROWS[7], ROWS[8]], [ROWS[6], ROWS[7], ROWS[8]],
+const BLOCK_ROWS: [HouseSet; 9] = [
+    rows!(123), rows!(123), rows!(123),
+    rows!(456), rows!(456), rows!(456),
+    rows!(789), rows!(789), rows!(789),
 ];
 
-const ROW_COLUMNS: [[House; 9]; 9] = [COLUMNS; 9];
+const ROW_COLUMNS: [HouseSet; 9] = [House::all_columns(); 9];
 
-#[rustfmt::skip]
-const COLUMN_COLUMNS: [[House; 1]; 9] = [
-    [COLUMNS[0]], [COLUMNS[1]], [COLUMNS[2]], [COLUMNS[3]], [COLUMNS[4]], [COLUMNS[5]], [COLUMNS[6]], [COLUMNS[7]], [COLUMNS[8]],
-];
-
-#[rustfmt::skip]
-const BLOCK_COLUMNS: [[House; 3]; 9] = [
-    [COLUMNS[0], COLUMNS[1], COLUMNS[2]], [COLUMNS[3], COLUMNS[4], COLUMNS[5]], [COLUMNS[6], COLUMNS[7], COLUMNS[8]],
-    [COLUMNS[0], COLUMNS[1], COLUMNS[2]], [COLUMNS[3], COLUMNS[4], COLUMNS[5]], [COLUMNS[6], COLUMNS[7], COLUMNS[8]],
-    [COLUMNS[0], COLUMNS[1], COLUMNS[2]], [COLUMNS[3], COLUMNS[4], COLUMNS[5]], [COLUMNS[6], COLUMNS[7], COLUMNS[8]],
-];
-
-#[rustfmt::skip]
-const ROW_BLOCKS: [[House; 3]; 9] = [
-    [BLOCKS[0], BLOCKS[1], BLOCKS[2]],
-    [BLOCKS[0], BLOCKS[1], BLOCKS[2]],
-    [BLOCKS[0], BLOCKS[1], BLOCKS[2]],
-    [BLOCKS[3], BLOCKS[4], BLOCKS[5]],
-    [BLOCKS[3], BLOCKS[4], BLOCKS[5]],
-    [BLOCKS[3], BLOCKS[4], BLOCKS[5]],
-    [BLOCKS[6], BLOCKS[7], BLOCKS[8]],
-    [BLOCKS[6], BLOCKS[7], BLOCKS[8]],
-    [BLOCKS[6], BLOCKS[7], BLOCKS[8]],
+const COLUMN_COLUMNS: [HouseSet; 9] = [
+    cols!(1),
+    cols!(2),
+    cols!(3),
+    cols!(4),
+    cols!(5),
+    cols!(6),
+    cols!(7),
+    cols!(8),
+    cols!(9),
 ];
 
 #[rustfmt::skip]
-const COLUMN_BLOCKS: [[House; 3]; 9] = [
-    [BLOCKS[0], BLOCKS[3], BLOCKS[6]],
-    [BLOCKS[0], BLOCKS[3], BLOCKS[6]],
-    [BLOCKS[0], BLOCKS[3], BLOCKS[6]],
-    [BLOCKS[1], BLOCKS[4], BLOCKS[7]],
-    [BLOCKS[1], BLOCKS[4], BLOCKS[7]],
-    [BLOCKS[1], BLOCKS[4], BLOCKS[7]],
-    [BLOCKS[2], BLOCKS[5], BLOCKS[8]],
-    [BLOCKS[2], BLOCKS[5], BLOCKS[8]],
-    [BLOCKS[2], BLOCKS[5], BLOCKS[8]],
+const BLOCK_COLUMNS: [HouseSet; 9] = [
+    cols!(123), cols!(456), cols!(789), 
+    cols!(123), cols!(456), cols!(789), 
+    cols!(123), cols!(456), cols!(789), 
 ];
 
-#[rustfmt::skip]
-const BLOCK_BLOCKS: [[House; 1]; 9] = [
-    [BLOCKS[0]], [BLOCKS[1]], [BLOCKS[2]], [BLOCKS[3]], [BLOCKS[4]], [BLOCKS[5]], [BLOCKS[6]], [BLOCKS[7]], [BLOCKS[8]],
+const ROW_BLOCKS: [HouseSet; 9] = [
+    blocks!(123),
+    blocks!(123),
+    blocks!(123),
+    blocks!(456),
+    blocks!(456),
+    blocks!(456),
+    blocks!(789),
+    blocks!(789),
+    blocks!(789),
+];
+
+const COLUMN_BLOCKS: [HouseSet; 9] = [
+    blocks!(147),
+    blocks!(147),
+    blocks!(147),
+    blocks!(258),
+    blocks!(258),
+    blocks!(258),
+    blocks!(369),
+    blocks!(369),
+    blocks!(369),
+];
+
+const BLOCK_BLOCKS: [HouseSet; 9] = [
+    blocks!(1),
+    blocks!(2),
+    blocks!(3),
+    blocks!(4),
+    blocks!(5),
+    blocks!(6),
+    blocks!(7),
+    blocks!(8),
+    blocks!(9),
 ];
 
 #[cfg(test)]
@@ -488,32 +505,27 @@ mod tests {
 
     #[test]
     fn houses() {
-        let groups = [
-            (Shape::Row, House::all_rows()),
-            (Shape::Column, House::all_columns()),
-            (Shape::Block, House::all_blocks()),
-        ];
+        let house_sets = [House::all_rows(), House::all_columns(), House::all_blocks()];
 
-        for group in groups {
-            let (shape, houses) = group;
+        for houses in house_sets {
             let mut all = CellSet::empty();
 
-            for (i, h) in houses.iter().enumerate() {
-                assert_eq!(h, &House::new(shape, Coord::new(i as u8)));
-                assert_eq!(shape, h.shape());
-                assert_eq!(Coord::new(i as u8), h.coord());
-                assert_eq!(i, h.usize());
-                assert_eq!(format!("{} {}", shape, i + 1), h.label());
+            for (i, house) in houses.iter().enumerate() {
+                assert_eq!(house, House::new(houses.shape(), Coord::new(i as u8)));
+                assert_eq!(houses.shape(), house.shape());
+                assert_eq!(Coord::new(i as u8), house.coord());
+                assert_eq!(i, house.usize());
+                assert_eq!(format!("{} {}", houses.shape(), i + 1), house.label());
 
-                let mut house = CellSet::empty();
+                let mut house_cells = CellSet::empty();
                 (0..9).for_each(|c| {
-                    let cell = h.cell(c.into());
-                    assert_eq!(h, &cell.house(shape));
-                    house += cell
+                    let cell = house.cell(c.into());
+                    assert_eq!(house, cell.house(houses.shape()));
+                    house_cells += cell
                 });
-                assert_eq!(h.cells(), house);
+                assert_eq!(house.cells(), house_cells);
 
-                all |= h.cells();
+                all |= house.cells();
             }
 
             assert_eq!(CellSet::full(), all);

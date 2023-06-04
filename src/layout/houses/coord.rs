@@ -56,6 +56,12 @@ impl From<u8> for Coord {
     }
 }
 
+impl From<char> for Coord {
+    fn from(coord: char) -> Self {
+        Self::new(coord as u8 - b'1')
+    }
+}
+
 impl From<usize> for Coord {
     fn from(coord: usize) -> Self {
         Self::new(coord as u8)

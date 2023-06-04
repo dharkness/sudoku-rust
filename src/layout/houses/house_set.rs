@@ -26,6 +26,35 @@ impl HouseSet {
         }
     }
 
+    pub const fn from_labels(shape: Shape, labels: &str) -> HouseSet {
+        let bytes = labels.as_bytes();
+        let mut bits: u16 = 0;
+        let mut i = 0;
+
+        while i < bytes.len() {
+            bits += 1 << (bytes[i] - b'1');
+            i += 1;
+        }
+        HouseSet {
+            shape,
+            coords: bits,
+        }
+    }
+
+    pub const fn from_coords(shape: Shape, mut coords: i32) -> HouseSet {
+        let mut bits: u16 = 0;
+
+        while coords > 0 {
+            let c = coords % 10;
+            coords /= 10;
+            bits += 1 << (c - 1);
+        }
+        HouseSet {
+            shape,
+            coords: bits,
+        }
+    }
+
     pub const fn shape(&self) -> Shape {
         self.shape
     }
@@ -176,8 +205,8 @@ impl HouseSet {
         *self = self.inverted()
     }
 
-    pub const fn iter(&self) -> Iter {
-        Iter {
+    pub const fn iter(&self) -> HouseSetIter {
+        HouseSetIter {
             shape: self.shape,
             coords: self.coords,
         }
@@ -447,15 +476,36 @@ macro_rules! houses {
     }};
 }
 
-#[allow(unused_imports)]
-pub(crate) use houses;
+#[allow(unused_macros)]
+macro_rules! rows {
+    ($coords:literal) => {
+        HouseSet::from_coords(Shape::Row, $coords)
+    };
+}
 
-pub struct Iter {
+#[allow(unused_macros)]
+macro_rules! cols {
+    ($labels:literal) => {
+        HouseSet::from_coords(Shape::Column, $labels)
+    };
+}
+
+#[allow(unused_macros)]
+macro_rules! blocks {
+    ($labels:literal) => {
+        HouseSet::from_coords(Shape::Block, $labels)
+    };
+}
+
+#[allow(unused_imports)]
+pub(crate) use {blocks, cols, houses, rows};
+
+pub struct HouseSetIter {
     shape: Shape,
     coords: u16,
 }
 
-impl Iterator for Iter {
+impl Iterator for HouseSetIter {
     type Item = House;
 
     fn next(&mut self) -> Option<Self::Item> {
