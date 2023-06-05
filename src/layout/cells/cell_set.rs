@@ -68,8 +68,8 @@ impl CellSet {
     }
 
     // FACTOR If u128.count_ones() is fast, no need to track size.
-    pub const fn size(&self) -> Size {
-        (self.0 >> SIZE_SHIFT) as Size
+    pub const fn size(&self) -> usize {
+        (self.0 >> SIZE_SHIFT) as usize
     }
 
     pub const fn bits(&self) -> Bits {
@@ -431,7 +431,7 @@ impl fmt::Display for CellSet {
         if self.is_empty() {
             write!(f, "{}", EMPTY_SET)
         } else {
-            let mut s = String::with_capacity(3 * self.size() as usize + 2);
+            let mut s = String::with_capacity(3 * self.size() + 2);
             s.push('(');
             for cell in self.iter() {
                 s.push(' ');
@@ -510,7 +510,7 @@ mod tests {
         let set = CellSet::full();
 
         assert!(!set.is_empty());
-        assert_eq!(Cell::COUNT, set.size());
+        assert_eq!(Cell::COUNT, set.size() as u8);
         for i in ALL_CELLS {
             assert!(set[Cell::new(i)]);
         }

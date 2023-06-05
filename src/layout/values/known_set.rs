@@ -49,8 +49,8 @@ impl KnownSet {
     }
 
     // FACTOR If u16.count_ones() is fast, no need to track size.
-    pub const fn size(&self) -> Size {
-        (self.0 >> SIZE_SHIFT) as Size
+    pub const fn size(&self) -> usize {
+        (self.0 >> SIZE_SHIFT) as usize
     }
 
     pub const fn bits(&self) -> Bits {

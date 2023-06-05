@@ -3,55 +3,52 @@ use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Neg, Not, Sub, SubAssign,
 };
 
-use crate::layout::{CellSet, Coord, House, Shape};
+use crate::layout::CellSet;
 use crate::symbols::EMPTY_SET;
+
+use super::{Coord, CoordSet, House, Shape};
 
 const FULL: u16 = (1 << 9) - 1;
 
 #[derive(Clone, Copy, Default, Eq, PartialEq)]
 pub struct HouseSet {
     shape: Shape,
-    coords: u16,
+    coords: CoordSet,
 }
 
 impl HouseSet {
     pub const fn empty(shape: Shape) -> Self {
-        Self { shape, coords: 0 }
+        Self {
+            shape,
+            coords: CoordSet::empty(),
+        }
     }
 
     pub const fn full(shape: Shape) -> Self {
         Self {
             shape,
-            coords: FULL,
+            coords: CoordSet::full(),
+        }
+    }
+
+    pub const fn from_bits(shape: Shape, bits: u16) -> Self {
+        HouseSet {
+            shape,
+            coords: CoordSet::from_bits(bits),
         }
     }
 
     pub const fn from_labels(shape: Shape, labels: &str) -> HouseSet {
-        let bytes = labels.as_bytes();
-        let mut bits: u16 = 0;
-        let mut i = 0;
-
-        while i < bytes.len() {
-            bits += 1 << (bytes[i] - b'1');
-            i += 1;
-        }
         HouseSet {
             shape,
-            coords: bits,
+            coords: CoordSet::from_labels(labels),
         }
     }
 
-    pub const fn from_coords(shape: Shape, mut coords: i32) -> HouseSet {
-        let mut bits: u16 = 0;
-
-        while coords > 0 {
-            let c = coords % 10;
-            coords /= 10;
-            bits += 1 << (c - 1);
-        }
+    pub const fn from_coords(shape: Shape, coords: i32) -> HouseSet {
         HouseSet {
             shape,
-            coords: bits,
+            coords: CoordSet::from_coords(coords),
         }
     }
 
@@ -60,26 +57,26 @@ impl HouseSet {
     }
 
     pub const fn is_empty(&self) -> bool {
-        self.coords == 0
+        self.coords.is_empty()
     }
 
     pub const fn is_full(&self) -> bool {
-        self.coords == FULL
+        self.coords.is_full()
     }
 
-    pub const fn size(&self) -> u32 {
-        self.coords.count_ones()
+    pub const fn size(&self) -> usize {
+        self.coords.size()
     }
 
     pub fn has(&self, house: House) -> bool {
         if self.shape != house.shape() {
             panic!("{} cannot be in {} set", house, self.shape);
         }
-        self.coords & house.coord().bit() != 0
+        self.coords.has(house.coord())
     }
 
     pub fn has_coord(&self, coord: Coord) -> bool {
-        self.coords & coord.bit() != 0
+        self.coords.has(coord)
     }
 
     pub fn cells(&self) -> CellSet {
@@ -96,7 +93,7 @@ impl HouseSet {
     pub fn with_coord(&self, coord: Coord) -> Self {
         Self {
             shape: self.shape,
-            coords: self.coords | coord.bit(),
+            coords: self.coords.with(coord),
         }
     }
 
@@ -108,7 +105,7 @@ impl HouseSet {
     }
 
     pub fn add_coord(&mut self, coord: Coord) {
-        self.coords |= coord.bit();
+        self.coords += coord;
     }
 
     pub fn without(&self, house: House) -> Self {
@@ -121,7 +118,7 @@ impl HouseSet {
     pub fn without_coord(&self, coord: Coord) -> Self {
         Self {
             shape: self.shape,
-            coords: self.coords & !coord.bit(),
+            coords: self.coords.without(coord),
         }
     }
 
@@ -133,7 +130,7 @@ impl HouseSet {
     }
 
     pub fn remove_coord(&mut self, coord: Coord) {
-        self.coords &= !coord.bit();
+        self.coords -= coord;
     }
 
     pub fn union(&self, set: Self) -> Self {
@@ -181,7 +178,7 @@ impl HouseSet {
         } else {
             Self {
                 shape: self.shape,
-                coords: self.coords & !set.coords,
+                coords: self.coords & -set.coords,
             }
         }
     }
@@ -191,13 +188,9 @@ impl HouseSet {
     }
 
     pub fn inverted(&self) -> Self {
-        match self.coords {
-            0 => Self::full(self.shape),
-            FULL => Self::empty(self.shape),
-            _ => Self {
-                shape: self.shape,
-                coords: FULL & !self.coords,
-            },
+        Self {
+            shape: self.shape,
+            coords: -self.coords,
         }
     }
 
@@ -208,12 +201,12 @@ impl HouseSet {
     pub const fn iter(&self) -> HouseSetIter {
         HouseSetIter {
             shape: self.shape,
-            coords: self.coords,
+            coords: self.coords.bits(),
         }
     }
 
     pub fn debug(&self) -> String {
-        format!("{} {}:{:09b}", self.shape, self.size(), self.coords)
+        format!("{} {}", self.shape, self.coords.debug())
     }
 }
 
@@ -221,7 +214,7 @@ impl From<House> for HouseSet {
     fn from(house: House) -> Self {
         HouseSet {
             shape: house.shape(),
-            coords: house.coord().bit(),
+            coords: CoordSet::from_coord(house.coord()),
         }
     }
 }
@@ -448,17 +441,9 @@ impl SubAssign for HouseSet {
 impl fmt::Display for HouseSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.is_empty() {
-            write!(f, "{}", EMPTY_SET)
+            write!(f, "{} {}", self.shape.label(), EMPTY_SET)
         } else {
-            let mut s = String::with_capacity(3 * self.size() as usize + 2);
-            s.push('(');
-            for house in self.iter() {
-                s.push(' ');
-                s.push_str(house.label());
-            }
-            s.push(' ');
-            s.push(')');
-            write!(f, "{}", s)
+            write!(f, "{} {}", self.shape.label(), self.coords)
         }
     }
 }

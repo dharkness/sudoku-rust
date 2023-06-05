@@ -5,11 +5,13 @@
 //! In a valid puzzle, each `House` must contain exactly one of each [`Known`][crate::layout::Known].
 
 pub mod coord;
+pub mod coord_set;
 pub mod house;
 pub mod house_set;
 pub mod shape;
 
 pub use coord::Coord;
+pub use coord_set::CoordSet;
 pub use house::{House, HouseIter, HousesIter};
 pub use house_set::{
     HouseIteratorUnion, HouseSet, HouseSetIter, HouseSetIteratorIntersection, HouseSetIteratorUnion,

@@ -37,13 +37,13 @@ fn check_houses(
         shape
             .iter()
             .map(|house| (house, house.cells() & candidate_cells))
-            .filter(|(_, cells)| 2 <= cells.size() && cells.size() as usize <= size)
+            .filter(|(_, cells)| 2 <= cells.size() && cells.size() <= size)
             .map(|(house, cells)| (house, cells, house.crossing_houses(cells)))
             .combinations(size)
             .for_each(|candidates| {
                 // HouseSet
                 let crosses = candidates.iter().map(|(_, _, crosses)| *crosses).union();
-                if crosses.size() as usize != size {
+                if crosses.size() != size {
                     return;
                 }
 

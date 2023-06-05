@@ -62,6 +62,12 @@ impl From<char> for Coord {
     }
 }
 
+impl From<&str> for Coord {
+    fn from(label: &str) -> Self {
+        Coord::from(label.chars().next().unwrap())
+    }
+}
+
 impl From<usize> for Coord {
     fn from(coord: usize) -> Self {
         Self::new(coord as u8)

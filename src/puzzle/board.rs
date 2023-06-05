@@ -35,7 +35,7 @@ impl Board {
         }
     }
 
-    pub fn given_count(&self) -> u8 {
+    pub fn given_count(&self) -> usize {
         self.givens.size()
     }
 
@@ -43,11 +43,11 @@ impl Board {
         self.givens[cell]
     }
 
-    pub fn known_count(&self) -> u8 {
+    pub fn known_count(&self) -> usize {
         self.knowns.size()
     }
 
-    pub fn unknown_count(&self) -> u8 {
+    pub fn unknown_count(&self) -> usize {
         81 - self.knowns.size()
     }
 
