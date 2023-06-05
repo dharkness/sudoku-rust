@@ -80,6 +80,32 @@ impl CellSet {
         self.0 & cell.bit().bit() != 0
     }
 
+    pub const fn as_pair(&self) -> Option<(Cell, Cell)> {
+        if self.size() != 2 {
+            None
+        } else {
+            let mut bits = self.bits();
+            let first = Cell::new(bits.trailing_zeros() as u8);
+            bits -= first.bit().bit();
+            let second = Cell::new(bits.trailing_zeros() as u8);
+            Some((first, second))
+        }
+    }
+
+    pub const fn as_triple(&self) -> Option<(Cell, Cell, Cell)> {
+        if self.size() != 3 {
+            None
+        } else {
+            let mut bits = self.bits();
+            let first = Cell::new(bits.trailing_zeros() as u8);
+            bits -= first.bit().bit();
+            let second = Cell::new(bits.trailing_zeros() as u8);
+            bits -= second.bit().bit();
+            let third = Cell::new(bits.trailing_zeros() as u8);
+            Some((first, second, third))
+        }
+    }
+
     pub const fn with(&self, cell: Cell) -> CellSet {
         if self.has(cell) {
             return *self;
@@ -527,6 +553,44 @@ mod tests {
         for i in ALL_CELLS {
             assert_eq!(i % 2 == 0, set[Cell::new(i)]);
         }
+    }
+
+    #[test]
+    fn as_pair_returns_none_if_not_pair() {
+        assert!(CellSet::empty().as_pair().is_none());
+        assert!(CellSet::full().as_pair().is_none());
+        assert!(CellSet::from("A5 D9 F3 H5").as_pair().is_none());
+    }
+
+    #[test]
+    fn as_pair_returns_pair() {
+        assert_eq!(
+            (Cell::from("D3"), Cell::from("G5")),
+            CellSet::from("D3 G5").as_pair().unwrap()
+        );
+        assert_eq!(
+            (Cell::from("F4"), Cell::from("J2")),
+            CellSet::from("J2 F4").as_pair().unwrap()
+        );
+    }
+
+    #[test]
+    fn as_triple_returns_none_if_not_triple() {
+        assert!(CellSet::empty().as_triple().is_none());
+        assert!(CellSet::full().as_triple().is_none());
+        assert!(CellSet::from("A5 D9 F3 H5").as_triple().is_none());
+    }
+
+    #[test]
+    fn as_triple_returns_triple() {
+        assert_eq!(
+            (Cell::from("D3"), Cell::from("G5"), Cell::from("H2")),
+            CellSet::from("D3 G5 H2").as_triple().unwrap()
+        );
+        assert_eq!(
+            (Cell::from("E5"), Cell::from("F4"), Cell::from("J2")),
+            CellSet::from("J2 F4 E5").as_triple().unwrap()
+        );
     }
 
     #[test]

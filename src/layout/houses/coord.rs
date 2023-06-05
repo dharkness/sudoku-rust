@@ -10,6 +10,16 @@ impl Coord {
         Self(coord)
     }
 
+    pub const fn from_digit(digit: u8) -> Self {
+        debug_assert!(1 <= digit && digit <= 9);
+        Self(digit - 1)
+    }
+
+    pub const fn from_index(index: u32) -> Self {
+        debug_assert!(index < 9);
+        Self(index as u8)
+    }
+
     pub const fn u8(&self) -> u8 {
         self.0
     }

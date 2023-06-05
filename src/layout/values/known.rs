@@ -25,6 +25,11 @@ impl Known {
         Self(value - 1)
     }
 
+    pub const fn from_index(index: u32) -> Self {
+        debug_assert!(index < 9);
+        Self(index as u8)
+    }
+
     pub const fn usize(&self) -> usize {
         self.0 as usize
     }

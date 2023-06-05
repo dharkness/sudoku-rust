@@ -83,6 +83,27 @@ impl HouseSet {
         self.iter().fold(CellSet::empty(), |acc, h| acc | h.cells())
     }
 
+    pub const fn as_pair(&self) -> Option<(House, House)> {
+        match self.coords.as_pair() {
+            Some((first, second)) => Some((
+                House::new(self.shape, first),
+                House::new(self.shape, second),
+            )),
+            _ => None,
+        }
+    }
+
+    pub const fn as_triple(&self) -> Option<(House, House, House)> {
+        match self.coords.as_triple() {
+            Some((first, second, third)) => Some((
+                House::new(self.shape, first),
+                House::new(self.shape, second),
+                House::new(self.shape, third),
+            )),
+            _ => None,
+        }
+    }
+
     pub fn with(&self, house: House) -> Self {
         if self.shape != house.shape() {
             panic!("Cannot add {} to {} set", house, self.shape);
@@ -526,5 +547,43 @@ mod tests {
         assert_eq!(9, set.size());
         assert_eq!(9, set.iter().collect::<Vec<House>>().len());
         House::rows_iter().for_each(|house| assert!(set.has(house)));
+    }
+
+    #[test]
+    fn as_pair_returns_none_if_not_pair() {
+        assert!(HouseSet::empty(Shape::Row).as_pair().is_none());
+        assert!(HouseSet::full(Shape::Row).as_pair().is_none());
+        assert!(HouseSet::from("R2 R4 R8").as_pair().is_none());
+    }
+
+    #[test]
+    fn as_pair_returns_pair() {
+        assert_eq!(
+            (House::from("R2"), House::from("R8")),
+            HouseSet::from("R2 R8").as_pair().unwrap()
+        );
+        assert_eq!(
+            (House::from("R4"), House::from("R7")),
+            HouseSet::from("R7 R4").as_pair().unwrap()
+        );
+    }
+
+    #[test]
+    fn as_triple_returns_none_if_not_triple() {
+        assert!(HouseSet::empty(Shape::Row).as_triple().is_none());
+        assert!(HouseSet::full(Shape::Row).as_triple().is_none());
+        assert!(HouseSet::from("C2 C4 C7 C9").as_triple().is_none());
+    }
+
+    #[test]
+    fn as_triple_returns_triple() {
+        assert_eq!(
+            (House::from("C1"), House::from("C2"), House::from("C4")),
+            HouseSet::from("C1 C2 C4").as_triple().unwrap()
+        );
+        assert_eq!(
+            (House::from("C1"), House::from("C2"), House::from("C4")),
+            HouseSet::from("C4 C1 C2").as_triple().unwrap()
+        );
     }
 }

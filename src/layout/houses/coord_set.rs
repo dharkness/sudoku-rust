@@ -75,6 +75,32 @@ impl CoordSet {
         self.0 & coord.bit() != 0
     }
 
+    pub const fn as_pair(&self) -> Option<(Coord, Coord)> {
+        if self.size() != 2 {
+            None
+        } else {
+            let mut bits = self.bits();
+            let first = Coord::from_index(bits.trailing_zeros());
+            bits -= first.bit();
+            let second = Coord::from_index(bits.trailing_zeros());
+            Some((first, second))
+        }
+    }
+
+    pub const fn as_triple(&self) -> Option<(Coord, Coord, Coord)> {
+        if self.size() != 3 {
+            None
+        } else {
+            let mut bits = self.bits();
+            let first = Coord::from_index(bits.trailing_zeros());
+            bits -= first.bit();
+            let second = Coord::from_index(bits.trailing_zeros());
+            bits -= second.bit();
+            let third = Coord::from_index(bits.trailing_zeros());
+            Some((first, second, third))
+        }
+    }
+
     pub const fn with(&self, coord: Coord) -> Self {
         if self.has(coord) {
             return *self;
@@ -463,6 +489,52 @@ mod tests {
         for i in 1..=9 {
             assert_eq!(i % 2 == 1, set[coord!(i)]);
         }
+    }
+
+    #[test]
+    fn as_pair_returns_none_if_not_pair() {
+        assert!(CoordSet::empty().as_pair().is_none());
+        assert!(CoordSet::full().as_pair().is_none());
+        assert!(CoordSet::from("2 5 8 9").as_pair().is_none());
+    }
+
+    #[test]
+    fn as_pair_returns_pair() {
+        assert_eq!(
+            (Coord::from_digit(2), Coord::from_digit(5)),
+            CoordSet::from("2 5").as_pair().unwrap()
+        );
+        assert_eq!(
+            (Coord::from_digit(1), Coord::from_digit(9)),
+            CoordSet::from("9 1").as_pair().unwrap()
+        );
+    }
+
+    #[test]
+    fn as_triple_returns_none_if_not_triple() {
+        assert!(CoordSet::empty().as_triple().is_none());
+        assert!(CoordSet::full().as_triple().is_none());
+        assert!(CoordSet::from("2 5 8 9").as_triple().is_none());
+    }
+
+    #[test]
+    fn as_triple_returns_triple() {
+        assert_eq!(
+            (
+                Coord::from_digit(2),
+                Coord::from_digit(5),
+                Coord::from_digit(8)
+            ),
+            CoordSet::from("2 5 8").as_triple().unwrap()
+        );
+        assert_eq!(
+            (
+                Coord::from_digit(1),
+                Coord::from_digit(5),
+                Coord::from_digit(9)
+            ),
+            CoordSet::from("9 5 1").as_triple().unwrap()
+        );
     }
 
     #[test]

@@ -61,6 +61,32 @@ impl KnownSet {
         self.0 & known.bit() != 0
     }
 
+    pub const fn as_pair(&self) -> Option<(Known, Known)> {
+        if self.size() != 2 {
+            None
+        } else {
+            let mut bits = self.bits();
+            let first = Known::from_index(bits.trailing_zeros());
+            bits -= first.bit();
+            let second = Known::from_index(bits.trailing_zeros());
+            Some((first, second))
+        }
+    }
+
+    pub const fn as_triple(&self) -> Option<(Known, Known, Known)> {
+        if self.size() != 3 {
+            None
+        } else {
+            let mut bits = self.bits();
+            let first = Known::from_index(bits.trailing_zeros());
+            bits -= first.bit();
+            let second = Known::from_index(bits.trailing_zeros());
+            bits -= second.bit();
+            let third = Known::from_index(bits.trailing_zeros());
+            Some((first, second, third))
+        }
+    }
+
     pub const fn with(&self, known: Known) -> KnownSet {
         if self.has(known) {
             return *self;
@@ -441,6 +467,44 @@ mod tests {
         for i in 1..=9 {
             assert_eq!(i % 2 == 1, set[known!(i)]);
         }
+    }
+
+    #[test]
+    fn as_pair_returns_none_if_not_pair() {
+        assert!(KnownSet::empty().as_pair().is_none());
+        assert!(KnownSet::full().as_pair().is_none());
+        assert!(KnownSet::from("2 5 8 9").as_pair().is_none());
+    }
+
+    #[test]
+    fn as_pair_returns_pair() {
+        assert_eq!(
+            (Known::new(2), Known::new(5)),
+            KnownSet::from("2 5").as_pair().unwrap()
+        );
+        assert_eq!(
+            (Known::new(1), Known::new(9)),
+            KnownSet::from("9 1").as_pair().unwrap()
+        );
+    }
+
+    #[test]
+    fn as_triple_returns_none_if_not_triple() {
+        assert!(KnownSet::empty().as_triple().is_none());
+        assert!(KnownSet::full().as_triple().is_none());
+        assert!(KnownSet::from("2 5 8 9").as_triple().is_none());
+    }
+
+    #[test]
+    fn as_triple_returns_triple() {
+        assert_eq!(
+            (Known::new(2), Known::new(5), Known::new(8)),
+            KnownSet::from("2 5 8").as_triple().unwrap()
+        );
+        assert_eq!(
+            (Known::new(1), Known::new(5), Known::new(9)),
+            KnownSet::from("9 5 1").as_triple().unwrap()
+        );
     }
 
     #[test]
