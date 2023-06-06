@@ -40,7 +40,7 @@ pub fn find_intersection_removals(board: &Board) -> Option<Effects> {
 }
 
 fn check_intersection(board: &Board, block: House, houses: HouseSet, effects: &mut Effects) {
-    for known in Known::ALL {
+    for known in Known::iter() {
         houses.iter().for_each(|house| {
             let segment = block.cells() & house.cells();
             let block_disjoint = block.cells() - segment;

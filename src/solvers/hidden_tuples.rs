@@ -16,9 +16,8 @@ pub fn find_hidden_quads(board: &Board) -> Option<Effects> {
 pub fn find_hidden_tuples(board: &Board, size: usize, strategy: Strategy) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    for house in House::iter() {
-        Known::ALL
-            .into_iter()
+    House::iter().for_each(|house| {
+        Known::iter()
             .map(|k| (k, house.cells() & board.candidate_cells(k)))
             .filter(|(_, candidates)| 2 <= candidates.size() && candidates.size() <= size)
             .combinations(size)
@@ -44,7 +43,7 @@ pub fn find_hidden_tuples(board: &Board, size: usize, strategy: Strategy) -> Opt
                     effects.add_action(action);
                 }
             });
-    }
+    });
 
     if effects.has_actions() {
         Some(effects)

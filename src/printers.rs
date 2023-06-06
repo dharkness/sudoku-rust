@@ -29,7 +29,7 @@ pub fn print_candidates(board: &Board) {
             let value = board.value(cell);
             let candidates = board.candidates(cell);
             if !value {
-                for k in Known::ALL {
+                for k in Known::iter() {
                     let line = k.usize() / 3;
                     if candidates[k] {
                         lines[line].push(k.label());

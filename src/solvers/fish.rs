@@ -32,10 +32,10 @@ fn check_houses(
     shape: Shape,
     effects: &mut Effects,
 ) {
-    for k in Known::ALL {
-        let candidate_cells = board.candidate_cells(k);
+    Known::iter().for_each(|known| {
+        let candidate_cells = board.candidate_cells(known);
         shape
-            .iter()
+            .house_iter()
             .map(|house| (house, house.cells() & candidate_cells))
             .filter(|(_, cells)| 2 <= cells.size() && cells.size() <= size)
             .map(|(house, cells)| (house, cells, house.crossing_houses(cells)))
@@ -79,10 +79,10 @@ fn check_houses(
                 }
 
                 let mut action = Action::new(strategy);
-                action.erase_cells(erase, k);
+                action.erase_cells(erase, known);
                 effects.add_action(action);
             });
-    }
+    });
 }
 
 #[cfg(test)]

@@ -13,6 +13,10 @@ pub struct Cell(u8);
 impl Cell {
     pub const COUNT: u8 = 81;
 
+    pub fn iter() -> CellIter {
+        CellIter::new()
+    }
+
     pub const fn new(index: u8) -> Self {
         debug_assert!(index < Cell::COUNT);
         Self(index)
@@ -89,6 +93,17 @@ impl Cell {
     pub const fn label(&self) -> &'static str {
         label_from_index(self.0)
     }
+
+    pub fn labels(cells: &Vec<Cell>) -> String {
+        let mut labels = String::new();
+        labels.push('(');
+        for cell in cells {
+            labels.push(' ');
+            labels.push_str(cell.label());
+        }
+        labels.push_str(" )");
+        labels
+    }
 }
 
 impl From<i32> for Cell {
@@ -143,6 +158,34 @@ impl fmt::Display for Cell {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.label())?;
         Ok(())
+    }
+}
+
+pub struct CellIter(u8);
+
+impl CellIter {
+    pub const fn new() -> Self {
+        Self(0)
+    }
+}
+
+impl Iterator for CellIter {
+    type Item = Cell;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.0 < Cell::COUNT {
+            let cell = Cell::new(self.0);
+            self.0 += 1;
+            Some(cell)
+        } else {
+            None
+        }
+    }
+}
+
+impl ExactSizeIterator for CellIter {
+    fn len(&self) -> usize {
+        (Cell::COUNT - self.0) as usize
     }
 }
 

@@ -8,17 +8,9 @@ use super::{KnownSet, Value};
 pub struct Known(u8);
 
 impl Known {
-    pub const ALL: [Known; 9] = [
-        known!(1),
-        known!(2),
-        known!(3),
-        known!(4),
-        known!(5),
-        known!(6),
-        known!(7),
-        known!(8),
-        known!(9),
-    ];
+    pub fn iter() -> KnownIter {
+        KnownIter::new()
+    }
 
     pub const fn new(value: u8) -> Self {
         debug_assert!(1 <= value && value <= 9);
@@ -88,6 +80,34 @@ impl Neg for Known {
 impl fmt::Display for Known {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.label())
+    }
+}
+
+pub struct KnownIter(u8);
+
+impl KnownIter {
+    pub const fn new() -> Self {
+        Self(0)
+    }
+}
+
+impl Iterator for KnownIter {
+    type Item = Known;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.0 < 9 {
+            let known = Known::from_index(self.0.into());
+            self.0 += 1;
+            Some(known)
+        } else {
+            None
+        }
+    }
+}
+
+impl ExactSizeIterator for KnownIter {
+    fn len(&self) -> usize {
+        9 - self.0 as usize
     }
 }
 

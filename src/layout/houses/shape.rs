@@ -14,6 +14,10 @@ pub enum Shape {
 }
 
 impl Shape {
+    pub fn iter() -> ShapeIter {
+        ShapeIter::new()
+    }
+
     pub const fn new(index: u8) -> Self {
         debug_assert!(index <= 2);
         match index {
@@ -60,7 +64,7 @@ impl Shape {
         CELLS[self.usize()][house.usize()][coord.usize()]
     }
 
-    pub const fn iter(&self) -> HouseIter {
+    pub const fn house_iter(&self) -> HouseIter {
         HouseIter::new(*self)
     }
 }
@@ -85,6 +89,34 @@ impl fmt::Display for Shape {
 impl fmt::Debug for Shape {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.label())
+    }
+}
+
+pub struct ShapeIter(u8);
+
+impl ShapeIter {
+    pub const fn new() -> Self {
+        Self(0)
+    }
+}
+
+impl Iterator for ShapeIter {
+    type Item = Shape;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.0 < 3 {
+            let shape = Shape::new(self.0);
+            self.0 += 1;
+            Some(shape)
+        } else {
+            None
+        }
+    }
+}
+
+impl ExactSizeIterator for ShapeIter {
+    fn len(&self) -> usize {
+        3 - self.0 as usize
     }
 }
 

@@ -384,7 +384,7 @@ impl fmt::Display for KnownSet {
         } else {
             let mut s = String::with_capacity(2 + 9);
             s.push('(');
-            Known::ALL.into_iter().for_each(|k| {
+            Known::iter().for_each(|k| {
                 if self.has(k) {
                     s.push(k.label());
                 } else {
