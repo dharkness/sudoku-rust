@@ -209,6 +209,21 @@ pub fn play() {
                     println!("\n==> No deductions found\n");
                 }
             }
+            "R" => {
+                let mut reset = Board::new();
+                board.known_iter().for_each(|(cell, known)| {
+                    let mut effects = Effects::new();
+                    reset.set_known(cell, known, &mut effects);
+                    if let Some(errors) = effects.apply_all(&mut reset) {
+                        println!("\n==> Invalid board\n");
+                        errors.print_errors();
+                        println!();
+                    }
+                });
+                boards.push(reset);
+                println!();
+                show = true;
+            }
             "Z" => {
                 if boards.len() > 1 {
                     println!("\n==> Undoing last move\n");
@@ -235,6 +250,7 @@ fn print_help() {
         "S <cell> <value> - solve a cell\n",
         "F                - find deductions\n",
         "A                - apply deductions\n",
+        "R                - reset candidates based on solved cells\n",
         "Z                - undo last change\n",
         "H                - this help message\n",
         "Q                - quit\n\n",
