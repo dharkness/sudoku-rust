@@ -30,12 +30,18 @@ pub fn find_deadly_rectangles(board: &Board) -> Option<Vec<Rectangle>> {
             for ((tl, bl), (tr, br)) in CELL_COORDS[horiz_vert] {
                 let top_left = from.cell(tl);
                 let bottom_right = to.cell(br);
+                if board.is_given(top_left) || board.is_given(bottom_right) {
+                    continue;
+                }
                 if !board.is_known(top_left) || board.value(top_left) != board.value(bottom_right) {
                     continue;
                 }
 
                 let bottom_left = from.cell(bl);
                 let top_right = to.cell(tr);
+                if board.is_given(bottom_left) || board.is_given(top_right) {
+                    continue;
+                }
                 if !board.is_known(bottom_left)
                     || board.value(bottom_left) != board.value(top_right)
                 {
@@ -86,6 +92,15 @@ pub fn creates_deadly_rectangles(
                 let mut bottom_left = from.cell(bl);
                 let mut top_right = to.cell(tr);
                 let mut bottom_right = to.cell(br);
+
+                if board.is_given(top_left)
+                    || board.is_given(bottom_left)
+                    || board.is_given(top_right)
+                    || board.is_given(bottom_right)
+                {
+                    continue;
+                }
+
                 if tl == cell_coord {
                     // use it
                 } else if bl == cell_coord {
@@ -237,6 +252,15 @@ mod tests {
 
     #[test]
     fn find() {
+        test_find(false);
+    }
+
+    #[test]
+    fn find_ignores_givens() {
+        test_find(true);
+    }
+
+    fn test_find(givens: bool) {
         for horiz_vert in 0..2 {
             for (from, to) in BLOCKS[horiz_vert] {
                 for ((tl, bl), (tr, br)) in CELL_COORDS[horiz_vert] {
@@ -249,17 +273,25 @@ mod tests {
                     let mut effects = Effects::new();
 
                     board.set_known(tl, known!(1), &mut effects);
-                    board.set_known(tr, known!(2), &mut effects);
+                    if givens {
+                        board.set_given(tr, known!(2), &mut effects);
+                    } else {
+                        board.set_known(tr, known!(2), &mut effects);
+                    }
                     board.set_known(br, known!(1), &mut effects);
                     board.set_known(bl, known!(2), &mut effects);
 
                     let found = find_deadly_rectangles(&board);
-                    let want = Rectangle::new(tl, br);
+                    if givens {
+                        assert!(found.is_none());
+                    } else {
+                        let want = Rectangle::new(tl, br);
 
-                    assert!(found.is_some(), "deadly rectangle {} not found", want);
-                    let found = found.unwrap();
-                    assert_eq!(1, found.len(), "wrong count for {}", want);
-                    assert_eq!(want, found[0]);
+                        assert!(found.is_some(), "deadly rectangle {} not found", want);
+                        let found = found.unwrap();
+                        assert_eq!(1, found.len(), "wrong count for {}", want);
+                        assert_eq!(want, found[0]);
+                    }
                 }
             }
         }
@@ -267,34 +299,55 @@ mod tests {
 
     #[test]
     fn creates() {
+        test_creates(false);
+    }
+
+    #[test]
+    fn creates_ignores_givens() {
+        test_creates(true);
+    }
+
+    fn test_creates(givens: bool) {
         const KNOWNS: [Known; 4] = [known!(1), known!(2), known!(1), known!(2)];
 
-        fn test(cells: [Cell; 4]) {
+        fn test(givens: bool, cells: [Cell; 4]) {
             let want = Rectangle::new(cells[0], cells[2]);
 
             for i in 0..4 {
                 let mut board = Board::new();
                 let mut effects = Effects::new();
+                let mut first = givens;
 
                 for j in 0..4 {
                     if i != j {
-                        board.set_known(cells[j], KNOWNS[j], &mut effects);
+                        if first {
+                            board.set_given(cells[j], KNOWNS[j], &mut effects);
+                            first = false;
+                        } else {
+                            board.set_known(cells[j], KNOWNS[j], &mut effects);
+                        }
                     }
                 }
 
                 let found = creates_deadly_rectangles(&board, cells[i], KNOWNS[i]);
-
-                assert!(found.is_some(), "deadly rectangle {} not found", want);
-                let found = found.unwrap();
-                assert_eq!(1, found.len(), "wrong count for {}", want);
-                assert_eq!(want, found[0]);
+                if givens {
+                    assert!(found.is_none());
+                } else {
+                    assert!(found.is_some(), "deadly rectangle {} not found", want);
+                    let found = found.unwrap();
+                    assert_eq!(1, found.len(), "wrong count for {}", want);
+                    assert_eq!(want, found[0]);
+                }
             }
         }
 
         for horiz_vert in 0..2 {
             for (from, to) in BLOCKS[horiz_vert] {
                 for ((tl, bl), (tr, br)) in CELL_COORDS[horiz_vert] {
-                    test([from.cell(tl), to.cell(tr), to.cell(br), from.cell(bl)]);
+                    test(
+                        givens,
+                        [from.cell(tl), to.cell(tr), to.cell(br), from.cell(bl)],
+                    );
                 }
             }
         }

@@ -36,7 +36,7 @@ impl Parser {
                     let current = board.value(cell);
                     if current != known.value() {
                         if board.is_candidate(cell, known) {
-                            board.set_known(cell, known, &mut effects);
+                            board.set_given(cell, known, &mut effects);
                             if effects.has_errors() && self.stop_on_error {
                                 return (board, effects, Some((cell, known)));
                             }
@@ -83,6 +83,7 @@ pub(crate) use parse;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::printers::print_values;
 
     #[test]
     fn test() {
@@ -119,6 +120,6 @@ mod tests {
         assert!(failed.is_none());
         assert!(!errors.has_errors());
 
-        assert_eq!(want, board)
+        assert_eq!(want.console_string(), board.console_string())
     }
 }

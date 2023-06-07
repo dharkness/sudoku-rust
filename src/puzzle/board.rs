@@ -48,6 +48,10 @@ impl Board {
         self.givens[cell]
     }
 
+    pub fn givens(&self) -> CellSet {
+        self.givens
+    }
+
     pub fn known_count(&self) -> usize {
         self.knowns.size()
     }
@@ -58,6 +62,10 @@ impl Board {
 
     pub fn is_known(&self, cell: Cell) -> bool {
         self.knowns[cell]
+    }
+
+    pub fn knowns(&self) -> CellSet {
+        self.knowns
     }
 
     pub fn known_iter(&self) -> impl Iterator<Item = (Cell, Known)> + '_ {
