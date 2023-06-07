@@ -136,6 +136,16 @@ impl CellSet {
         }
     }
 
+    pub fn pop(&mut self) -> Option<Cell> {
+        if self.is_empty() {
+            None
+        } else {
+            let cell = Cell::new(self.bits().trailing_zeros() as u8);
+            self.remove(cell);
+            Some(cell)
+        }
+    }
+
     pub const fn union(&self, set: Self) -> CellSet {
         if self.0 == set.0 {
             *self
@@ -184,8 +194,8 @@ impl CellSet {
         *self = self.inverted()
     }
 
-    pub const fn iter(&self) -> Iter {
-        Iter {
+    pub const fn iter(&self) -> CellIter {
+        CellIter {
             iter: self.bit_iter(),
         }
     }
@@ -212,6 +222,15 @@ impl From<&str> for CellSet {
         } else {
             labels.split(' ').map(Cell::from).union() as CellSet
         }
+    }
+}
+
+impl IntoIterator for CellSet {
+    type Item = Cell;
+    type IntoIter = CellIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }
 
@@ -486,11 +505,11 @@ macro_rules! cells {
 #[allow(unused_imports)]
 pub(crate) use cells;
 
-pub struct Iter {
+pub struct CellIter {
     iter: BitIter,
 }
 
-impl Iterator for Iter {
+impl Iterator for CellIter {
     type Item = Cell;
 
     fn next(&mut self) -> Option<Self::Item> {

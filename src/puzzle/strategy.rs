@@ -50,4 +50,6 @@ pub enum Strategy {
     XWing,
     Swordfish,
     Jellyfish,
+
+    SinglesChain,
 }

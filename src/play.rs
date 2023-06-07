@@ -10,7 +10,7 @@ use crate::symbols::UNKNOWN_VALUE;
 
 const URL: &str = "https://www.sudokuwiki.org/sudoku.htm?bd=";
 
-const SOLVERS: [Solver; 10] = [
+const SOLVERS: [Solver; 11] = [
     crate::solvers::intersection_removals::find_intersection_removals,
     crate::solvers::naked_tuples::find_naked_pairs,
     crate::solvers::naked_tuples::find_naked_triples,
@@ -21,8 +21,9 @@ const SOLVERS: [Solver; 10] = [
     crate::solvers::fish::find_x_wings,
     crate::solvers::fish::find_swordfish,
     crate::solvers::fish::find_jellyfish,
+    crate::solvers::singles_chains::find_singles_chains,
 ];
-const SOLVER_LABELS: [&str; 10] = [
+const SOLVER_LABELS: [&str; 11] = [
     "intersection removal",
     "naked pair",
     "naked triple",
@@ -33,6 +34,7 @@ const SOLVER_LABELS: [&str; 10] = [
     "x-wing",
     "swordfish",
     "jellyfish",
+    "singles chain",
 ];
 
 pub fn play() {

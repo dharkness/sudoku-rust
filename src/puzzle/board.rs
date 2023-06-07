@@ -19,20 +19,25 @@ pub struct Board {
     candidate_knowns: [KnownSet; 81],
     /// Cells that are still possible for each known.
     candidate_cells: [CellSet; 9],
+    /// Cells that have N candidates.
+    cells_with_n_candidates: [CellSet; 10],
     /// Cells that have been solved for each known.
     known_cells: [CellSet; 9],
 }
 
 impl Board {
     pub const fn new() -> Board {
-        Board {
+        let mut board = Board {
             givens: CellSet::empty(),
             knowns: CellSet::empty(),
             values: [Value::unknown(); 81],
             candidate_knowns: [KnownSet::full(); 81],
             candidate_cells: [CellSet::full(); 9],
+            cells_with_n_candidates: [CellSet::empty(); 10],
             known_cells: [CellSet::empty(); 9],
-        }
+        };
+        board.cells_with_n_candidates[9] = CellSet::full();
+        board
     }
 
     pub fn given_count(&self) -> usize {
@@ -79,6 +84,19 @@ impl Board {
         self.candidate_knowns[cell.usize()][known]
     }
 
+    pub fn cells_with_n_candidates(&self, n: usize) -> CellSet {
+        self.cells_with_n_candidates[n]
+    }
+
+    pub fn cell_knowns_with_n_candidates(
+        &self,
+        n: usize,
+    ) -> impl Iterator<Item = (Cell, KnownSet)> + '_ {
+        self.cells_with_n_candidates(n)
+            .iter()
+            .map(|cell| (cell, self.candidates(cell)))
+    }
+
     pub fn candidate_cells(&self, known: Known) -> CellSet {
         self.candidate_cells[known.usize()]
     }
@@ -90,6 +108,9 @@ impl Board {
     pub fn remove_candidate(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> bool {
         let knowns = &mut self.candidate_knowns[cell.usize()];
         if knowns[known] {
+            let size = knowns.size();
+            self.cells_with_n_candidates[size] -= cell;
+            self.cells_with_n_candidates[size - 1] += cell;
             *knowns -= known;
             if knowns.is_empty() {
                 effects.add_error(Error::UnsolvableCell(cell));
@@ -195,7 +216,10 @@ impl Board {
         self.known_cells[known.usize()] += cell;
         self.candidate_cells[known.usize()] -= cell;
 
-        let candidates = self.candidate_knowns[cell.usize()] - known;
+        let mut candidates = self.candidate_knowns[cell.usize()];
+        self.cells_with_n_candidates[candidates.size()] -= cell;
+        self.cells_with_n_candidates[0] += cell;
+        candidates -= known;
         self.candidate_knowns[cell.usize()] = KnownSet::empty();
         for known in candidates.iter() {
             self.candidate_cells[known.usize()] -= cell;
