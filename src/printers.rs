@@ -2,7 +2,7 @@
 
 use crate::layout::{Cell, House, Known};
 use crate::puzzle::Board;
-use crate::symbols::MISSING;
+use crate::symbols::{MISSING, REMOVE_CANDIDATE};
 
 pub fn print_values(board: &Board) {
     println!("  ¹²³⁴⁵⁶⁷⁸⁹");
@@ -11,6 +11,26 @@ pub fn print_values(board: &Board) {
         row.cells().iter().for_each(|cell| {
             let value = board.value(cell);
             print!("{}", value);
+        });
+        println!();
+    });
+}
+
+pub fn print_candidate(board: &Board, known: Known) {
+    println!("  ¹²³⁴⁵⁶⁷⁸⁹");
+    House::rows_iter().for_each(|row| {
+        print!("{} ", row.console_label());
+        row.cells().iter().for_each(|cell| {
+            if board.is_candidate(cell, known) {
+                print!("{}", known.highlight());
+            } else {
+                let value = board.value(cell);
+                if value.is_unknown() || value == known.value() {
+                    print!("{}", value);
+                } else {
+                    print!("{}", REMOVE_CANDIDATE);
+                }
+            }
         });
         println!();
     });

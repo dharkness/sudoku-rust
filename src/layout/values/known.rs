@@ -37,6 +37,10 @@ impl Known {
     pub const fn label(&self) -> char {
         (b'1' + self.0) as char
     }
+
+    pub const fn highlight(&self) -> char {
+        HIGHLIGHT_LABELS[self.usize()]
+    }
 }
 
 impl From<u8> for Known {
@@ -120,3 +124,5 @@ macro_rules! known {
 
 #[allow(unused_imports)]
 pub(crate) use known;
+
+const HIGHLIGHT_LABELS: [char; 9] = ['❶', '❷', '❸', '❹', '❺', '❻', '❼', '❽', '❾'];

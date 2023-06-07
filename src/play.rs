@@ -3,7 +3,7 @@
 use std::io::{stdout, Write};
 
 use crate::layout::{Cell, Known};
-use crate::printers::print_candidates;
+use crate::printers::{print_candidate, print_candidates};
 use crate::puzzle::{Board, Effects, Generator, Parser};
 use crate::solvers::Solver;
 use crate::symbols::UNKNOWN_VALUE;
@@ -86,8 +86,19 @@ pub fn play() {
                 }
             }
             "P" => {
-                println!();
-                show = true
+                if input.len() >= 2 {
+                    let k = input[1].chars().next().unwrap();
+                    if ('1'..='9').contains(&k) {
+                        println!();
+                        print_candidate(board, Known::from(k));
+                        println!();
+                    } else {
+                        println!("\n==> Invalid candidate \"{}\"\n", k);
+                    }
+                } else {
+                    println!();
+                    show = true
+                }
             }
             "X" => {
                 let mut unknown = UNKNOWN_VALUE;
@@ -243,7 +254,7 @@ fn print_help() {
         "\n==> Help\n\n",
         "N                - start or input a new puzzle\n",
         "G                - generate a random puzzle\n",
-        "P                - print the full puzzle with knowns and candidates\n",
+        "P <value>        - print the puzzle, optionally limited to a single candidate\n",
         "X [char]         - export the puzzle with optional character for unsolved cells\n",
         "W                - print URL to play on SudokuWiki.org\n",
         "E <cell> <value> - erase a candidate\n",

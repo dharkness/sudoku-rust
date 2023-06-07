@@ -60,6 +60,12 @@ impl Board {
         self.knowns[cell]
     }
 
+    pub fn known_iter(&self) -> impl Iterator<Item = (Cell, Known)> + '_ {
+        self.knowns
+            .into_iter()
+            .map(|cell| (cell, self.value(cell).known()))
+    }
+
     pub fn is_solved(&self) -> bool {
         self.knowns.is_full()
     }
