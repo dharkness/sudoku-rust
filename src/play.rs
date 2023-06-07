@@ -197,8 +197,12 @@ pub fn play() {
 
                 if found {
                     boards.push(clone);
-                    show = true;
-                    println!();
+                    if clone.is_solved() {
+                        println!("\n==> Congratulations!\n");
+                    } else {
+                        println!();
+                        show = true;
+                    }
                 } else {
                     println!("\n==> No deductions found\n");
                 }
