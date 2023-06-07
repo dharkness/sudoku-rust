@@ -90,6 +90,10 @@ impl Cell {
         PEERS[self.usize()]
     }
 
+    pub const fn sees(&self, other: Cell) -> bool {
+        PEERS[self.usize()].has(other)
+    }
+
     pub const fn label(&self) -> &'static str {
         label_from_index(self.0)
     }

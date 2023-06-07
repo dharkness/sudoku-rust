@@ -52,4 +52,5 @@ pub enum Strategy {
     Jellyfish,
 
     SinglesChain,
+    YWing,
 }

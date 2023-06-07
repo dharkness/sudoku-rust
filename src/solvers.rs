@@ -9,6 +9,7 @@ pub mod hidden_tuples;
 pub mod intersection_removals;
 pub mod naked_tuples;
 pub mod singles_chains;
+pub mod y_wings;
 
 use crate::layout::*;
 use crate::puzzle::*;
