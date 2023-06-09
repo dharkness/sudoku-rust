@@ -11,8 +11,8 @@ use super::{Board, Effects, Strategy};
 #[derive(Clone, Debug)]
 pub struct Action {
     strategy: Strategy,
-    set: HashMap<Cell, Known>,
-    erase: HashMap<Cell, KnownSet>,
+    set: HashMap<Cell, Known>,      // [CellSet; 9], [Value; 81]
+    erase: HashMap<Cell, KnownSet>, // [CellSet; 9], [KnownSet; 81]
 }
 
 impl Action {
