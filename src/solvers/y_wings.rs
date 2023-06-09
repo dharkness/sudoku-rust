@@ -6,8 +6,6 @@ pub fn find_y_wings(board: &Board) -> Option<Effects> {
     let bi_values = board.cells_with_n_candidates(2);
     let mut log = false;
 
-    println!("bi_values: {}", bi_values);
-
     bi_values.iter().for_each(|cell| {
         let (k1, k2) = board.candidates(cell).as_pair().unwrap();
         let peers = cell.peers() & bi_values;
