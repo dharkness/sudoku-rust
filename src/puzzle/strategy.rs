@@ -1,6 +1,35 @@
 /// Identifies the logic used to solve cells and remove candidates.
+///
+/// - Strategy stays a simple high-level enum with no values
+/// - Rule specifies subtype or rule with knowns/cells/houses (see comments below)
+///   - Strategy Intersection Removal has Line/Box Reduction and Pointing Pair/Triple
+/// - Deduction combines the Strategy and Clue with Effects (sets and erases)
+///
+/// Add Class (groupings)?
+/// - Naked Candidates
+/// - Hidden Candidates
+/// - Intersection Removal
+/// - Fish
+/// - ...kinda breaks down after that
+///
+/// What's the point? Want to be able to filter rules to apply (automatically),
+/// and then really only peers and singles? This is a tool for creating and solving
+/// puzzles automatically. The UI is just for fun and to learn Rust.
+///
+/// Add Difficulty? sudokuwiki.org only has four:
+/// - Basic
+/// - Tough
+/// - Diabolical
+/// - Extreme
+///
+/// What is the purpose of this project?
+/// - learn Rust
+/// - have fun
+/// - exercise my brain
+/// - Create a generalized solver using inference chains
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Strategy {
+    // these become the Clues; copy and generalize for Strategy
     /// When a cell becomes solved, the value may be removed as a candidate
     /// from every cell in the same row, column or box.
     Peer, // (Known, Cell)
@@ -9,12 +38,12 @@ pub enum Strategy {
     /// may be removed from the other two segments in the segment's row or column.
     ///
     /// This is one form of intersection removals.
-    PointingPair, // (Known, House, (Cell, Cell))
+    PointingPair, // (Known, block House, House, (Cell, Cell))
     /// A candidate that may only appear in three cells one segment of a block
     /// may be removed from the other two segments in the segment's row or column.
     ///
     /// This is one form of intersection removals.
-    PointingTriple, // (Known, House, (Cell, Cell, Cell))
+    PointingTriple, // (Known, block House, House, (Cell, Cell, Cell))
     /// A candidate that may only appear in one segment of a block
     /// may be removed from the other cells in the block.
     ///
