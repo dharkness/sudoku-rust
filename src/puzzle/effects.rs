@@ -56,7 +56,9 @@ impl Effects {
     }
 
     pub fn add_action(&mut self, action: Action) {
-        self.actions.push(action);
+        if !action.is_empty() {
+            self.actions.push(action);
+        }
     }
 
     pub fn add_set(&mut self, strategy: Strategy, cell: Cell, known: Known) {

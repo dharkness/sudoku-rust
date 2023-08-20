@@ -75,6 +75,14 @@ impl CoordSet {
         self.0 & coord.bit() != 0
     }
 
+    pub const fn as_single(&self) -> Option<Coord> {
+        if self.size() != 1 {
+            None
+        } else {
+            Some(Coord::from_index(self.bits().trailing_zeros()))
+        }
+    }
+
     pub const fn as_pair(&self) -> Option<(Coord, Coord)> {
         if self.size() != 2 {
             None

@@ -61,6 +61,14 @@ impl KnownSet {
         self.0 & known.bit() != 0
     }
 
+    pub const fn as_single(&self) -> Option<Known> {
+        if self.size() != 1 {
+            None
+        } else {
+            Some(Known::from_index(self.bits().trailing_zeros()))
+        }
+    }
+
     pub const fn as_pair(&self) -> Option<(Known, Known)> {
         if self.size() != 2 {
             None

@@ -80,6 +80,14 @@ impl CellSet {
         self.0 & cell.bit().bit() != 0
     }
 
+    pub const fn as_single(&self) -> Option<Cell> {
+        if self.size() != 1 {
+            None
+        } else {
+            Some(Cell::new(self.bits().trailing_zeros() as u8))
+        }
+    }
+
     pub const fn as_pair(&self) -> Option<(Cell, Cell)> {
         if self.size() != 2 {
             None

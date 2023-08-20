@@ -83,25 +83,29 @@ impl HouseSet {
         self.iter().fold(CellSet::empty(), |acc, h| acc | h.cells())
     }
 
-    pub const fn as_pair(&self) -> Option<(House, House)> {
-        match self.coords.as_pair() {
-            Some((first, second)) => Some((
-                House::new(self.shape, first),
-                House::new(self.shape, second),
-            )),
-            _ => None,
-        }
+    pub fn as_single(&self) -> Option<House> {
+        self.coords
+            .as_single()
+            .map(|coord| House::new(self.shape, coord))
     }
 
-    pub const fn as_triple(&self) -> Option<(House, House, House)> {
-        match self.coords.as_triple() {
-            Some((first, second, third)) => Some((
+    pub fn as_pair(&self) -> Option<(House, House)> {
+        self.coords.as_pair().map(|(first, second)| {
+            (
+                House::new(self.shape, first),
+                House::new(self.shape, second),
+            )
+        })
+    }
+
+    pub fn as_triple(&self) -> Option<(House, House, House)> {
+        self.coords.as_triple().map(|(first, second, third)| {
+            (
                 House::new(self.shape, first),
                 House::new(self.shape, second),
                 House::new(self.shape, third),
-            )),
-            _ => None,
-        }
+            )
+        })
     }
 
     pub fn with(&self, house: House) -> Self {

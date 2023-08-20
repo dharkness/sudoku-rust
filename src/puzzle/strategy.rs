@@ -82,4 +82,5 @@ pub enum Strategy {
 
     SinglesChain, // (Known, Vec<Cell>)
     YWing,        // (Known, pivot Cell, arms (Cell, Cell))
+    XYZWing,      // (Known, pivot Cell, arms (Cell, Cell))
 }
