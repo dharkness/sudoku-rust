@@ -365,6 +365,13 @@ pub const CONSOLE_LABELS: [[char; 9]; 3] = [
     ['❶', '❷', '❸', '❹', '❺', '❻', '❼', '❽', '❾'],
 ];
 
+#[rustfmt::skip]
+pub const ALT_CONSOLE_LABELS: [[char; 9]; 3] = [
+    ['Ⓐ', 'Ⓑ', 'Ⓒ', 'Ⓓ', 'Ⓔ', 'Ⓕ', 'Ⓖ', 'Ⓗ', 'Ⓙ'],
+    ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨'],
+    ['❶', '❷', '❸', '❹', '❺', '❻', '❼', '❽', '❾'],
+];
+
 pub const ROWS: [House; 9] = make_houses(Shape::Row);
 pub const COLUMNS: [House; 9] = make_houses(Shape::Column);
 pub const BLOCKS: [House; 9] = make_houses(Shape::Block);
