@@ -16,16 +16,16 @@ pub fn print_values(board: &Board) {
     });
 }
 
-pub fn print_candidate(board: &Board, known: Known) {
+pub fn print_candidate(board: &Board, candidate: Known) {
     println!("  ¹²³⁴⁵⁶⁷⁸⁹");
     House::rows_iter().for_each(|row| {
         print!("{} ", row.console_label());
         row.cells().iter().for_each(|cell| {
-            if board.is_candidate(cell, known) {
-                print!("{}", known.highlight());
+            if board.is_candidate(cell, candidate) {
+                print!("{}", candidate.highlight());
             } else {
                 let value = board.value(cell);
-                if value.is_unknown() || value == known.value() {
+                if value.is_unknown() || value == candidate.value() {
                     print!("{}", value);
                 } else {
                     print!("{}", REMOVE_CANDIDATE);
@@ -64,7 +64,7 @@ pub fn print_candidates(board: &Board) {
             }
             if column.is_block_right() {
                 if !column.is_right() {
-                    lines.iter_mut().for_each(|line| line.push_str(" | "));
+                    lines.iter_mut().for_each(|line| line.push_str(" │ "));
                 }
             } else {
                 lines.iter_mut().for_each(|line| line.push(' '));
@@ -74,10 +74,10 @@ pub fn print_candidates(board: &Board) {
         lines.iter().for_each(|line| println!("{}", line));
         if row.is_block_bottom() {
             if !row.is_bottom() {
-                println!("  ------------+-------------+------------");
+                println!("  ────────────┼─────────────┼────────────");
             }
         } else {
-            println!("              |             |");
+            println!("              │             │");
         }
     });
     println!("   ₁   ₂   ₃     ₄   ₅   ₆     ₇   ₈   ₉");
