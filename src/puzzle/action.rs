@@ -44,6 +44,10 @@ impl Action {
         self.set.is_empty() && self.erase.is_empty()
     }
 
+    pub fn strategy(&self) -> Strategy {
+        self.strategy
+    }
+
     pub fn has_strategy(&self, strategy: Strategy) -> bool {
         self.strategy == strategy
     }
@@ -65,10 +69,10 @@ impl Action {
     }
 
     pub fn erases(&self, cell: Cell, known: Known) -> bool {
-        self.erase
-            .get(&cell)
-            .unwrap_or(&KnownSet::empty())
-            .has(known)
+        match self.erase.get(&cell) {
+            Some(knowns) => knowns.has(known),
+            None => false,
+        }
     }
 
     pub fn erases_from_cells(&self, known: Known) -> CellSet {
