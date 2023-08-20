@@ -81,6 +81,7 @@ pub enum Strategy {
     Jellyfish, // (Known, mains HouseSet, crosses HouseSet)
 
     SinglesChain, // (Known, Vec<Cell>)
+    Skyscraper,   // (Known, floor (Cell, Cell), ceiling (Cell, Cell))
     YWing,        // (Known, pivot Cell, arms (Cell, Cell))
     XYZWing,      // (Known, pivot Cell, arms (Cell, Cell))
 }

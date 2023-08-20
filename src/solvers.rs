@@ -9,6 +9,7 @@ pub mod hidden_tuples;
 pub mod intersection_removals;
 pub mod naked_tuples;
 pub mod singles_chains;
+pub mod skyscrapers;
 pub mod xyz_wings;
 pub mod y_wings;
 
