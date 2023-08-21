@@ -75,6 +75,14 @@ impl CoordSet {
         self.0 & coord.bit() != 0
     }
 
+    pub const fn has_all(&self, subset: CoordSet) -> bool {
+        self.intersect(subset).0 == subset.0
+    }
+
+    pub const fn is_subset_of(&self, superset: CoordSet) -> bool {
+        self.intersect(superset).0 == self.0
+    }
+
     pub const fn as_single(&self) -> Option<Coord> {
         if self.size() != 1 {
             None

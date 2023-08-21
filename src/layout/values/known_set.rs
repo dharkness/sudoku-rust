@@ -61,6 +61,14 @@ impl KnownSet {
         self.0 & known.bit() != 0
     }
 
+    pub const fn has_all(&self, subset: KnownSet) -> bool {
+        self.intersect(subset).0 == subset.0
+    }
+
+    pub const fn is_subset_of(&self, superset: KnownSet) -> bool {
+        self.intersect(superset).0 == self.0
+    }
+
     pub const fn as_single(&self) -> Option<Known> {
         if self.size() != 1 {
             None

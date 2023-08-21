@@ -84,4 +84,6 @@ pub enum Strategy {
     Skyscraper,   // (Known, floor (Cell, Cell), ceiling (Cell, Cell))
     YWing,        // (Known, pivot Cell, arms (Cell, Cell))
     XYZWing,      // (Known, pivot Cell, arms (Cell, Cell))
+
+    EmptyRectangle, // (Known, Block, Row, Column, Cell) - CellSet instead of three houses
 }

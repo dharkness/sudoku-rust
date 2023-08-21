@@ -80,6 +80,14 @@ impl CellSet {
         self.0 & cell.bit().bit() != 0
     }
 
+    pub const fn has_all(&self, subset: CellSet) -> bool {
+        self.intersect(subset).0 == subset.0
+    }
+
+    pub const fn is_subset_of(&self, superset: CellSet) -> bool {
+        self.intersect(superset).0 == self.0
+    }
+
     pub const fn as_single(&self) -> Option<Cell> {
         if self.size() != 1 {
             None

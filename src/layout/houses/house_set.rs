@@ -79,6 +79,14 @@ impl HouseSet {
         self.coords.has(coord)
     }
 
+    pub fn has_all(&self, subset: HouseSet) -> bool {
+        self.shape == subset.shape && self.intersect(subset).coords == subset.coords
+    }
+
+    pub fn is_subset_of(&self, superset: HouseSet) -> bool {
+        self.shape == superset.shape && self.intersect(superset).coords == self.coords
+    }
+
     pub fn cells(&self) -> CellSet {
         self.iter().fold(CellSet::empty(), |acc, h| acc | h.cells())
     }
