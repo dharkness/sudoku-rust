@@ -12,7 +12,7 @@ type Bits = u16;
 type SizeAndBits = u16;
 
 /// A set of knowns implemented using a bit field.
-#[derive(Clone, Copy, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Hash, Eq, PartialEq)]
 pub struct KnownSet(SizeAndBits);
 
 const BITS_MASK: Bits = (1 << 9) - 1;
@@ -196,6 +196,15 @@ impl From<&str> for KnownSet {
     }
 }
 
+impl IntoIterator for KnownSet {
+    type Item = Known;
+    type IntoIter = Iter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
 pub trait KnownIteratorUnion {
     fn union(self) -> KnownSet;
 }
@@ -238,8 +247,8 @@ where
 impl FromIterator<Known> for KnownSet {
     fn from_iter<I: IntoIterator<Item = Known>>(iter: I) -> Self {
         let mut set = KnownSet::empty();
-        for house in iter {
-            set += house;
+        for known in iter {
+            set += known;
         }
         set
     }

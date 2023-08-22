@@ -5,7 +5,7 @@ use crate::layout::{Cell, CellSet, Coord};
 use super::{House, HouseIter};
 
 /// The three house shapes on the board.
-#[derive(Clone, Copy, Default, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Copy, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Shape {
     #[default]
     Row,

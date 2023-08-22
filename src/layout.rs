@@ -9,8 +9,8 @@ pub use cells::{
     Rectangle,
 };
 pub use houses::{
-    Coord, House, HouseIter, HouseIteratorUnion, HouseSet, HouseSetIter,
-    HouseSetIteratorIntersection, HouseSetIteratorUnion, HousesIter, Shape,
+    Coord, House, HouseIteratorUnion, HouseSet, HouseSetIteratorIntersection,
+    HouseSetIteratorUnion, Shape,
 };
 pub use values::{
     Known, KnownIteratorUnion, KnownSet, KnownSetIteratorIntersection, KnownSetIteratorUnion, Value,

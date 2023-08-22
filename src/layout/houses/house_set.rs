@@ -10,7 +10,7 @@ use super::{Coord, CoordSet, House, Shape};
 
 const FULL: u16 = (1 << 9) - 1;
 
-#[derive(Clone, Copy, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Hash, Eq, PartialEq)]
 pub struct HouseSet {
     shape: Shape,
     coords: CoordSet,
@@ -231,8 +231,8 @@ impl HouseSet {
         *self = self.inverted()
     }
 
-    pub const fn iter(&self) -> HouseSetIter {
-        HouseSetIter {
+    pub const fn iter(&self) -> Iter {
+        Iter {
             shape: self.shape,
             coords: self.coords.bits(),
         }
@@ -255,6 +255,15 @@ impl From<House> for HouseSet {
 impl From<&str> for HouseSet {
     fn from(labels: &str) -> Self {
         labels.split(' ').map(House::from).union() as HouseSet
+    }
+}
+
+impl IntoIterator for HouseSet {
+    type Item = House;
+    type IntoIter = Iter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }
 
@@ -518,12 +527,12 @@ macro_rules! blocks {
 #[allow(unused_imports)]
 pub(crate) use {blocks, cols, houses, rows};
 
-pub struct HouseSetIter {
+pub struct Iter {
     shape: Shape,
     coords: u16,
 }
 
-impl Iterator for HouseSetIter {
+impl Iterator for Iter {
     type Item = House;
 
     fn next(&mut self) -> Option<Self::Item> {

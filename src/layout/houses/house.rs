@@ -5,7 +5,7 @@ use std::ops::{Add, Neg};
 use crate::layout::houses::house_set::{blocks, cols, rows};
 use crate::layout::{Cell, CellSet, Coord};
 
-use super::{HouseSet, HouseSetIter, Shape};
+use super::{HouseSet, Iter, Shape};
 
 /// One of the nine rows, columns, or blocks on the board.
 #[derive(Clone, Copy, Debug, Default)]
@@ -158,7 +158,7 @@ impl House {
         }
     }
 
-    pub fn row_iter(&self) -> HouseSetIter {
+    pub fn row_iter(&self) -> Iter {
         self.rows().iter()
     }
 
@@ -170,7 +170,7 @@ impl House {
         }
     }
 
-    pub fn column_iter(&self) -> HouseSetIter {
+    pub fn column_iter(&self) -> Iter {
         self.columns().iter()
     }
 
@@ -182,7 +182,7 @@ impl House {
         }
     }
 
-    pub fn block_iter(&self) -> HouseSetIter {
+    pub fn block_iter(&self) -> Iter {
         self.blocks().iter()
     }
 }

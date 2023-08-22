@@ -8,7 +8,7 @@ use crate::symbols::{EMPTY_SET, MISSING};
 use super::Coord;
 
 /// A set of coordinates in a [`House`] implemented using a bit field.
-#[derive(Clone, Copy, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Hash, Eq, PartialEq)]
 pub struct CoordSet(u16);
 
 const FULL: u16 = (1 << 9) - 1;
@@ -218,6 +218,15 @@ impl From<i32> for CoordSet {
     }
 }
 
+impl IntoIterator for CoordSet {
+    type Item = Coord;
+    type IntoIter = Iter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
 pub trait CoordIteratorUnion {
     fn union(self) -> CoordSet;
 }
@@ -260,8 +269,8 @@ where
 impl FromIterator<Coord> for CoordSet {
     fn from_iter<I: IntoIterator<Item = Coord>>(iter: I) -> Self {
         let mut set = Self::empty();
-        for house in iter {
-            set += house;
+        for coord in iter {
+            set += coord;
         }
         set
     }

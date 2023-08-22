@@ -8,7 +8,7 @@ use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Neg, Not, Sub, SubAssign,
 };
 
-use crate::layout::House;
+use crate::layout::{House, HouseSet, Shape};
 use crate::symbols::EMPTY_SET;
 
 use super::{Bit, Cell};
@@ -18,7 +18,7 @@ type Size = u8;
 type SizeAndBits = u128;
 
 /// A set of cells implemented using a bit field.
-#[derive(Clone, Copy, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Hash, Eq, PartialEq)]
 pub struct CellSet(SizeAndBits);
 
 const ALL_CELLS: std::ops::Range<Size> = 0..Cell::COUNT;
@@ -210,6 +210,23 @@ impl CellSet {
         *self = self.inverted()
     }
 
+    pub fn rows(&self) -> HouseSet {
+        self.houses(Shape::Row)
+    }
+
+    pub fn columns(&self) -> HouseSet {
+        self.houses(Shape::Column)
+    }
+
+    pub fn blocks(&self) -> HouseSet {
+        self.houses(Shape::Block)
+    }
+
+    pub fn houses(&self, shape: Shape) -> HouseSet {
+        self.iter()
+            .fold(HouseSet::empty(shape), |set, cell| set + cell.house(shape))
+    }
+
     pub const fn iter(&self) -> CellIter {
         CellIter {
             iter: self.bit_iter(),
@@ -292,8 +309,8 @@ where
 impl FromIterator<Cell> for CellSet {
     fn from_iter<I: IntoIterator<Item = Cell>>(iter: I) -> Self {
         let mut set = CellSet::empty();
-        for house in iter {
-            set += house;
+        for cell in iter {
+            set += cell;
         }
         set
     }
