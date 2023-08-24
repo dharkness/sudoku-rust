@@ -154,6 +154,14 @@ impl House {
             [other.coord.usize()]
     }
 
+    pub const fn houses(&self, shape: Shape) -> HouseSet {
+        match shape {
+            Shape::Row => self.rows(),
+            Shape::Column => self.columns(),
+            Shape::Block => self.blocks(),
+        }
+    }
+
     pub const fn rows(&self) -> HouseSet {
         match self.shape {
             Shape::Row => ROW_ROWS[self.coord.usize()],

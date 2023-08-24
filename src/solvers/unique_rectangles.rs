@@ -78,7 +78,7 @@ fn check_type_one(
     found_type_ones: &mut HashSet<Rectangle>,
     effects: &mut Effects,
 ) {
-    if found_type_ones.contains(&rectangle) || rectangle.block_count() != 2 {
+    if found_type_ones.contains(&rectangle) {
         return;
     }
 
@@ -103,7 +103,14 @@ fn check_neighbors(
     found_type_ones: &HashSet<Rectangle>,
     effects: &mut Effects,
 ) {
-    for house in HouseSet::full(shape) - floor_left.house(shape) {
+    let floor_left_block = floor_left.block();
+    let houses = if floor_left_block == floor_right.block() {
+        HouseSet::full(shape) - floor_left_block.houses(shape)
+    } else {
+        floor_left_block.houses(shape) - floor_left.house(shape)
+    };
+
+    for house in houses {
         if let Ok(candidate) =
             Candidate::try_from_neighbors(board, pair, floor_left, floor_right, house)
         {
@@ -131,7 +138,6 @@ fn check_diagonals(
 
 struct Candidate {
     pub rectangle: Rectangle,
-    pub block_count: usize,
     pub pair: KnownSet,
     pub pair1: Known,
     pub pair2: Known,
@@ -198,7 +204,7 @@ impl Candidate {
         let roof_right_extras = board.candidates(roof_right) - pair;
 
         let rectangle = Rectangle::from(floor_left, floor_right, roof_left, roof_right);
-        if rectangle.block_count() > 2 {
+        if rectangle.block_count() != 2 {
             return Err(());
         }
 
@@ -206,7 +212,6 @@ impl Candidate {
 
         Ok(Self {
             rectangle,
-            block_count: rectangle.block_count(),
             pair,
             pair1,
             pair2,
@@ -229,9 +234,17 @@ impl Candidate {
         floor1: Cell,
         floor2: Cell,
     ) -> Result<Self, ()> {
+        let block1 = floor1.block();
+        let block2 = floor1.block();
+        if block1 == block2
+            || (block1.rows() != block2.rows() && block1.columns() != block2.columns())
+        {
+            return Err(());
+        }
+
         let floor = CellSet::from_iter([floor1, floor2]);
         let rectangle = Rectangle::try_from(floor)?;
-        if rectangle.block_count() > 2 {
+        if rectangle.block_count() != 2 {
             return Err(());
         }
 
@@ -258,7 +271,6 @@ impl Candidate {
 
         Ok(Self {
             rectangle,
-            block_count: rectangle.block_count(),
             pair,
             pair1,
             pair2,
