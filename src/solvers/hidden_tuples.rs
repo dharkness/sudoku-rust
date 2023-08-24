@@ -52,7 +52,7 @@ pub fn find_hidden_tuples(board: &Board, size: usize, strategy: Strategy) -> Opt
     }
 }
 
-fn is_degenerate(cell_sets: &[CellSet], size: usize, smaller_size: usize) -> bool {
+pub fn is_degenerate(cell_sets: &[CellSet], size: usize, smaller_size: usize) -> bool {
     size > smaller_size
         && cell_sets
             .iter()

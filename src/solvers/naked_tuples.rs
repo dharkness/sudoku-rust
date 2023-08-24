@@ -53,7 +53,7 @@ fn find_naked_tuples(board: &Board, size: usize, strategy: Strategy) -> Option<E
     }
 }
 
-fn is_degenerate(known_sets: &[KnownSet], size: usize, smaller_size: usize) -> bool {
+pub fn is_degenerate(known_sets: &[KnownSet], size: usize, smaller_size: usize) -> bool {
     size > smaller_size
         && known_sets
             .iter()

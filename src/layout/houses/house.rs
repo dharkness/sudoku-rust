@@ -131,6 +131,10 @@ impl House {
         self.shape.cells(self.coord)
     }
 
+    pub const fn has(&self, cell: Cell) -> bool {
+        self.cells().has(cell)
+    }
+
     pub fn crossing_houses(&self, cells: CellSet) -> HouseSet {
         match self.shape() {
             Shape::Row => cells

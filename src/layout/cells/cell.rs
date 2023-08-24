@@ -86,6 +86,14 @@ impl Cell {
         COORDS_IN_HOUSES[self.usize()][Shape::Block.usize()]
     }
 
+    pub fn common_houses(&self, peer: Cell) -> Vec<House> {
+        [self.row(), self.column(), self.block()]
+            .iter()
+            .copied()
+            .filter(|house| house.has(peer))
+            .collect::<Vec<_>>()
+    }
+
     pub const fn peers(&self) -> CellSet {
         PEERS[self.usize()]
     }

@@ -1,5 +1,8 @@
-use super::*;
 use std::collections::{HashMap, HashSet};
+
+use super::hidden_tuples;
+use super::naked_tuples;
+use super::*;
 
 pub fn find_unique_rectangles(board: &Board) -> Option<Effects> {
     let mut effects = Effects::new();
@@ -298,44 +301,95 @@ impl Candidate {
         effects.add_action(action);
     }
 
-    // TODO extend to triples and quads
     fn check_type_three(&self, board: &Board, effects: &mut Effects) {
-        if self.roof_extras.size() != 2 {
+        if !(2..=4).contains(&self.roof_extras.size()) {
             return;
         }
 
-        let (extra1, extra2) = self.roof_extras.as_pair().unwrap();
-        let mut erase1 = CellSet::empty();
-        let mut erase2 = CellSet::empty();
-
-        for s in Shape::iter() {
-            let house = self.roof_left.house(s);
-            if house != self.roof_right.house(s) {
-                continue;
-            }
-
-            let peers = house.cells() - self.roof;
-            let naked_candidates = CellSet::from_iter(
-                peers
-                    .iter()
-                    .filter(|c| board.candidates(*c) == self.roof_extras),
-            );
-            if naked_candidates.size() != 1 {
-                continue;
-            }
-
-            let naked_candidate = naked_candidates.as_single().unwrap();
-            erase1 |= board.house_candidate_cells(house, extra1) - self.roof - naked_candidate;
-            erase2 |= board.house_candidate_cells(house, extra2) - self.roof - naked_candidate;
-        }
-
-        if erase1.is_empty() && erase2.is_empty() {
-            return;
-        }
-
+        // pick the left roof as a pseudo cell containing all of the roof extras
+        let pseudo_roof = self.roof_left;
         let mut action = Action::new(Strategy::UniqueRectangle);
-        action.erase_cells(erase1, extra1);
-        action.erase_cells(erase2, extra2);
+
+        for house in self.roof_left.common_houses(self.roof_right) {
+            let peers = house.cells() - self.roof;
+            let peer_knowns: Vec<(Cell, KnownSet)> = peers
+                .iter()
+                .map(|cell| (cell, board.candidates(cell)))
+                .collect();
+            let known_peers: Vec<(Known, CellSet)> = Known::iter()
+                .map(|known| {
+                    (
+                        known,
+                        if self.pair.has(known) {
+                            // common pair cannot be part of hidden tuple
+                            CellSet::empty()
+                        } else if self.roof_extras.has(known) {
+                            // pseudo roof cell contains all of the roof extras
+                            (peers & board.candidate_cells(known)) + pseudo_roof
+                        } else {
+                            // otherwise use what's found in the peer cells
+                            peers & board.candidate_cells(known)
+                        },
+                    )
+                })
+                .filter(|(_, cells)| !cells.is_empty())
+                .collect();
+
+            for size in 2..=4 {
+                // find naked tuples
+                peer_knowns
+                    .iter()
+                    .filter(|(_, knowns)| (2..=size).contains(&knowns.size()))
+                    .combinations(size - 1)
+                    .for_each(|peer_knowns| {
+                        let known_sets: Vec<KnownSet> = peer_knowns
+                            .iter()
+                            .map(|(_, ks)| *ks)
+                            .chain([self.roof_extras])
+                            .collect();
+                        let knowns = known_sets.iter().copied().union() as KnownSet;
+                        if knowns.size() != size
+                            || naked_tuples::is_degenerate(&known_sets, size, 2)
+                            || naked_tuples::is_degenerate(&known_sets, size, 3)
+                        {
+                            return;
+                        }
+
+                        let cells = peers - peer_knowns.iter().map(|(c, _)| *c).union() as CellSet;
+
+                        knowns
+                            .iter()
+                            .for_each(|k| action.erase_cells(cells & board.candidate_cells(k), k));
+                    });
+
+                // find hidden tuples
+                known_peers
+                    .iter()
+                    .filter(|(_, cells)| (2..=size).contains(&cells.size()))
+                    .combinations(size)
+                    .for_each(|known_peers| {
+                        let knowns = known_peers.iter().map(|(k, _)| *k).union();
+                        if !knowns.has_all(self.roof_extras) {
+                            return;
+                        }
+
+                        let cell_sets: Vec<CellSet> =
+                            known_peers.iter().map(|(_, cs)| *cs).collect();
+                        let cells = cell_sets.iter().copied().union() as CellSet;
+                        if cells.size() != size
+                            || hidden_tuples::is_degenerate(&cell_sets, size, 2)
+                            || hidden_tuples::is_degenerate(&cell_sets, size, 3)
+                        {
+                            return;
+                        }
+
+                        (cells - pseudo_roof)
+                            .iter()
+                            .for_each(|c| action.erase_knowns(c, board.candidates(c) - knowns));
+                    });
+            }
+        }
+
         effects.add_action(action);
     }
 
