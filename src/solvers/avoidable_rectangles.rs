@@ -18,12 +18,12 @@ pub fn find_avoidable_rectangles(board: &Board) -> Option<Effects> {
         .combinations(3)
         .map(Rectangle::try_from)
         .filter_map(Result::ok)
-        .filter(|r| r.block_count() == 2)
+        .filter(|r| r.block_count == 2)
     {
-        let top_left = rectangle.top_left();
-        let top_right = rectangle.top_right();
-        let bottom_left = rectangle.bottom_left();
-        let bottom_right = rectangle.bottom_right();
+        let top_left = rectangle.top_left;
+        let top_right = rectangle.top_right;
+        let bottom_left = rectangle.bottom_left;
+        let bottom_right = rectangle.bottom_right;
 
         let top_left_value = board.value(top_left);
         let top_right_value = board.value(top_right);

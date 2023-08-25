@@ -6,12 +6,12 @@ use super::{Cell, CellSet};
 /// A rectangle of four cells.
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub struct Rectangle {
-    top_left: Cell,
-    top_right: Cell,
-    bottom_left: Cell,
-    bottom_right: Cell,
-    cells: CellSet,
-    block_count: usize,
+    pub top_left: Cell,
+    pub top_right: Cell,
+    pub bottom_left: Cell,
+    pub bottom_right: Cell,
+    pub cells: CellSet,
+    pub block_count: usize,
 }
 
 impl Rectangle {
@@ -42,30 +42,6 @@ impl Rectangle {
 
     pub fn from(c1: Cell, c2: Cell, c3: Cell, c4: Cell) -> Rectangle {
         Rectangle::new(c1.min(c2).min(c3).min(c4), c1.max(c2).max(c3).max(c4))
-    }
-
-    pub const fn top_left(&self) -> Cell {
-        self.top_left
-    }
-
-    pub const fn top_right(&self) -> Cell {
-        self.top_right
-    }
-
-    pub const fn bottom_left(&self) -> Cell {
-        self.bottom_left
-    }
-
-    pub const fn bottom_right(&self) -> Cell {
-        self.bottom_right
-    }
-
-    pub const fn cells(&self) -> CellSet {
-        self.cells
-    }
-
-    pub const fn block_count(&self) -> usize {
-        self.block_count
     }
 }
 

@@ -82,7 +82,7 @@ fn check_type_one(
         return;
     }
 
-    let fourth = (rectangle.cells() - corners).as_single().unwrap();
+    let fourth = (rectangle.cells - corners).as_single().unwrap();
     let candidates = board.candidates(fourth);
     if !candidates.has_all(pair) {
         return;
@@ -204,7 +204,7 @@ impl Candidate {
         let roof_right_extras = board.candidates(roof_right) - pair;
 
         let rectangle = Rectangle::from(floor_left, floor_right, roof_left, roof_right);
-        if rectangle.block_count() != 2 {
+        if rectangle.block_count != 2 {
             return Err(());
         }
 
@@ -244,11 +244,11 @@ impl Candidate {
 
         let floor = CellSet::from_iter([floor1, floor2]);
         let rectangle = Rectangle::try_from(floor)?;
-        if rectangle.block_count() != 2 {
+        if rectangle.block_count != 2 {
             return Err(());
         }
 
-        let roof = rectangle.cells() - floor;
+        let roof = rectangle.cells - floor;
         let roof_pair = roof.as_pair().unwrap();
 
         // the floor and roof are formed by the diagonals;
