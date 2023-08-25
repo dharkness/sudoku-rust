@@ -45,8 +45,8 @@ const SOLVER_LABELS: [&str; 17] = [
     "y-wing",
     "xyz-wing",
     "bug",
-    "unique rectangles",
-    "empty rectangles",
+    "unique rectangle",
+    "empty rectangle",
 ];
 
 pub fn play() {
