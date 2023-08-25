@@ -29,11 +29,11 @@ impl Value {
         self.0 != 0
     }
 
-    pub const fn known(&self) -> Known {
-        if self.is_unknown() {
-            panic!("Unknown value");
+    pub const fn known(&self) -> Option<Known> {
+        if self.is_known() {
+            Some(Known::new(self.0))
         } else {
-            Known::new(self.0)
+            None
         }
     }
 

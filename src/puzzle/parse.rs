@@ -47,12 +47,8 @@ impl Parser {
                             }
                             effects.clear_actions();
                         } else if self.stop_on_error {
-                            if current.is_known() {
-                                effects.add_error(Error::AlreadySolved(
-                                    cell,
-                                    known,
-                                    current.known(),
-                                ));
+                            if let Some(known) = current.known() {
+                                effects.add_error(Error::AlreadySolved(cell, known, known));
                             } else {
                                 effects.add_error(Error::NotCandidate(cell, known));
                             }

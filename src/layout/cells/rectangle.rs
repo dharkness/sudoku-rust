@@ -7,6 +7,8 @@ use super::{Cell, CellSet};
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub struct Rectangle {
     top_left: Cell,
+    top_right: Cell,
+    bottom_left: Cell,
     bottom_right: Cell,
     cells: CellSet,
     block_count: usize,
@@ -14,12 +16,9 @@ pub struct Rectangle {
 
 impl Rectangle {
     pub const fn new(top_left: Cell, bottom_right: Cell) -> Rectangle {
-        let cells = CellSet::of(&[
-            top_left,
-            bottom_right,
-            Cell::from_coords(top_left.row_coord(), bottom_right.column_coord()),
-            Cell::from_coords(bottom_right.row_coord(), top_left.column_coord()),
-        ]);
+        let top_right = Cell::from_coords(top_left.row_coord(), bottom_right.column_coord());
+        let bottom_left = Cell::from_coords(bottom_right.row_coord(), top_left.column_coord());
+        let cells = CellSet::of(&[top_left, top_right, bottom_left, bottom_right]);
 
         let tl_block = top_left.block_coord().usize();
         let br_block = bottom_right.block_coord().usize();
@@ -33,6 +32,8 @@ impl Rectangle {
 
         Rectangle {
             top_left,
+            top_right,
+            bottom_left,
             bottom_right,
             cells,
             block_count,
@@ -41,6 +42,22 @@ impl Rectangle {
 
     pub fn from(c1: Cell, c2: Cell, c3: Cell, c4: Cell) -> Rectangle {
         Rectangle::new(c1.min(c2).min(c3).min(c4), c1.max(c2).max(c3).max(c4))
+    }
+
+    pub const fn top_left(&self) -> Cell {
+        self.top_left
+    }
+
+    pub const fn top_right(&self) -> Cell {
+        self.top_right
+    }
+
+    pub const fn bottom_left(&self) -> Cell {
+        self.bottom_left
+    }
+
+    pub const fn bottom_right(&self) -> Cell {
+        self.bottom_right
     }
 
     pub const fn cells(&self) -> CellSet {
@@ -56,6 +73,14 @@ impl Hash for Rectangle {
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.top_left.hash(state);
         self.bottom_right.hash(state);
+    }
+}
+
+impl TryFrom<Vec<Cell>> for Rectangle {
+    type Error = ();
+
+    fn try_from(cells: Vec<Cell>) -> Result<Rectangle, ()> {
+        Rectangle::try_from(CellSet::from_iter(cells))
     }
 }
 

@@ -71,7 +71,7 @@ impl Board {
     pub fn known_iter(&self) -> impl Iterator<Item = (Cell, Known)> + '_ {
         self.knowns
             .into_iter()
-            .map(|cell| (cell, self.value(cell).known()))
+            .map(|cell| (cell, self.value(cell).known().unwrap()))
     }
 
     pub fn is_solved(&self) -> bool {
