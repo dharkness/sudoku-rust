@@ -4,6 +4,7 @@ use itertools::Itertools;
 
 pub mod deadly_rectangles;
 
+pub mod bugs;
 pub mod empty_rectangles;
 pub mod fish;
 pub mod hidden_tuples;

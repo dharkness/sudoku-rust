@@ -80,10 +80,12 @@ pub enum Strategy {
     Swordfish, // (Known, mains HouseSet, crosses HouseSet)
     Jellyfish, // (Known, mains HouseSet, crosses HouseSet)
 
-    SinglesChain, // (Known, Vec<Cell>)
-    Skyscraper,   // (Known, floor (Cell, Cell), ceiling (Cell, Cell))
-    YWing,        // (Known, pivot Cell, arms (Cell, Cell))
-    XYZWing,      // (Known, pivot Cell, arms (Cell, Cell))
+    Bug,                // (Cell, Cell, Cell)
+    AvoidableRectangle, // (CellSet) - all unsolved cells
+    SinglesChain,       // (Known, Vec<Cell>)
+    Skyscraper,         // (Known, floor (Cell, Cell), ceiling (Cell, Cell))
+    YWing,              // (Known, pivot Cell, arms (Cell, Cell))
+    XYZWing,            // (Known, pivot Cell, arms (Cell, Cell))
 
     EmptyRectangle, // (Known, Block, Row, Column, Cell) - CellSet instead of three houses
     UniqueRectangle, // (Cell, Cell, Cell, Cell)
