@@ -68,6 +68,10 @@ impl Board {
         self.knowns
     }
 
+    pub const fn solved(&self) -> CellSet {
+        self.knowns.minus(self.givens)
+    }
+
     pub fn known_iter(&self) -> impl Iterator<Item = (Cell, Known)> + '_ {
         self.knowns
             .into_iter()
@@ -216,10 +220,6 @@ impl Board {
     }
 
     pub fn set_known(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> bool {
-        if !self.is_candidate(cell, known) || self.is_known(cell) {
-            return false;
-        }
-
         if let Some(rectangles) = creates_deadly_rectangles(self, cell, known) {
             rectangles.into_iter().for_each(|r| {
                 effects.add_error(Error::DeadlyRectangle(r));
