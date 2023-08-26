@@ -60,6 +60,16 @@ impl Board {
         81 - self.knowns.size()
     }
 
+    pub const fn cell_state(&self, cell: Cell) -> CellState {
+        CellState {
+            cell,
+            is_given: self.is_given(cell),
+            is_known: self.is_known(cell),
+            value: self.value(cell),
+            candidates: self.candidates(cell),
+        }
+    }
+
     pub const fn is_known(&self, cell: Cell) -> bool {
         self.knowns.has(cell)
     }
@@ -282,4 +292,14 @@ impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&self.fancy_string())
     }
+}
+
+/// Collects everything known about a single cell in the board.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct CellState {
+    pub cell: Cell,
+    pub is_given: bool,
+    pub is_known: bool,
+    pub value: Value,
+    pub candidates: KnownSet,
 }

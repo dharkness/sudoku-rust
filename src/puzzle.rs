@@ -11,7 +11,7 @@ pub mod parse;
 pub mod strategy;
 
 pub use action::Action;
-pub use board::Board;
+pub use board::{Board, CellState};
 pub use effects::Effects;
 pub use error::Error;
 pub use generate::Generator;
