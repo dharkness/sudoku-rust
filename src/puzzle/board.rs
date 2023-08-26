@@ -40,31 +40,31 @@ impl Board {
         board
     }
 
-    pub fn given_count(&self) -> usize {
+    pub const fn given_count(&self) -> usize {
         self.givens.size()
     }
 
-    pub fn is_given(&self, cell: Cell) -> bool {
-        self.givens[cell]
+    pub const fn is_given(&self, cell: Cell) -> bool {
+        self.givens.has(cell)
     }
 
-    pub fn givens(&self) -> CellSet {
+    pub const fn givens(&self) -> CellSet {
         self.givens
     }
 
-    pub fn known_count(&self) -> usize {
+    pub const fn known_count(&self) -> usize {
         self.knowns.size()
     }
 
-    pub fn unknown_count(&self) -> usize {
+    pub const fn unknown_count(&self) -> usize {
         81 - self.knowns.size()
     }
 
-    pub fn is_known(&self, cell: Cell) -> bool {
-        self.knowns[cell]
+    pub const fn is_known(&self, cell: Cell) -> bool {
+        self.knowns.has(cell)
     }
 
-    pub fn knowns(&self) -> CellSet {
+    pub const fn knowns(&self) -> CellSet {
         self.knowns
     }
 
@@ -74,7 +74,7 @@ impl Board {
             .map(|cell| (cell, self.value(cell).known().unwrap()))
     }
 
-    pub fn is_solved(&self) -> bool {
+    pub const fn is_solved(&self) -> bool {
         self.knowns.is_full()
     }
 
@@ -90,15 +90,15 @@ impl Board {
             .fold(KnownSet::full(), |acc, cell| acc & self.candidates(cell))
     }
 
-    pub fn candidates(&self, cell: Cell) -> KnownSet {
+    pub const fn candidates(&self, cell: Cell) -> KnownSet {
         self.candidate_knowns_by_cell[cell.usize()]
     }
 
-    pub fn is_candidate(&self, cell: Cell, known: Known) -> bool {
-        self.candidate_knowns_by_cell[cell.usize()][known]
+    pub const fn is_candidate(&self, cell: Cell, known: Known) -> bool {
+        self.candidate_knowns_by_cell[cell.usize()].has(known)
     }
 
-    pub fn cells_with_n_candidates(&self, n: usize) -> CellSet {
+    pub const fn cells_with_n_candidates(&self, n: usize) -> CellSet {
         debug_assert!(n <= 9);
         self.cells_with_n_candidates[n]
     }
@@ -112,12 +112,12 @@ impl Board {
             .map(|cell| (cell, self.candidates(cell)))
     }
 
-    pub fn candidate_cells(&self, known: Known) -> CellSet {
+    pub const fn candidate_cells(&self, known: Known) -> CellSet {
         self.candidate_cells_by_known[known.usize()]
     }
 
-    pub fn house_candidate_cells(&self, house: House, known: Known) -> CellSet {
-        house.cells() & self.candidate_cells(known)
+    pub const fn house_candidate_cells(&self, house: House, known: Known) -> CellSet {
+        house.cells().intersect(self.candidate_cells(known))
     }
 
     pub fn remove_candidate(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> bool {
@@ -202,7 +202,7 @@ impl Board {
         })
     }
 
-    pub fn value(&self, cell: Cell) -> Value {
+    pub const fn value(&self, cell: Cell) -> Value {
         self.values[cell.usize()]
     }
 
