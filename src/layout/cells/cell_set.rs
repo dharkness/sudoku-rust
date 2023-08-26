@@ -4,6 +4,7 @@
 // Or maybe not. References are about ownership--not pointers.
 
 use std::fmt;
+use std::iter::FusedIterator;
 use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Neg, Not, Sub, SubAssign,
 };
@@ -550,6 +551,8 @@ impl Iterator for CellIter {
     }
 }
 
+impl FusedIterator for CellIter {}
+
 pub struct BitIter {
     bits: Bits,
 }
@@ -567,6 +570,8 @@ impl Iterator for BitIter {
         }
     }
 }
+
+impl FusedIterator for BitIter {}
 
 #[cfg(test)]
 mod tests {

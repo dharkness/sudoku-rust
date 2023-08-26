@@ -1,4 +1,5 @@
 use std::fmt;
+use std::iter::FusedIterator;
 use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Neg, Not, Sub, SubAssign,
 };
@@ -455,6 +456,8 @@ impl Iterator for Iter {
         }
     }
 }
+
+impl FusedIterator for Iter {}
 
 #[cfg(test)]
 mod tests {
