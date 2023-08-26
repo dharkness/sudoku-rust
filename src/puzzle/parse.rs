@@ -79,7 +79,6 @@ pub(crate) use parse;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::printers::print_values;
 
     #[test]
     fn test() {
