@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Coord(u8);
 
 /// Identifies a cell in a house.

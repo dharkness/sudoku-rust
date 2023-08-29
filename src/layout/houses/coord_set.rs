@@ -76,6 +76,10 @@ impl CoordSet {
         self.0 & coord.bit() != 0
     }
 
+    pub const fn has_any(&self, set: CoordSet) -> bool {
+        !self.intersect(set).is_empty()
+    }
+
     pub const fn has_all(&self, subset: CoordSet) -> bool {
         self.intersect(subset).0 == subset.0
     }

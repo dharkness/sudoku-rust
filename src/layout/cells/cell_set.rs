@@ -81,6 +81,10 @@ impl CellSet {
         self.0 & cell.bit().bit() != 0
     }
 
+    pub const fn has_any(&self, set: CellSet) -> bool {
+        !self.intersect(set).is_empty()
+    }
+
     pub const fn has_all(&self, subset: CellSet) -> bool {
         self.intersect(subset).0 == subset.0
     }
@@ -150,6 +154,14 @@ impl CellSet {
     pub fn remove(&mut self, cell: Cell) {
         if self.has(cell) {
             self.0 -= cell.bit().bit() + SIZE_BIT
+        }
+    }
+
+    pub const fn first(&self) -> Option<Cell> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(Cell::new(self.bits().trailing_zeros() as u8))
         }
     }
 

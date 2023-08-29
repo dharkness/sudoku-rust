@@ -62,6 +62,10 @@ impl KnownSet {
         self.0 & known.bit() != 0
     }
 
+    pub const fn has_any(&self, set: KnownSet) -> bool {
+        !self.intersect(set).is_empty()
+    }
+
     pub const fn has_all(&self, subset: KnownSet) -> bool {
         self.intersect(subset).0 == subset.0
     }

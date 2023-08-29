@@ -80,6 +80,10 @@ impl HouseSet {
         self.coords.has(coord)
     }
 
+    pub fn has_any(&self, set: HouseSet) -> bool {
+        !self.intersect(set).is_empty()
+    }
+
     pub fn has_all(&self, subset: HouseSet) -> bool {
         self.shape == subset.shape && self.intersect(subset).coords == subset.coords
     }

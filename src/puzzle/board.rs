@@ -1,6 +1,7 @@
 use std::fmt;
 
 use crate::layout::{Cell, CellSet, House, Known, KnownSet, Value};
+use crate::puzzle::PseudoCell;
 use crate::solvers::deadly_rectangles::creates_deadly_rectangles;
 use crate::symbols::UNKNOWN_VALUE;
 
@@ -80,6 +81,10 @@ impl Board {
 
     pub const fn is_solved(&self) -> bool {
         self.knowns.is_full()
+    }
+
+    pub fn pseudo_cell(&self, cells: CellSet) -> PseudoCell {
+        PseudoCell::new(cells, self.all_candidates(cells))
     }
 
     pub fn all_candidates(&self, cells: CellSet) -> KnownSet {
@@ -208,6 +213,19 @@ impl Board {
 
     pub const fn value(&self, cell: Cell) -> Value {
         self.values[cell.usize()]
+    }
+
+    pub fn all_knowns(&self, cells: CellSet) -> KnownSet {
+        cells.iter().fold(KnownSet::empty(), |acc, cell| {
+            self.value(cell).known().map_or(acc, |k| acc + k)
+        })
+        // let mut knowns = KnownSet::empty();
+        // for cell in cells {
+        //     if let Some(known) = self.value(cell).known() {
+        //         knowns += known;
+        //     }
+        // }
+        // knowns
     }
 
     pub fn set_given(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> bool {

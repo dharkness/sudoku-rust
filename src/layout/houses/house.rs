@@ -8,7 +8,7 @@ use crate::layout::{Cell, CellSet, Coord};
 use super::{HouseSet, Iter, Shape};
 
 /// One of the nine rows, columns, or blocks on the board.
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq)]
 pub struct House {
     shape: Shape,
     coord: Coord,
@@ -220,14 +220,6 @@ impl From<&str> for House {
         }
     }
 }
-
-impl PartialEq<Self> for House {
-    fn eq(&self, other: &Self) -> bool {
-        self.shape == other.shape && self.coord == other.coord
-    }
-}
-
-impl Eq for House {}
 
 impl PartialOrd<Self> for House {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
