@@ -17,6 +17,8 @@ pub mod unique_rectangles;
 pub mod xyz_wings;
 pub mod y_wings;
 
+mod pseudo_naked_tuples;
+
 use crate::layout::*;
 use crate::puzzle::*;
 

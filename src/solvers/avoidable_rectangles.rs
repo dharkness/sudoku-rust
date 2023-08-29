@@ -97,6 +97,12 @@ pub fn find_avoidable_rectangles(board: &Board) -> Option<Effects> {
 
                 effects.add_action(action);
 
+                // naked tuple with degenerate detection
+                // let mut action = Action::new(Strategy::AvoidableRectangle);
+                // for size in 2..=4 {
+                //     find_pseudo_naked_tuples(board, house, pseudo, size, &mut action);
+                // }
+
                 // degenerates should create actions
                 // normally, when looking for a naked triple, finding two cells
                 // that collectively can only be two of the knowns
