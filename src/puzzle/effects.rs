@@ -69,6 +69,14 @@ impl Effects {
         self.add_action(Action::new_erase(strategy, cell, known));
     }
 
+    pub fn add_erase_cells(&mut self, strategy: Strategy, cells: CellSet, known: Known) {
+        self.add_action(Action::new_erase_cells(strategy, cells, known));
+    }
+
+    pub fn add_erase_knowns(&mut self, strategy: Strategy, cell: Cell, knowns: KnownSet) {
+        self.add_action(Action::new_erase_knowns(strategy, cell, knowns));
+    }
+
     pub fn erases(&self, cell: Cell, known: Known) -> bool {
         self.actions.iter().any(|action| action.erases(cell, known))
     }

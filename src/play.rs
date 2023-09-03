@@ -10,7 +10,7 @@ use crate::symbols::UNKNOWN_VALUE;
 
 const URL: &str = "https://www.sudokuwiki.org/sudoku.htm?bd=";
 
-const SOLVERS: [Solver; 18] = [
+const SOLVERS: [Solver; 19] = [
     crate::solvers::intersection_removals::find_intersection_removals,
     crate::solvers::naked_tuples::find_naked_pairs,
     crate::solvers::naked_tuples::find_naked_triples,
@@ -27,10 +27,11 @@ const SOLVERS: [Solver; 18] = [
     crate::solvers::xyz_wings::find_xyz_wings,
     crate::solvers::bugs::find_bugs,
     crate::solvers::avoidable_rectangles::find_avoidable_rectangles,
+    crate::solvers::xy_chains::find_xy_chains,
     crate::solvers::unique_rectangles::find_unique_rectangles,
     crate::solvers::empty_rectangles::find_empty_rectangles,
 ];
-const SOLVER_LABELS: [&str; 18] = [
+const SOLVER_LABELS: [&str; 19] = [
     "intersection removal",
     "naked pair",
     "naked triple",
@@ -47,6 +48,7 @@ const SOLVER_LABELS: [&str; 18] = [
     "xyz-wing",
     "bug",
     "avoidable rectangle",
+    "xy-chain",
     "unique rectangle",
     "empty rectangle",
 ];

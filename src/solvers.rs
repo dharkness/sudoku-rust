@@ -14,6 +14,7 @@ pub mod naked_tuples;
 pub mod singles_chains;
 pub mod skyscrapers;
 pub mod unique_rectangles;
+pub mod xy_chains;
 pub mod xyz_wings;
 pub mod y_wings;
 
