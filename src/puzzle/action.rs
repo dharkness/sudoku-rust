@@ -40,6 +40,25 @@ impl Action {
         }
     }
 
+    pub fn new_erase_cells(strategy: Strategy, cells: CellSet, known: Known) -> Self {
+        Self {
+            strategy,
+            set: HashMap::new(),
+            erase: cells
+                .iter()
+                .map(|cell| (cell, KnownSet::empty() + known))
+                .collect(),
+        }
+    }
+
+    pub fn new_erase_knowns(strategy: Strategy, cell: Cell, knowns: KnownSet) -> Self {
+        Self {
+            strategy,
+            set: HashMap::new(),
+            erase: HashMap::from([(cell, knowns)]),
+        }
+    }
+
     pub fn is_empty(&self) -> bool {
         self.set.is_empty() && self.erase.is_empty()
     }

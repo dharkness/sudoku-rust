@@ -87,6 +87,8 @@ pub enum Strategy {
     YWing,              // (Known, pivot Cell, arms (Cell, Cell))
     XYZWing,            // (Known, pivot Cell, arms (Cell, Cell))
 
-    EmptyRectangle, // (Known, Block, Row, Column, Cell) - CellSet instead of three houses
+    XYChain,         // (Known, Vec<Cell>)
     UniqueRectangle, // (Cell, Cell, Cell, Cell)
+
+    EmptyRectangle, // (Known, Block, Row, Column, Cell) - CellSet instead of three houses
 }
