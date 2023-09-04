@@ -8,7 +8,7 @@ use crate::puzzle::{Board, Effects, Generator, Parser};
 use crate::solvers::Solver;
 use crate::symbols::UNKNOWN_VALUE;
 
-const URL: &str = "https://www.sudokuwiki.org/sudoku.htm?bd=";
+const SUDOKUWIKI_URL: &str = "https://www.sudokuwiki.org/sudoku.htm?bd=";
 
 const SOLVERS: [Solver; 19] = [
     crate::solvers::intersection_removals::find_intersection_removals,
@@ -62,7 +62,11 @@ pub fn play() {
         let board = boards.last().unwrap();
         if show {
             print_candidates(board);
-            println!();
+            if board.is_solved() {
+                println!("\n==> Congratulations!\n");
+            } else {
+                println!();
+            }
             show = false;
         }
 
@@ -124,7 +128,11 @@ pub fn play() {
                 println!("\n==> {}\n", board.packed_string(unknown));
             }
             "W" => {
-                println!("\n==> {}{}\n", URL, board.url_string().replace(' ', ""));
+                println!(
+                    "\n==> {}{}\n",
+                    SUDOKUWIKI_URL,
+                    board.url_string().replace(' ', "")
+                );
             }
             "E" => {
                 if input.len() != 3 {
@@ -147,12 +155,8 @@ pub fn play() {
                     continue;
                 }
                 boards.push(clone);
-                if clone.is_solved() {
-                    println!("\n==> Congratulations!\n");
-                } else {
-                    println!();
-                    show = true;
-                }
+                println!();
+                show = true;
             }
             "S" => {
                 if input.len() != 3 {
@@ -175,12 +179,8 @@ pub fn play() {
                     continue;
                 }
                 boards.push(clone);
-                if clone.is_solved() {
-                    println!("\n==> Congratulations!\n");
-                } else {
-                    println!();
-                    show = true;
-                }
+                println!();
+                show = true;
             }
             "F" => {
                 let mut found = false;
@@ -226,12 +226,8 @@ pub fn play() {
 
                 if found {
                     boards.push(clone);
-                    if clone.is_solved() {
-                        println!("\n==> Congratulations!\n");
-                    } else {
-                        println!();
-                        show = true;
-                    }
+                    println!();
+                    show = true;
                 } else {
                     println!("\n==> No deductions found\n");
                 }
