@@ -1,55 +1,62 @@
-use crate::layout::House;
+use itertools::Itertools;
+
+use crate::layout::{House, KnownSet};
 use crate::puzzle::Board;
 use crate::symbols::MISSING;
 
 /// Formats a [`Board`] into a packed string with spacing and periods for unsolved cells.
 pub fn format_for_console(board: &Board) -> String {
-    PackedFormat::console().format(board)
+    FormatPacked::console().format(board)
 }
 
 /// Formats a [`Board`] into a packed string with spacing and Unicode dots for unsolved cells.
 pub fn format_for_fancy_console(board: &Board) -> String {
-    PackedFormat::fancy().format(board)
+    FormatPacked::fancy().format(board)
 }
 
 /// Formats a [`Board`] into a packed string with zeros for unsolved cells.
 pub fn format_for_url(board: &Board) -> String {
-    PackedFormat::url().format(board)
+    FormatPacked::url().format(board)
 }
 
 /// Formats a [`Board`] into a packed string for the SudokuWiki site.
 pub fn format_for_wiki(board: &Board) -> String {
-    WikiFormat::new().format(board)
+    FormatWiki::new().format(board)
 }
 
 /// Formats a [`Board`] into a packed string.
 pub fn format_packed(board: &Board, unknown: char, spaces: bool) -> String {
-    PackedFormat::new(unknown, spaces).format(board)
+    FormatPacked::new(unknown, spaces).format(board)
+}
+
+/// Formats a [`Board`] into an ASCII grid showing all knowns and candidates.
+pub fn format_grid(board: &Board) -> String {
+    FormatGrid::new().format(board)
 }
 
 /// Produces a single-line packed string of the [`Board`]'s cells
 /// with a configured character for all unsolved cells
 /// and optional space separating rows.
-pub struct PackedFormat {
+pub struct FormatPacked {
     pub unknown: char,
     pub spaces: bool,
 }
 
-impl PackedFormat {
+impl FormatPacked {
     pub const fn new(unknown: char, spaces: bool) -> Self {
-        PackedFormat { unknown, spaces }
+        FormatPacked { unknown, spaces }
     }
 
     pub const fn console() -> Self {
-        PackedFormat::new('.', true)
+        FormatPacked::new('.', true)
     }
 
     pub const fn url() -> Self {
-        PackedFormat::new('0', false)
+        FormatPacked::new('0', false)
     }
 
     pub const fn fancy() -> Self {
-        PackedFormat::new(MISSING, true)
+        FormatPacked::new(MISSING, true)
     }
 
     fn format(&self, board: &Board) -> String {
@@ -77,19 +84,101 @@ impl PackedFormat {
     }
 }
 
+/// Produces a ASCII grid of the [`Board`]'s cells for emailing
+/// showing the solution or candidates for each cell.
+pub struct FormatGrid {}
+
+impl FormatGrid {
+    pub const fn new() -> Self {
+        FormatGrid {}
+    }
+
+    fn format(&self, board: &Board) -> String {
+        let mut border = String::new();
+        let mut rows: [String; 9] = Default::default();
+        let widths = House::columns_iter()
+            .map(|column| {
+                column
+                    .cells()
+                    .iter()
+                    .map(|cell| {
+                        if board.is_known(cell) {
+                            1
+                        } else {
+                            board.candidates(cell).size()
+                        }
+                    })
+                    .max()
+                    .unwrap()
+            })
+            .collect_vec();
+
+        House::columns_iter().for_each(|column| {
+            if column.is_block_left() {
+                border += "+-";
+            }
+            border += "-----------"[..widths[column.usize()] + 1].into();
+            if column.is_right() {
+                border += "+";
+            }
+
+            column.cells().iter().enumerate().for_each(|(r, cell)| {
+                let candidates = if board.is_known(cell) {
+                    KnownSet::of(board.value(cell).known().unwrap())
+                } else {
+                    board.candidates(cell)
+                };
+
+                let row = &mut rows[r];
+                if column.is_block_left() {
+                    *row += "| ";
+                }
+                *row += &format!(
+                    "{:width$} ",
+                    candidates
+                        .iter()
+                        .map(|known| known.label())
+                        .collect::<String>(),
+                    width = widths[column.usize()]
+                );
+                if column.is_right() {
+                    *row += "|";
+                }
+            })
+        });
+
+        vec![
+            border.as_str(),
+            rows[0].as_str(),
+            rows[1].as_str(),
+            rows[2].as_str(),
+            border.as_str(),
+            rows[3].as_str(),
+            rows[4].as_str(),
+            rows[5].as_str(),
+            border.as_str(),
+            rows[6].as_str(),
+            rows[7].as_str(),
+            rows[8].as_str(),
+            border.as_str(),
+        ]
+        .join("\n")
+    }
+}
+
 /// Produces a single-line packed string of the [`Board`]'s cells for SudokuWiki
 /// detailing givens, solved cells, and unsolved candidates.
-pub struct WikiFormat {
+pub struct FormatWiki {
     pub spaces: bool,
 }
 
-impl WikiFormat {
+impl FormatWiki {
     pub const fn new() -> Self {
-        WikiFormat { spaces: false }
+        FormatWiki { spaces: false }
     }
 
     pub const fn new_with_spaces() -> Self {
-        WikiFormat { spaces: true }
+        FormatWiki { spaces: true }
     }
 
     fn format(&self, board: &Board) -> String {
@@ -132,22 +221,22 @@ impl WikiFormat {
 mod tests {
     use super::*;
     use crate::io::parse::parse;
-    use crate::io::Parser;
+    use crate::io::ParsePacked;
 
     #[test]
     fn test_format_for_console() {
         let board = parse(
             "
-            .8.1.3.7.
-            .9.5.6...
-            ..14.8.2.
-            578241639
-            143659782
-            926837451
-            .379.52..
-            ...3.4.97
-            419782.6.
-        ",
+                .8.1.3.7.
+                .9.5.6...
+                ..14.8.2.
+                578241639
+                143659782
+                926837451
+                .379.52..
+                ...3.4.97
+                419782.6.
+            ",
         );
 
         assert_eq!(
@@ -160,16 +249,16 @@ mod tests {
     fn test_format_packed() {
         let board = parse(
             "
-            .8.1.3.7.
-            .9.5.6...
-            ..14.8.2.
-            578241639
-            143659782
-            926837451
-            .379.52..
-            ...3.4.97
-            419782.6.
-        ",
+                .8.1.3.7.
+                .9.5.6...
+                ..14.8.2.
+                578241639
+                143659782
+                926837451
+                .379.52..
+                ...3.4.97
+                419782.6.
+            ",
         );
 
         assert_eq!(
@@ -179,9 +268,48 @@ mod tests {
     }
 
     #[test]
+    fn test_format_grid() {
+        let board = parse(
+            "
+                ..2...376
+                .1..3.5..
+                .......9.
+                9..85...1
+                ...3.4...
+                2...97..3
+                .8.......
+                ..3.4..6.
+                147...2..
+            ",
+        );
+
+        let want = "
+            +-------------------+---------------------+-----------------+
+            | 458    59   2     | 1459   18    1589   | 3    7    6     |
+            | 4678   1    4689  | 24679  3     2689   | 5    248  248   |
+            | 345678 3567 4568  | 124567 12678 12568  | 148  9    248   |
+            +-------------------+---------------------+-----------------+
+            | 9      367  46    | 8      5     26     | 467  24   1     |
+            | 5678   567  1568  | 3      126   4      | 6789 258  25789 |
+            | 2      56   14568 | 16     9     7      | 468  458  3     |
+            +-------------------+---------------------+-----------------+
+            | 56     8    569   | 125679 1267  123569 | 1479 1345 4579  |
+            | 5      259  3     | 12579  4     12589  | 1789 6    5789  |
+            | 1      4    7     | 569    68    35689  | 2    358  589   |
+            +-------------------+---------------------+-----------------+
+        "
+        .lines()
+        .map(|line| line.trim())
+        .filter(|line| !line.is_empty())
+        .join("\n");
+
+        assert_eq!(want, format_grid(&board));
+    }
+
+    #[test]
     fn test_format_for_wiki() {
-        let parser = Parser::new(true, true);
-        let (mut board, _, _) = parser.parse(
+        let parser = ParsePacked::new(true, true);
+        let (board, _, _) = parser.parse(
             "
             ..2...376
             .1..3.5..

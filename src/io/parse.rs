@@ -3,19 +3,19 @@ use crate::puzzle::{Board, Effects, Error, Strategy};
 
 /// Parses various puzzle string formats based on the input.
 pub fn parse(input: &str) -> Board {
-    Parser::new(false, false).parse(input).0
+    ParsePacked::new(false, false).parse(input).0
 }
 
 /// Parses puzzle strings into [`Board`]s, optionally stopping on errors
 /// and/or automatically solving naked and hidden singles.
-pub struct Parser {
+pub struct ParsePacked {
     stop_on_error: bool,
     solve_singles: bool,
 }
 
-impl Parser {
+impl ParsePacked {
     pub fn new(stop_on_error: bool, solve_singles: bool) -> Self {
-        Parser {
+        ParsePacked {
             stop_on_error,
             solve_singles,
         }
@@ -78,7 +78,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let parser = Parser::new(true, true);
+        let parser = ParsePacked::new(true, true);
         let (board, errors, failed) = parser.parse(
             "
             .1..7....

@@ -90,16 +90,16 @@ mod tests {
     fn intersection_removals() {
         let board = parse(
             "
-            7..1....9
-            .2.3..7..
-            4.9......
-            .6.8..2..
-            .........
-            .7...1.5.
-            .....49..
-            .46..5..2
-            .1...68..
-        ",
+                7..1....9
+                .2.3..7..
+                4.9......
+                .6.8..2..
+                .........
+                .7...1.5.
+                .....49..
+                .46..5..2
+                .1...68..
+            ",
         );
 
         let found = find_intersection_removals(&board).unwrap_or(Effects::new());

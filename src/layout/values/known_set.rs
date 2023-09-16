@@ -41,6 +41,10 @@ impl KnownSet {
         KnownSet(pack(knowns, knowns.count_ones() as Size))
     }
 
+    pub const fn of(known: Known) -> KnownSet {
+        KnownSet::new(known.bit())
+    }
+
     pub const fn is_empty(&self) -> bool {
         self.0 == 0
     }

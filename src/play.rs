@@ -2,7 +2,8 @@
 
 use std::io::{stdout, Write};
 
-use crate::io::{format_for_fancy_console, format_for_wiki, format_packed, Parser};
+use crate::io::format::format_grid;
+use crate::io::{format_for_fancy_console, format_for_wiki, format_packed, ParsePacked};
 use crate::io::{print_candidate, print_candidates};
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Board, Effects, Generator};
@@ -137,6 +138,9 @@ pub fn play() {
             }
             "W" => {
                 println!("\n==> {}{}\n", SUDOKUWIKI_URL, format_for_wiki(board));
+            }
+            "M" => {
+                println!("\n{}\n", format_grid(board));
             }
             "E" => {
                 if input.len() != 3 {
@@ -273,6 +277,7 @@ fn print_help() {
         "P <value>        - print the puzzle, optionally limited to a single candidate\n",
         "X [char]         - export the puzzle with optional character for unsolved cells\n",
         "W                - print URL to play on SudokuWiki.org\n",
+        "M                - print the puzzle as a grid suitable for email\n",
         "E <cell> <value> - erase a candidate\n",
         "S <cell> <value> - solve a cell\n",
         "F                - find deductions\n",
@@ -321,7 +326,7 @@ fn create_new_puzzle() -> Option<Board> {
             continue;
         }
 
-        let parser = Parser::new(true, false);
+        let parser = ParsePacked::new(true, false);
         let (board, effects, failure) = parser.parse(&input);
 
         if let Some((cell, known)) = failure {
