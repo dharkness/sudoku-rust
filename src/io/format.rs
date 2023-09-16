@@ -6,32 +6,62 @@ use crate::symbols::MISSING;
 
 /// Formats a [`Board`] into a packed string with spacing and periods for unsolved cells.
 pub fn format_for_console(board: &Board) -> String {
-    FormatPacked::console().format(board)
+    Format::console().format(board)
 }
 
 /// Formats a [`Board`] into a packed string with spacing and Unicode dots for unsolved cells.
 pub fn format_for_fancy_console(board: &Board) -> String {
-    FormatPacked::fancy().format(board)
+    Format::fancy().format(board)
 }
 
 /// Formats a [`Board`] into a packed string with zeros for unsolved cells.
 pub fn format_for_url(board: &Board) -> String {
-    FormatPacked::url().format(board)
+    Format::url().format(board)
 }
 
 /// Formats a [`Board`] into a packed string for the SudokuWiki site.
 pub fn format_for_wiki(board: &Board) -> String {
-    FormatWiki::new().format(board)
+    Format::wiki().format(board)
 }
 
 /// Formats a [`Board`] into a packed string.
 pub fn format_packed(board: &Board, unknown: char, spaces: bool) -> String {
-    FormatPacked::new(unknown, spaces).format(board)
+    let mut formatter = FormatPacked::new(unknown);
+    if spaces {
+        formatter = formatter.spaces();
+    }
+    formatter.format(board)
 }
 
 /// Formats a [`Board`] into an ASCII grid showing all knowns and candidates.
 pub fn format_grid(board: &Board) -> String {
-    FormatGrid::new().format(board)
+    Format::grid().format(board)
+}
+
+/// Provides helper methods for parsing puzzle strings into [`Board`]s.
+pub struct Format {}
+
+impl Format {
+    /// Formats a [`Board`] into a packed string with spacing and periods for unsolved cells.
+    pub const fn console() -> FormatPacked {
+        FormatPacked::new('.').spaces()
+    }
+
+    pub const fn fancy() -> FormatPacked {
+        FormatPacked::new(MISSING).spaces()
+    }
+
+    pub const fn url() -> FormatPacked {
+        FormatPacked::new('0')
+    }
+
+    pub const fn wiki() -> FormatWiki {
+        FormatWiki::new()
+    }
+
+    pub const fn grid() -> FormatGrid {
+        FormatGrid::new()
+    }
 }
 
 /// Produces a single-line packed string of the [`Board`]'s cells
@@ -43,23 +73,26 @@ pub struct FormatPacked {
 }
 
 impl FormatPacked {
-    pub const fn new(unknown: char, spaces: bool) -> Self {
-        FormatPacked { unknown, spaces }
+    pub const fn new(unknown: char) -> Self {
+        FormatPacked {
+            unknown,
+            spaces: false,
+        }
     }
 
-    pub const fn console() -> Self {
-        FormatPacked::new('.', true)
+    /// Changes the character used for unsolved cells.
+    pub const fn unknown(mut self, unknown: char) -> Self {
+        self.unknown = unknown;
+        self
     }
 
-    pub const fn url() -> Self {
-        FormatPacked::new('0', false)
+    /// Adds a space between rows.
+    pub const fn spaces(mut self) -> Self {
+        self.spaces = true;
+        self
     }
 
-    pub const fn fancy() -> Self {
-        FormatPacked::new(MISSING, true)
-    }
-
-    fn format(&self, board: &Board) -> String {
+    pub fn format(&self, board: &Board) -> String {
         let mut result = String::new();
 
         House::rows_iter().for_each(|row| {
@@ -86,6 +119,7 @@ impl FormatPacked {
 
 /// Produces a ASCII grid of the [`Board`]'s cells for emailing
 /// showing the solution or candidates for each cell.
+#[derive(Default)]
 pub struct FormatGrid {}
 
 impl FormatGrid {
@@ -168,6 +202,7 @@ impl FormatGrid {
 
 /// Produces a single-line packed string of the [`Board`]'s cells for SudokuWiki
 /// detailing givens, solved cells, and unsolved candidates.
+#[derive(Default)]
 pub struct FormatWiki {
     pub spaces: bool,
 }
@@ -177,8 +212,10 @@ impl FormatWiki {
         FormatWiki { spaces: false }
     }
 
-    pub const fn new_with_spaces() -> Self {
-        FormatWiki { spaces: true }
+    /// Adds a space between rows.
+    pub const fn spaces(mut self) -> Self {
+        self.spaces = true;
+        self
     }
 
     fn format(&self, board: &Board) -> String {
@@ -262,7 +299,7 @@ mod tests {
 
         assert_eq!(
             "-8-1-3-7--9-5-6-----14-8-2-578241639143659782926837451-379-52-----3-4-97419782-6-",
-            format_packed(&board, '-', false)
+            FormatPacked::new('-').format(&board)
         );
     }
 
