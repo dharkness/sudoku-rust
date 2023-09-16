@@ -202,6 +202,8 @@ impl FormatGrid {
 
 /// Produces a single-line packed string of the [`Board`]'s cells for SudokuWiki
 /// detailing givens, solved cells, and unsolved candidates.
+///
+/// See https://www.sudokuwiki.org/Sudoku_String_Definitions for more information.
 #[derive(Default)]
 pub struct FormatWiki {
     pub spaces: bool,
