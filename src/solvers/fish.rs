@@ -88,13 +88,13 @@ fn check_houses(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::io::parse::parse;
     use crate::layout::cells::cell_set::cells;
     use crate::layout::values::known::known;
-    use crate::puzzle::parse::parse;
 
     #[test]
     fn x_wing() {
-        let board = parse!(
+        let board = parse(
             "
             1.....569
             492.561.8
@@ -105,7 +105,7 @@ mod tests {
             .4.5...16
             9.5.614.2
             621.....5
-        "
+        ",
         );
 
         let found = find_x_wings(&board).unwrap_or(Effects::new());
@@ -117,7 +117,7 @@ mod tests {
 
     #[test]
     fn swordfish() {
-        let board = parse!(
+        let board = parse(
             "
             52941.7.3
             ..6..3..2
@@ -128,7 +128,7 @@ mod tests {
             3...6942.
             2..83.6..
             96.7423.5
-        "
+        ",
         );
 
         let found = find_swordfish(&board).unwrap_or(Effects::new());
@@ -140,7 +140,7 @@ mod tests {
 
     #[test]
     fn jellyfish() {
-        let board = parse!(
+        let board = parse(
             "
             ..17538..
             .5......7
@@ -151,7 +151,7 @@ mod tests {
             ....67..4
             .7.....1.
             ..63.97..
-        "
+        ",
         );
 
         let found = find_jellyfish(&board).unwrap_or(Effects::new());

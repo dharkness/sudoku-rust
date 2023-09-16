@@ -82,13 +82,13 @@ fn check_intersection(board: &Board, block: House, houses: HouseSet, effects: &m
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::io::parse::parse;
     use crate::layout::cells::cell_set::cells;
     use crate::layout::values::known::known;
-    use crate::puzzle::parse::parse;
 
     #[test]
     fn intersection_removals() {
-        let board = parse!(
+        let board = parse(
             "
             7..1....9
             .2.3..7..
@@ -99,7 +99,7 @@ mod tests {
             .....49..
             .46..5..2
             .1...68..
-        "
+        ",
         );
 
         let found = find_intersection_removals(&board).unwrap_or(Effects::new());

@@ -1,11 +1,10 @@
 use std::fmt;
 
+use crate::io::format_for_fancy_console;
 use crate::layout::{Cell, CellSet, House, Known, KnownSet, Value};
-use crate::puzzle::PseudoCell;
 use crate::solvers::deadly_rectangles::creates_deadly_rectangles;
-use crate::symbols::UNKNOWN_VALUE;
 
-use super::{Effects, Error, Strategy};
+use super::{Effects, Error, PseudoCell, Strategy};
 
 /// Tracks the full state of a puzzle in play.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -282,22 +281,10 @@ impl Board {
         });
         result[1..].to_string()
     }
-
-    pub fn fancy_string(&self) -> String {
-        self.packed_string(UNKNOWN_VALUE)
-    }
-
-    pub fn console_string(&self) -> String {
-        self.packed_string('.')
-    }
-
-    pub fn url_string(&self) -> String {
-        self.packed_string('0')
-    }
 }
 
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.fancy_string())
+        f.write_str(&format_for_fancy_console(self))
     }
 }

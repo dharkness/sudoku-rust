@@ -2,9 +2,10 @@
 
 use std::io::{stdout, Write};
 
+use crate::io::{format_for_fancy_console, format_for_wiki, format_packed, Parser};
+use crate::io::{print_candidate, print_candidates};
 use crate::layout::{Cell, Known};
-use crate::printers::{print_candidate, print_candidates};
-use crate::puzzle::{Board, Effects, Generator, Parser};
+use crate::puzzle::{Board, Effects, Generator};
 use crate::solvers::Solver;
 use crate::symbols::UNKNOWN_VALUE;
 
@@ -121,18 +122,21 @@ pub fn play() {
                 }
             }
             "X" => {
-                let mut unknown = UNKNOWN_VALUE;
                 if input.len() >= 2 {
-                    unknown = input[1].chars().next().unwrap_or(unknown);
-                }
-                println!("\n==> {}\n", board.packed_string(unknown));
+                    println!(
+                        "\n==> {}\n",
+                        format_packed(
+                            board,
+                            input[1].chars().next().unwrap_or(UNKNOWN_VALUE),
+                            true
+                        )
+                    );
+                } else {
+                    println!("\n==> {}\n", format_for_fancy_console(board));
+                };
             }
             "W" => {
-                println!(
-                    "\n==> {}{}\n",
-                    SUDOKUWIKI_URL,
-                    board.url_string().replace(' ', "")
-                );
+                println!("\n==> {}{}\n", SUDOKUWIKI_URL, format_for_wiki(board));
             }
             "E" => {
                 if input.len() != 3 {

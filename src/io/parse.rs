@@ -1,6 +1,11 @@
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Board, Effects, Error, Strategy};
 
+/// Parses various puzzle string formats based on the input.
+pub fn parse(input: &str) -> Board {
+    Parser::new(false, false).parse(input).0
+}
+
 /// Parses puzzle strings into [`Board`]s, optionally stopping on errors
 /// and/or automatically solving naked and hidden singles.
 pub struct Parser {
@@ -66,19 +71,10 @@ impl Parser {
     }
 }
 
-#[allow(unused_macros)]
-macro_rules! parse {
-    ($board:expr) => {
-        Parser::new(false, false).parse($board).0
-    };
-}
-
-#[allow(unused_imports)]
-pub(crate) use parse;
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::io::format::format_for_console;
 
     #[test]
     fn test() {
@@ -115,6 +111,6 @@ mod tests {
         assert!(failed.is_none());
         assert!(!errors.has_errors());
 
-        assert_eq!(want.console_string(), board.console_string())
+        assert_eq!(format_for_console(&want), format_for_console(&board))
     }
 }
