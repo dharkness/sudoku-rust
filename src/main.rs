@@ -9,6 +9,8 @@ mod symbols;
 
 use crate::play::play;
 
-fn main() {
-    play();
+use rustyline::Result;
+
+fn main() -> Result<()> {
+    play()
 }

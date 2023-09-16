@@ -2,6 +2,9 @@
 
 use std::io::{stdout, Write};
 
+use rustyline::error::ReadlineError;
+use rustyline::{DefaultEditor, Result};
+
 use crate::layout::{Cell, Known};
 use crate::printers::{print_candidate, print_candidates};
 use crate::puzzle::{Board, Effects, Generator, Parser};
@@ -53,7 +56,15 @@ const SOLVER_LABELS: [&str; 19] = [
     "empty rectangle",
 ];
 
-pub fn play() {
+pub fn play() -> Result<()> {
+    let mut rl = DefaultEditor::new()?;
+    let mut use_history = true;
+
+    #[cfg(feature = "with-file-history")]
+    if use_history && rl.load_history(".history").is_err() {
+        println!("No previous history.");
+    }
+
     let mut boards = vec![Board::new()];
     let mut show = false;
 
@@ -70,15 +81,39 @@ pub fn play() {
             show = false;
         }
 
-        print!(
+        let prompt = format!(
             "[ {} solved - {} unsolved ] ",
             board.known_count(),
             board.unknown_count()
         );
-        let _ = stdout().flush();
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input).unwrap();
-        let input = input.trim().to_uppercase();
+        // let _ = stdout().flush();
+        let input: String;
+        // std::io::stdin().read_line(&mut input).unwrap();
+        // let input = input.trim().to_uppercase();
+
+        let readline = rl.readline(&prompt);
+        match readline {
+            Ok(line) => {
+                let trimmed = line.trim();
+                if use_history && !trimmed.is_empty() && rl.add_history_entry(trimmed).is_err() {
+                    println!("Unable to save command history; disabling history");
+                    use_history = false;
+                }
+                input = trimmed.to_uppercase();
+            }
+            Err(ReadlineError::Interrupted) => {
+                println!("CTRL-C");
+                break;
+            }
+            Err(ReadlineError::Eof) => {
+                println!("CTRL-D");
+                break;
+            }
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break;
+            }
+        }
         if input.is_empty() {
             continue;
         }
@@ -259,6 +294,13 @@ pub fn play() {
             _ => println!("\n==> Unknown command: {}\n", input[0]),
         }
     }
+
+    #[cfg(feature = "with-file-history")]
+    if use_history && rl.save_history(".history").is_err() {
+        println!("Unable to save command history");
+    }
+
+    Ok(())
 }
 
 fn print_help() {
