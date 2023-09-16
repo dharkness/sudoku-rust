@@ -163,7 +163,7 @@ impl Graph {
             self.peers[i].union_with(*peers);
         }
 
-        self.nodes.extend(other.nodes.into_iter());
+        self.nodes.extend(other.nodes);
     }
 }
 
