@@ -88,13 +88,13 @@ fn check_houses(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::io::parse::parse;
+    use crate::io::Parse;
     use crate::layout::cells::cell_set::cells;
     use crate::layout::values::known::known;
 
     #[test]
     fn x_wing() {
-        let board = parse(
+        let board = Parse::packed().parse_simple(
             "
                 1.....569
                 492.561.8
@@ -117,7 +117,7 @@ mod tests {
 
     #[test]
     fn swordfish() {
-        let board = parse(
+        let board = Parse::packed().parse_simple(
             "
                 52941.7.3
                 ..6..3..2
@@ -140,7 +140,7 @@ mod tests {
 
     #[test]
     fn jellyfish() {
-        let board = parse(
+        let board = Parse::packed().parse_simple(
             "
                 ..17538..
                 .5......7

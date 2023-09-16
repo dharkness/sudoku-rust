@@ -82,13 +82,13 @@ fn check_intersection(board: &Board, block: House, houses: HouseSet, effects: &m
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::io::parse::parse;
+    use crate::io::Parse;
     use crate::layout::cells::cell_set::cells;
     use crate::layout::values::known::known;
 
     #[test]
     fn intersection_removals() {
-        let board = parse(
+        let board = Parse::packed().parse_simple(
             "
                 7..1....9
                 .2.3..7..

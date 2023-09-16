@@ -220,12 +220,11 @@ impl FormatWiki {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::io::parse::parse;
-    use crate::io::ParsePacked;
+    use crate::io::Parse;
 
     #[test]
     fn test_format_for_console() {
-        let board = parse(
+        let board = Parse::packed().parse_simple(
             "
                 .8.1.3.7.
                 .9.5.6...
@@ -247,7 +246,7 @@ mod tests {
 
     #[test]
     fn test_format_packed() {
-        let board = parse(
+        let board = Parse::packed().parse_simple(
             "
                 .8.1.3.7.
                 .9.5.6...
@@ -269,7 +268,7 @@ mod tests {
 
     #[test]
     fn test_format_grid() {
-        let board = parse(
+        let board = Parse::packed().parse_simple(
             "
                 ..2...376
                 .1..3.5..
@@ -308,19 +307,18 @@ mod tests {
 
     #[test]
     fn test_format_for_wiki() {
-        let parser = ParsePacked::new(true, true);
-        let (board, _, _) = parser.parse(
+        let board = Parse::packed().solve_singles().parse_simple(
             "
-            ..2...376
-            .1..3.5..
-            .......9.
-            9..85...1
-            ...3.4...
-            2...97..3
-            .8.......
-            ..3.4..6.
-            147...2..
-        ",
+                ..2...376
+                .1..3.5..
+                .......9.
+                9..85...1
+                ...3.4...
+                2...97..3
+                .8.......
+                ..3.4..6.
+                147...2..
+            ",
         );
 
         assert_eq!(

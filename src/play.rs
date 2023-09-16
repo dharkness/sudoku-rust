@@ -3,7 +3,7 @@
 use std::io::{stdout, Write};
 
 use crate::io::format::format_grid;
-use crate::io::{format_for_fancy_console, format_for_wiki, format_packed, ParsePacked};
+use crate::io::{format_for_fancy_console, format_for_wiki, format_packed, Parse};
 use crate::io::{print_candidate, print_candidates};
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Board, Effects, Generator};
@@ -326,7 +326,7 @@ fn create_new_puzzle() -> Option<Board> {
             continue;
         }
 
-        let parser = ParsePacked::new(true, false);
+        let parser = Parse::packed().stop_on_error();
         let (board, effects, failure) = parser.parse(&input);
 
         if let Some((cell, known)) = failure {

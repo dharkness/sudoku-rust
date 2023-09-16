@@ -1,24 +1,46 @@
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Board, Effects, Error, Strategy};
 
-/// Parses various puzzle string formats based on the input.
-pub fn parse(input: &str) -> Board {
-    ParsePacked::new(false, false).parse(input).0
+/// Provides helper methods for parsing puzzle strings into [`Board`]s.
+pub struct Parse {}
+
+impl Parse {
+    /// Returns a new [`ParsePacked`] that ignores errors
+    /// and won't solve hidden/naked single automatically.
+    pub fn packed() -> ParsePacked {
+        ParsePacked::new()
+    }
 }
 
 /// Parses puzzle strings into [`Board`]s, optionally stopping on errors
 /// and/or automatically solving naked and hidden singles.
+#[derive(Default)]
 pub struct ParsePacked {
     stop_on_error: bool,
     solve_singles: bool,
 }
 
 impl ParsePacked {
-    pub fn new(stop_on_error: bool, solve_singles: bool) -> Self {
-        ParsePacked {
-            stop_on_error,
-            solve_singles,
-        }
+    pub fn new() -> Self {
+        ParsePacked::default()
+    }
+
+    /// Sets the parser to stop on the first error.
+    pub fn stop_on_error(mut self) -> Self {
+        self.stop_on_error = true;
+        self
+    }
+
+    /// Sets the parser to automatically solve naked and hidden singles.
+    pub fn solve_singles(mut self) -> Self {
+        self.solve_singles = true;
+        self
+    }
+
+    /// Builds a new [`Board`] using an input string to set some cells,
+    /// and returns it without any [`Action`]s or [`Error`]s that arise.
+    pub fn parse_simple(&self, input: &str) -> Board {
+        self.parse(input).0
     }
 
     /// Builds a new [`Board`] using an input string to set some cells,
@@ -78,8 +100,8 @@ mod tests {
 
     #[test]
     fn test() {
-        let parser = ParsePacked::new(true, true);
-        let (board, errors, failed) = parser.parse(
+        let parser = Parse::packed().stop_on_error().solve_singles();
+        let (board, effects, failed) = parser.parse(
             "
             .1..7....
             2...4....
@@ -93,9 +115,9 @@ mod tests {
         ",
         );
         assert!(failed.is_none());
-        assert!(!errors.has_errors());
+        assert!(!effects.has_errors());
 
-        let (want, errors, failed) = parser.parse(
+        let (want, effects, failed) = parser.parse(
             "
             51.279.4.
             29.1465.7
@@ -109,7 +131,7 @@ mod tests {
         ",
         );
         assert!(failed.is_none());
-        assert!(!errors.has_errors());
+        assert!(!effects.has_errors());
 
         assert_eq!(format_for_console(&want), format_for_console(&board))
     }
