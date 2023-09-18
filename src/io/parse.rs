@@ -13,6 +13,11 @@ impl Parse {
         ParsePacked::new()
     }
 
+    /// Returns a new [`ParseGrid`] that ignores errors.
+    pub fn grid() -> ParseGrid {
+        ParseGrid::new()
+    }
+
     /// Returns a new [`ParseWiki`] that ignores errors.
     pub fn wiki() -> ParseWiki {
         ParseWiki::new()
@@ -94,6 +99,77 @@ impl ParsePacked {
             }
 
             c += 1;
+        }
+
+        (board, effects, None)
+    }
+}
+
+/// Parses puzzle strings into [`Board`]s with the exact solved cells and candidates
+/// from the grid format.
+#[derive(Default)]
+pub struct ParseGrid {
+    stop_on_error: bool,
+}
+
+impl ParseGrid {
+    pub fn new() -> Self {
+        ParseGrid::default()
+    }
+
+    /// Sets the parser to stop on the first error.
+    pub fn stop_on_error(mut self) -> Self {
+        self.stop_on_error = true;
+        self
+    }
+
+    /// Builds a new [`Board`] using an input string to set some cells,
+    /// and returns it without any [`Action`]s or [`Error`]s that arise.
+    pub fn parse_simple(&self, input: &str) -> Board {
+        self.parse(input).0
+    }
+
+    /// Builds a new [`Board`] using an input string to set some cells,
+    /// and returns it along with any [`Action`]s and [`Error`]s that arise.
+    pub fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>) {
+        let mut board = Board::new();
+        let mut effects = Effects::new();
+
+        let mut candidates = [KnownSet::empty(); 81];
+        let mut c: usize = 0;
+        let mut collecting = false;
+        for char in input.chars() {
+            if ('1'..='9').contains(&char) {
+                collecting = true;
+                candidates[c] += Known::from(char);
+            } else if collecting {
+                collecting = false;
+                c += 1;
+                if c >= 81 {
+                    break;
+                }
+            }
+        }
+
+        for (c, knowns) in candidates.iter().enumerate() {
+            let cell = Cell::new(c as u8);
+
+            if let Some(solved) = knowns.as_single() {
+                board.set_known(cell, solved, &mut effects);
+                if effects.has_errors() && self.stop_on_error {
+                    return (board, effects, Some((cell, solved)));
+                }
+                effects.clear_actions();
+            } else {
+                for known in knowns.inverted() {
+                    if board.remove_candidate(cell, known, &mut effects) {
+                        if effects.has_errors() && self.stop_on_error {
+                            return (board, effects, Some((cell, known)));
+                        }
+                        effects.clear_actions();
+                    }
+                }
+            }
         }
 
         (board, effects, None)
@@ -184,10 +260,19 @@ fn to_decimal(c: char) -> u16 {
     }
 }
 
+fn trim_grid_whitespace(input: &str) -> String {
+    input
+        .lines()
+        .map(|line| line.trim())
+        .filter(|line| !line.is_empty())
+        .join("\n")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::io::format::{format_for_console, format_grid};
+    use crate::io::format_for_wiki;
 
     #[test]
     fn test_parse_packed() {
@@ -228,6 +313,35 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_grid() {
+        let parser = Parse::grid().stop_on_error();
+        let (board, effects, failed) = parser.parse(
+            "
+                +---------------+-----------------+--------------+
+                | 48  9   2     | 145   18   158  | 3   7   6    |
+                | 478 1   468   | 24679 3    2689 | 5   248 248  |
+                | 3   567 4568  | 24567 2678 2568 | 1   9   248  |
+                +---------------+-----------------+--------------+
+                | 9   3   46    | 8     5    26   | 7   24  1    |
+                | 78  567 1568  | 3     126  4    | 689 258 2589 |
+                | 2   56  14568 | 16    9    7    | 68  458 3    |
+                +---------------+-----------------+--------------+
+                | 6   8   9     | 257   27   3    | 4   1   57   |
+                | 5   2   3     | 179   4    189  | 89  6   789  |
+                | 1   4   7     | 569   68   5689 | 2   3   589  |
+                +---------------+-----------------+--------------+
+            ",
+        );
+        assert!(failed.is_none());
+        assert!(!effects.has_errors());
+
+        assert_eq!(
+            "8gg0041i8292084020cg02agmk08q4108k8k0870bg7ke4b402g08kg0082g801024400k02c070b208260gq094p40430bi22g040a09g082080g05444080g0250100408k20go2o020s0020g40j0a0r00408p0",
+            format_for_wiki(&board)
+        );
+    }
+
+    #[test]
     fn test_parse_wiki() {
         let parser = Parse::wiki().stop_on_error();
         let (board, effects, failed) = parser.parse(
@@ -236,7 +350,8 @@ mod tests {
         assert!(failed.is_none());
         assert!(!effects.has_errors());
 
-        let want = "
+        let want = trim_grid_whitespace(
+            "
             +---------------+-----------------+--------------+
             | 48  9   2     | 145   18   158  | 3   7   6    |
             | 478 1   468   | 24679 3    2689 | 5   248 248  |
@@ -250,11 +365,8 @@ mod tests {
             | 5   2   3     | 179   4    189  | 89  6   789  |
             | 1   4   7     | 569   68   5689 | 2   3   589  |
             +---------------+-----------------+--------------+
-        "
-        .lines()
-        .map(|line| line.trim())
-        .filter(|line| !line.is_empty())
-        .join("\n");
+        ",
+        );
 
         assert_eq!(want, format_grid(&board));
     }

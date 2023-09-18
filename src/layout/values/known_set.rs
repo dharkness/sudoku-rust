@@ -201,7 +201,11 @@ impl KnownSet {
 
 impl From<&str> for KnownSet {
     fn from(labels: &str) -> KnownSet {
-        labels.split(' ').map(Known::from).union()
+        labels
+            .chars()
+            .filter(|c| ('1'..='9').contains(c))
+            .map(Known::from)
+            .union()
     }
 }
 
