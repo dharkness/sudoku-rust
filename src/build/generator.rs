@@ -1,13 +1,10 @@
-use std::sync::atomic::{AtomicBool, Ordering};
-
 use rand::rngs::ThreadRng;
 use rand::seq::SliceRandom;
 
-use crate::io::{print_candidates, print_values};
+use crate::io::Cancelable;
 use crate::layout::{Cell, Known, KnownSet};
+use crate::puzzle::{Board, Effects};
 use crate::solvers::intersection_removals::find_intersection_removals;
-
-use super::{Board, Effects};
 
 const FILLED: &str =
     "|---------=========---------=========---------=========---------=========---------|";
@@ -21,23 +18,21 @@ pub struct Generator {
 }
 
 impl Generator {
-    pub fn new() -> Generator {
+    pub fn new(shuffle: bool) -> Generator {
         let mut rng = rand::thread_rng();
         let mut cells: Vec<Cell> = Vec::with_capacity(81);
 
         for i in 0..81 {
             cells.push(Cell::new(i));
         }
-        cells.shuffle(&mut rng);
+        if shuffle {
+            cells.shuffle(&mut rng);
+        }
 
         Generator { rng, cells }
     }
 
-    pub fn generate(&mut self) -> Option<Board> {
-        static CANCEL: AtomicBool = AtomicBool::new(false);
-        ctrlc::set_handler(|| CANCEL.store(true, Ordering::Relaxed))
-            .expect("Error setting Ctrl-C handler");
-
+    pub fn generate(&mut self, cancelable: &Cancelable) -> Option<Board> {
         let mut stack = Vec::with_capacity(81);
         stack.push(Entry {
             board: Board::new(),
@@ -57,7 +52,7 @@ impl Generator {
                 cell,
                 mut candidates,
             } = stack.pop().unwrap();
-            if CANCEL.load(Ordering::Relaxed) {
+            if cancelable.is_canceled() {
                 return Some(board);
             }
 
@@ -101,7 +96,7 @@ impl Generator {
                 candidates,
             });
             loop {
-                if stack.len() == 81 {
+                if stack.len() == 81 || cancelable.is_canceled() {
                     return Some(clone);
                 }
 
@@ -138,22 +133,4 @@ struct Entry {
     board: Board,
     cell: Cell,
     candidates: Vec<Known>,
-}
-
-#[allow(dead_code)]
-pub fn generate_board() {
-    let mut generator = Generator::new();
-
-    match generator.generate() {
-        Some(board) => {
-            print_values(&board);
-            if !board.is_solved() {
-                print_candidates(&board);
-            }
-            println!("Board: {}", board);
-        }
-        None => {
-            println!("No solution found");
-        }
-    }
 }

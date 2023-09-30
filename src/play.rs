@@ -1,12 +1,15 @@
 //! Provides a text-based interface for creating and playing Sudoku puzzles.
 
+use clap::Args;
 use std::io::{stdout, Write};
 
-use crate::io::format::format_grid;
-use crate::io::{format_for_fancy_console, format_for_wiki, format_packed, Parse};
-use crate::io::{print_candidate, print_candidates};
+use crate::build::Generator;
+use crate::io::{
+    format_for_fancy_console, format_for_wiki, format_grid, format_packed, print_candidate,
+    print_candidates, Cancelable, Parse,
+};
 use crate::layout::{Cell, Known};
-use crate::puzzle::{Board, Effects, Generator};
+use crate::puzzle::{Board, Effects};
 use crate::solvers::Solver;
 use crate::symbols::UNKNOWN_VALUE;
 
@@ -55,21 +58,49 @@ const SOLVER_LABELS: [&str; 19] = [
     "empty rectangle",
 ];
 
-pub fn play() {
-    let mut boards = vec![Board::new()];
-    let mut show = false;
+#[derive(Debug, Args)]
+pub struct PlayArgs {
+    /// Clues for a starting puzzle
+    #[clap(long, short = 'p')]
+    puzzle: Option<String>,
+}
 
-    print_help();
+pub fn play(args: PlayArgs, canceler: &Cancelable) {
+    let mut boards = vec![];
+    let mut show_board = false;
+
+    match args.puzzle {
+        Some(clues) => {
+            let parser = Parse::packed().stop_on_error();
+            let (board, effects, failure) = parser.parse(&clues);
+
+            boards.push(board);
+            if let Some((cell, known)) = failure {
+                println!();
+                print_candidates(&board);
+                println!();
+                effects.print_errors();
+                println!("\n==> Setting {} to {} caused errors\n", cell, known);
+            } else {
+                show_board = true;
+            }
+        }
+        None => {
+            boards.push(Board::new());
+            print_help();
+        }
+    }
+
     loop {
         let board = boards.last().unwrap();
-        if show {
+        if show_board {
             print_candidates(board);
             if board.is_solved() {
                 println!("\n==> Congratulations!\n");
             } else {
                 println!();
             }
-            show = false;
+            show_board = false;
         }
 
         print!(
@@ -91,13 +122,13 @@ pub fn play() {
                 if let Some(board) = create_new_puzzle() {
                     boards.push(board);
                     println!();
-                    show = true
+                    show_board = true
                 }
             }
             "G" => {
                 println!();
-                let mut generator = Generator::new();
-                match generator.generate() {
+                let mut generator = Generator::new(true);
+                match generator.generate(canceler) {
                     Some(board) => {
                         println!("\n==> Clues: {}\n", board);
                         boards.push(board);
@@ -106,6 +137,7 @@ pub fn play() {
                         println!("\n==> Failed to generate a puzzle\n");
                     }
                 }
+                canceler.clear();
             }
             "P" => {
                 if input.len() >= 2 {
@@ -119,7 +151,7 @@ pub fn play() {
                     }
                 } else {
                     println!();
-                    show = true
+                    show_board = true
                 }
             }
             "X" => {
@@ -164,7 +196,7 @@ pub fn play() {
                 }
                 boards.push(clone);
                 println!();
-                show = true;
+                show_board = true;
             }
             "S" => {
                 if input.len() != 3 {
@@ -188,7 +220,7 @@ pub fn play() {
                 }
                 boards.push(clone);
                 println!();
-                show = true;
+                show_board = true;
             }
             "F" => {
                 let mut found = false;
@@ -235,7 +267,7 @@ pub fn play() {
                 if found {
                     boards.push(clone);
                     println!();
-                    show = true;
+                    show_board = true;
                 } else {
                     println!("\n==> No deductions found\n");
                 }
@@ -253,13 +285,13 @@ pub fn play() {
                 });
                 boards.push(reset);
                 println!();
-                show = true;
+                show_board = true;
             }
             "Z" => {
                 if boards.len() > 1 {
                     println!("\n==> Undoing last move\n");
                     boards.pop();
-                    show = true
+                    show_board = true
                 }
             }
             "?" | "H" => print_help(),
@@ -272,32 +304,35 @@ pub fn play() {
 fn print_help() {
     println!(concat!(
         "\n==> Help\n\n",
-        "N                - start or input a new puzzle\n",
-        "G                - generate a random puzzle\n",
-        "P <value>        - print the puzzle, optionally limited to a single candidate\n",
-        "X [char]         - export the puzzle with optional character for unsolved cells\n",
-        "W                - print URL to play on SudokuWiki.org\n",
-        "M                - print the puzzle as a grid suitable for email\n",
-        "E <cell> <value> - erase a candidate\n",
-        "S <cell> <value> - solve a cell\n",
-        "F                - find deductions\n",
-        "A                - apply deductions\n",
-        "R                - reset candidates based on solved cells\n",
-        "Z                - undo last change\n",
-        "H                - this help message\n",
-        "Q                - quit\n\n",
-        "Note: commands and cells are not case-sensitive\n"
+        "  N                - start or input a new puzzle\n",
+        "  G                - generate a random puzzle\n",
+        "  P <digit>        - print the puzzle, optionally limited to a single candidate\n",
+        "  X [char]         - export the puzzle with optional character for unsolved cells\n",
+        "  W                - print URL to play on SudokuWiki.org\n",
+        "  M                - print the puzzle as a grid suitable for email\n",
+        "  E <cell> <digit> - erase a candidate\n",
+        "  S <cell> <digit> - solve a cell\n",
+        "  F                - find deductions\n",
+        "  A                - apply deductions\n",
+        "  R                - reset candidates based on solved cells\n",
+        "  Z                - undo last change\n",
+        "  H                - this help message\n",
+        "  Q                - quit\n\n",
+        "      <cell>  - A1 to J9\n",
+        "      <digit> - 1 to 9\n",
+        "      <char>  - any single character\n\n",
+        "  Note: commands and cells are not case-sensitive\n",
     ))
 }
 
 fn create_new_puzzle() -> Option<Board> {
     println!(concat!(
         "\n==> Enter the givens\n\n",
-        "- enter up to 81 digits\n",
-        "- use period or zero to leave a cell blank\n",
-        "- spaces are ignored\n",
-        "- leave empty to cancel\n",
-        "- enter 'E' for an empty puzzle\n",
+        "  - enter up to 81 digits\n",
+        "  - use period or zero to leave a cell blank\n",
+        "  - spaces are ignored\n",
+        "  - leave empty to cancel\n",
+        "  - enter 'E' for an empty puzzle\n",
     ));
 
     'input: loop {
