@@ -266,7 +266,7 @@ impl From<&str> for CellSet {
         if labels.is_empty() {
             CellSet::empty()
         } else {
-            labels.split(' ').map(Cell::from).union() as CellSet
+            labels.split(' ').map(Cell::from).union()
         }
     }
 }

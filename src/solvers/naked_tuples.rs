@@ -32,7 +32,7 @@ fn find_naked_tuples(board: &Board, size: usize, strategy: Strategy) -> Option<E
                     return;
                 }
 
-                let cells = house_cells - candidates.iter().map(|(c, _)| *c).union() as CellSet;
+                let cells = house_cells - candidates.iter().map(|(c, _)| *c).union();
                 let mut action = Action::new(strategy);
 
                 knowns

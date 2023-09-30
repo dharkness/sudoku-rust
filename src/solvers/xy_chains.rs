@@ -82,7 +82,7 @@ impl Forest {
             .iter()
             .filter(|(_, g)| g.can_add_node(&node))
             .map(|(c, _)| *c)
-            .union() as CellSet;
+            .union();
 
         if sees.is_empty() {
             self.graphs.insert(cell, Graph::new(&node));

@@ -28,7 +28,7 @@ pub fn find_xyz_wings(board: &Board) -> Option<Effects> {
         (cell.peers() & bi_values)
             .iter()
             .combinations(2)
-            .map(|pair| pair.iter().copied().union() as CellSet)
+            .map(|pair| pair.iter().copied().union())
             .for_each(|pair| {
                 let (c1, c2) = pair.as_pair().expect("cell pair");
                 let candidates = cell.peers() & c1.peers() & c2.peers();

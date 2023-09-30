@@ -23,7 +23,7 @@ pub fn find_hidden_tuples(board: &Board, size: usize, strategy: Strategy) -> Opt
             .combinations(size)
             .for_each(|candidates| {
                 let cell_sets = candidates.iter().map(|(_, cs)| *cs).collect::<Vec<_>>();
-                let cells = cell_sets.iter().copied().union() as CellSet;
+                let cells = cell_sets.iter().copied().union();
                 if cells.size() != size
                     || is_degenerate(&cell_sets, size, 2)
                     || is_degenerate(&cell_sets, size, 3)

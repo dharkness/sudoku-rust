@@ -367,7 +367,7 @@ impl Candidate {
                             return;
                         }
 
-                        let cells = peers - peer_knowns.iter().map(|(c, _)| *c).union() as CellSet;
+                        let cells = peers - peer_knowns.iter().map(|(c, _)| *c).union();
 
                         knowns
                             .iter()
@@ -380,14 +380,14 @@ impl Candidate {
                     .filter(|(_, cells)| (2..=size).contains(&cells.size()))
                     .combinations(size)
                     .for_each(|known_peers| {
-                        let knowns = known_peers.iter().map(|(k, _)| *k).union();
+                        let knowns = known_peers.iter().map(|(k, _)| *k).union() as KnownSet;
                         if !knowns.has_all(self.roof_extras) {
                             return;
                         }
 
                         let cell_sets: Vec<CellSet> =
                             known_peers.iter().map(|(_, cs)| *cs).collect();
-                        let cells = cell_sets.iter().copied().union() as CellSet;
+                        let cells = cell_sets.iter().copied().union();
                         if cells.size() != size
                             || hidden_tuples::is_degenerate(&cell_sets, size, 2)
                             || hidden_tuples::is_degenerate(&cell_sets, size, 3)

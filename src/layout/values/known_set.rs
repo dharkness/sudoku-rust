@@ -205,7 +205,7 @@ impl From<&str> for KnownSet {
             .chars()
             .filter(|c| ('1'..='9').contains(c))
             .map(Known::from)
-            .union()
+            .union() as KnownSet
     }
 }
 

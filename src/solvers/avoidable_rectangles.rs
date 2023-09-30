@@ -85,8 +85,7 @@ pub fn find_avoidable_rectangles(board: &Board) -> Option<Effects> {
                                     return;
                                 }
 
-                                let cells =
-                                    peers - peer_knowns.iter().map(|(c, _)| *c).union() as CellSet;
+                                let cells = peers - peer_knowns.iter().map(|(c, _)| *c).union();
 
                                 knowns.iter().for_each(|k| {
                                     action.erase_cells(cells & board.candidate_cells(k), k)

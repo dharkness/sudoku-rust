@@ -5,8 +5,7 @@ pub mod houses;
 pub mod values;
 
 pub use cells::{
-    Bits, Cell, CellIteratorUnion, CellSet, CellSetIteratorIntersection, CellSetIteratorUnion,
-    Rectangle,
+    Cell, CellIteratorUnion, CellSet, CellSetIteratorIntersection, CellSetIteratorUnion, Rectangle,
 };
 pub use houses::{
     Coord, House, HouseIteratorUnion, HouseSet, HouseSetIteratorIntersection,
