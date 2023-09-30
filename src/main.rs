@@ -3,17 +3,15 @@
 use clap::{Parser, Subcommand};
 
 mod build;
-mod create;
+mod commands;
 mod io;
 mod layout;
-mod play;
 mod puzzle;
 mod solvers;
 mod symbols;
 
-use crate::create::{create, CreateArgs};
+use crate::commands::{create_puzzle, start_player, CreateArgs, PlayArgs};
 use crate::io::create_signal;
-use crate::play::{play, PlayArgs};
 
 /// A command-line sudoku player, generator and solver written in Rust
 #[derive(Debug, Parser)]
@@ -43,7 +41,7 @@ fn main() {
 
     let app = App::parse();
     match app.command {
-        Commands::Play(args) => play(args, &canceler),
-        Commands::Create(args) => create(args, &canceler),
+        Commands::Play(args) => start_player(args, &canceler),
+        Commands::Create(args) => create_puzzle(args, &canceler),
     }
 }

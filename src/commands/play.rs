@@ -65,7 +65,7 @@ pub struct PlayArgs {
     puzzle: Option<String>,
 }
 
-pub fn play(args: PlayArgs, canceler: &Cancelable) {
+pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
     let mut boards = vec![];
     let mut show_board = false;
 

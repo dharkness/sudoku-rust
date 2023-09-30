@@ -15,7 +15,7 @@ pub struct CreateArgs {
 }
 
 /// Creates a new puzzle and prints it to stdout.
-pub fn create(args: CreateArgs, cancelable: &Cancelable) {
+pub fn create_puzzle(args: CreateArgs, cancelable: &Cancelable) {
     let mut generator = Generator::new(args.shuffle);
 
     match generator.generate(cancelable) {
