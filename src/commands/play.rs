@@ -10,53 +10,10 @@ use crate::io::{
 };
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Board, Effects};
-use crate::solvers::Solver;
+use crate::solvers::{SOLVERS, SOLVER_LABELS};
 use crate::symbols::UNKNOWN_VALUE;
 
 const SUDOKUWIKI_URL: &str = "https://www.sudokuwiki.org/sudoku.htm?bd=";
-
-const SOLVERS: [Solver; 19] = [
-    crate::solvers::intersection_removals::find_intersection_removals,
-    crate::solvers::naked_tuples::find_naked_pairs,
-    crate::solvers::naked_tuples::find_naked_triples,
-    crate::solvers::naked_tuples::find_naked_quads,
-    crate::solvers::hidden_tuples::find_hidden_pairs,
-    crate::solvers::hidden_tuples::find_hidden_triples,
-    crate::solvers::hidden_tuples::find_hidden_quads,
-    crate::solvers::fish::find_x_wings,
-    crate::solvers::fish::find_swordfish,
-    crate::solvers::fish::find_jellyfish,
-    crate::solvers::singles_chains::find_singles_chains,
-    crate::solvers::skyscrapers::find_skyscrapers,
-    crate::solvers::y_wings::find_y_wings,
-    crate::solvers::xyz_wings::find_xyz_wings,
-    crate::solvers::bugs::find_bugs,
-    crate::solvers::avoidable_rectangles::find_avoidable_rectangles,
-    crate::solvers::xy_chains::find_xy_chains,
-    crate::solvers::unique_rectangles::find_unique_rectangles,
-    crate::solvers::empty_rectangles::find_empty_rectangles,
-];
-const SOLVER_LABELS: [&str; 19] = [
-    "intersection removal",
-    "naked pair",
-    "naked triple",
-    "naked quad",
-    "hidden pair",
-    "hidden triple",
-    "hidden quad",
-    "x-wing",
-    "swordfish",
-    "jellyfish",
-    "singles chain",
-    "skyscraper",
-    "y-wing",
-    "xyz-wing",
-    "bug",
-    "avoidable rectangle",
-    "xy-chain",
-    "unique rectangle",
-    "empty rectangle",
-];
 
 #[derive(Debug, Args)]
 pub struct PlayArgs {

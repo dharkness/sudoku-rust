@@ -22,3 +22,47 @@ use crate::layout::*;
 use crate::puzzle::*;
 
 pub type Solver = fn(&Board) -> Option<Effects>;
+
+pub const SOLVERS: [Solver; 19] = [
+    intersection_removals::find_intersection_removals,
+    naked_tuples::find_naked_pairs,
+    naked_tuples::find_naked_triples,
+    naked_tuples::find_naked_quads,
+    hidden_tuples::find_hidden_pairs,
+    hidden_tuples::find_hidden_triples,
+    hidden_tuples::find_hidden_quads,
+    fish::find_x_wings,
+    fish::find_swordfish,
+    fish::find_jellyfish,
+    singles_chains::find_singles_chains,
+    skyscrapers::find_skyscrapers,
+    y_wings::find_y_wings,
+    xyz_wings::find_xyz_wings,
+    avoidable_rectangles::find_avoidable_rectangles,
+    xy_chains::find_xy_chains,
+    unique_rectangles::find_unique_rectangles,
+    empty_rectangles::find_empty_rectangles,
+    bugs::find_bugs,
+];
+
+pub const SOLVER_LABELS: [&str; 19] = [
+    "intersection removal",
+    "naked pair",
+    "naked triple",
+    "naked quad",
+    "hidden pair",
+    "hidden triple",
+    "hidden quad",
+    "x-wing",
+    "swordfish",
+    "jellyfish",
+    "singles chain",
+    "skyscraper",
+    "y-wing",
+    "xyz-wing",
+    "avoidable rectangle",
+    "xy-chain",
+    "unique rectangle",
+    "empty rectangle",
+    "bug",
+];
