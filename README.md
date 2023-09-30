@@ -8,7 +8,7 @@ Sudoku generator, solver and player console application in Rust.
 
 ## How to run
 
-To run the application,:
+To run the application,
 
 1. Install Rust
 2. Clone the repository
