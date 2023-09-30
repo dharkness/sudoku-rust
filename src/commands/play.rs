@@ -10,7 +10,7 @@ use crate::io::{
 };
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Board, Effects};
-use crate::solvers::{SOLVERS, SOLVER_LABELS};
+use crate::solvers::SOLVERS;
 use crate::symbols::UNKNOWN_VALUE;
 
 const SUDOKUWIKI_URL: &str = "https://www.sudokuwiki.org/sudoku.htm?bd=";
@@ -181,12 +181,12 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
             }
             "F" => {
                 let mut found = false;
-                SOLVERS.iter().enumerate().for_each(|(i, solver)| {
-                    if let Some(effects) = solver(board) {
+                SOLVERS.iter().for_each(|solver| {
+                    if let Some(effects) = solver.solve(board) {
                         found = true;
                         println!(
                             "\n==> Found {}\n",
-                            pluralize(effects.action_count(), SOLVER_LABELS[i])
+                            pluralize(effects.action_count(), solver.name())
                         );
                         effects.print_actions();
                     }
@@ -201,13 +201,13 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
             "A" => {
                 let mut found = false;
                 let mut clone = *board;
-                let _ = SOLVERS.iter().enumerate().try_for_each(|(i, solver)| {
-                    if let Some(effects) = solver(board) {
+                let _ = SOLVERS.iter().try_for_each(|solver| {
+                    if let Some(effects) = solver.solve(board) {
                         found = true;
                         if let Some(errors) = effects.apply_all(&mut clone) {
                             println!(
                                 "\n==> Found errors while applying {}\n",
-                                pluralize(effects.action_count(), SOLVER_LABELS[i])
+                                pluralize(effects.action_count(), solver.name())
                             );
                             errors.print_errors();
                             println!();
@@ -215,7 +215,7 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
                         }
                         println!(
                             "\n==> Applied {}",
-                            pluralize(effects.action_count(), SOLVER_LABELS[i])
+                            pluralize(effects.action_count(), solver.name())
                         );
                     }
                     Ok(())

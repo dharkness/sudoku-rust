@@ -65,7 +65,7 @@ fn solve(board: &Board) -> Option<Board> {
 
         let mut found = false;
         for solver in SOLVERS {
-            if let Some(effects) = solver(&clone) {
+            if let Some(effects) = solver.solve(&clone) {
                 if effects.apply_all(&mut clone).is_some() {
                     return None;
                 }
