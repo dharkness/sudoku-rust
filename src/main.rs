@@ -7,7 +7,7 @@ mod commands;
 mod io;
 mod layout;
 mod puzzle;
-mod solvers;
+mod solve;
 mod symbols;
 
 use crate::commands::{

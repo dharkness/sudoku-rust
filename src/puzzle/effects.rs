@@ -35,6 +35,14 @@ impl Effects {
         self.errors = vec![];
     }
 
+    pub fn errors(&self) -> &Vec<Error> {
+        &self.errors
+    }
+
+    pub fn errors_iter(&self) -> impl Iterator<Item = &'_ Error> {
+        self.errors.iter()
+    }
+
     pub fn add_error(&mut self, error: Error) {
         self.errors.push(error);
     }
@@ -53,6 +61,10 @@ impl Effects {
 
     pub fn clear_actions(&mut self) {
         self.actions = vec![];
+    }
+
+    pub fn actions(&self) -> &Vec<Action> {
+        &self.actions
     }
 
     pub fn add_action(&mut self, action: Action) {
@@ -93,18 +105,25 @@ impl Effects {
         })
     }
 
-    pub fn apply(&self, board: &mut Board, effects: &mut Effects) {
-        self.actions
-            .iter()
-            .for_each(|action| action.apply(board, effects));
+    pub fn apply(&self, board: &mut Board, effects: &mut Effects) -> bool {
+        self.actions.iter().fold(false, |changed, action| {
+            action.apply(board, effects) || changed
+        })
     }
 
-    pub fn apply_strategy(&self, board: &mut Board, strategy: Strategy, effects: &mut Effects) {
-        self.actions.iter().for_each(|action| {
+    pub fn apply_strategy(
+        &self,
+        board: &mut Board,
+        strategy: Strategy,
+        effects: &mut Effects,
+    ) -> bool {
+        self.actions.iter().fold(false, |changed, action| {
             if action.has_strategy(strategy) {
-                action.apply(board, effects);
+                action.apply(board, effects)
+            } else {
+                changed
             }
-        });
+        })
     }
 
     pub fn apply_all(&self, board: &mut Board) -> Option<Effects> {

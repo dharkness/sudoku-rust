@@ -110,17 +110,21 @@ impl Action {
         self.erase[&cell]
     }
 
-    pub fn apply(&self, board: &mut Board, effects: &mut Effects) {
+    pub fn apply(&self, board: &mut Board, effects: &mut Effects) -> bool {
+        let mut changed = false;
+
         for (cell, knowns) in &self.erase {
             for known in knowns.iter() {
                 // println!("erase {} from {}", known, cell);
-                board.remove_candidate(*cell, known, effects);
+                changed = board.remove_candidate(*cell, known, effects) || changed;
             }
         }
         for (cell, known) in &self.set {
             // println!("set {} to {}", cell, known);
-            board.set_known(*cell, *known, effects);
+            changed = board.set_known(*cell, *known, effects) || changed;
         }
+
+        changed
     }
 }
 

@@ -1,4 +1,5 @@
-use super::*;
+use crate::layout::{Cell, Known, Rectangle};
+use crate::puzzle::Board;
 
 /// Finds all existing deadly rectangles in the board.
 ///

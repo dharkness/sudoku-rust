@@ -10,7 +10,7 @@ use crate::io::{
 };
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Board, Effects};
-use crate::solvers::SOLVERS;
+use crate::solve::TECHNIQUES;
 use crate::symbols::UNKNOWN_VALUE;
 
 const SUDOKUWIKI_URL: &str = "https://www.sudokuwiki.org/sudoku.htm?bd=";
@@ -84,7 +84,7 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
             }
             "G" => {
                 println!();
-                let mut generator = Generator::new(true);
+                let mut generator = Generator::new(false);
                 match generator.generate(canceler) {
                     Some(board) => {
                         println!("\n==> Clues: {}\n", board);
@@ -181,7 +181,7 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
             }
             "F" => {
                 let mut found = false;
-                SOLVERS.iter().for_each(|solver| {
+                TECHNIQUES.iter().for_each(|solver| {
                     if let Some(effects) = solver.solve(board) {
                         found = true;
                         println!(
@@ -201,7 +201,7 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
             "A" => {
                 let mut found = false;
                 let mut clone = *board;
-                let _ = SOLVERS.iter().try_for_each(|solver| {
+                let _ = TECHNIQUES.iter().try_for_each(|solver| {
                     if let Some(effects) = solver.solve(board) {
                         found = true;
                         if let Some(errors) = effects.apply_all(&mut clone) {
@@ -323,6 +323,12 @@ fn create_new_puzzle() -> Option<Board> {
 
         if let Some((cell, known)) = failure {
             println!("\n==> Setting {} to {} caused errors\n", cell, known);
+            effects.print_errors();
+            println!();
+            print_candidates(&board);
+            println!();
+            break 'input;
+        } else if effects.has_errors() {
             effects.print_errors();
             println!();
             print_candidates(&board);

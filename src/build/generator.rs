@@ -4,7 +4,7 @@ use rand::seq::SliceRandom;
 use crate::io::Cancelable;
 use crate::layout::{Cell, Known, KnownSet};
 use crate::puzzle::{Board, Effects};
-use crate::solvers::intersection_removals::find_intersection_removals;
+use crate::solve::find_intersection_removals;
 
 const FILLED: &str =
     "|---------=========---------=========---------=========---------=========---------|";

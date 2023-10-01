@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::io::format_for_fancy_console;
 use crate::layout::{Cell, CellSet, House, Known, KnownSet, Value};
-use crate::solvers::deadly_rectangles::creates_deadly_rectangles;
+use crate::solve::creates_deadly_rectangles;
 
 use super::{Effects, Error, PseudoCell, Strategy};
 
@@ -138,7 +138,7 @@ impl Board {
             if knowns.is_empty() {
                 effects.add_error(Error::UnsolvableCell(cell));
             } else if knowns.size() == 1 {
-                effects.add_set(Strategy::NakedSingle, cell, knowns.iter().next().unwrap());
+                effects.add_set(Strategy::NakedSingle, cell, knowns.as_single().unwrap());
             }
 
             let cells = &mut self.candidate_cells_by_known[known.usize()];
@@ -167,7 +167,7 @@ impl Board {
                 } else if candidates.size() == 1 {
                     effects.add_set(
                         Strategy::HiddenSingle,
-                        candidates.iter().next().unwrap(),
+                        candidates.as_single().unwrap(),
                         known,
                     );
                 }
@@ -237,6 +237,9 @@ impl Board {
     }
 
     pub fn set_known(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> bool {
+        if self.values[cell.usize()] == known.value() {
+            return false;
+        }
         if let Some(rectangles) = creates_deadly_rectangles(self, cell, known) {
             rectangles.into_iter().for_each(|r| {
                 effects.add_error(Error::DeadlyRectangle(r));

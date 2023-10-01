@@ -27,7 +27,7 @@
 /// - have fun
 /// - exercise my brain
 /// - Create a generalized solver using inference chains
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq, PartialOrd, Ord)]
 pub enum Strategy {
     // these become the Clues; copy and generalize for Strategy
     /// When a cell becomes solved, the value may be removed as a candidate
