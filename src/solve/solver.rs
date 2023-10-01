@@ -1,56 +1,74 @@
 use std::collections::HashMap;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
-use crate::puzzle::{Board, Effects, Strategy};
-use crate::solve::{Difficulty, TECHNIQUES};
+use crate::io::{Parse, ParsePacked};
+use crate::puzzle::Effects;
+use crate::solve::{Difficulty, Reporter, TECHNIQUES};
 
-pub enum Resolution {
-    Solved(Board, Difficulty, Duration, HashMap<Strategy, i32>),
-    Unsolved(Board, Duration, HashMap<Strategy, i32>),
-    Failed(Board, Effects, Duration, HashMap<Strategy, i32>),
+pub struct Solver<'a> {
+    parser: ParsePacked,
+    reporter: &'a dyn Reporter,
 }
 
-pub struct Solver {}
-
-impl Solver {
-    pub const fn new() -> Solver {
-        Solver {}
+impl Solver<'_> {
+    pub fn new(reporter: &'_ dyn Reporter) -> Solver<'_> {
+        Solver {
+            parser: Parse::packed().stop_on_error(),
+            reporter,
+        }
     }
 
-    pub fn solve(&self, start: &Board, effects: &Effects) -> Resolution {
+    pub fn solve(&self, givens: &str) -> bool {
         let runtime = Instant::now();
-        let mut board = *start;
-        let mut actions = effects.clone();
+        let (start, mut effects, failure) = self.parser.parse(givens);
+
+        if let Some((cell, known)) = failure {
+            self.reporter
+                .invalid(givens, &start, &effects, cell, known, runtime.elapsed());
+            return false;
+        }
+
+        let mut board = start;
         let mut counts = HashMap::new();
         let mut difficulty = Difficulty::Basic;
 
         loop {
-            if actions.has_actions() {
-                loop {
-                    if actions.has_errors() {
-                        return Resolution::Failed(
-                            board,
-                            actions.clone(),
-                            runtime.elapsed(),
-                            counts,
-                        );
-                    }
-                    if !actions.has_actions() {
-                        break;
-                    }
-                    let mut next = Effects::new();
-                    for action in actions.actions() {
-                        if action.apply(&mut board, &mut next) {
-                            let count = counts.entry(action.strategy()).or_default();
-                            *count += 1;
+            while effects.has_actions() {
+                let mut next = Effects::new();
+                for action in effects.actions() {
+                    let mut clone = board;
+                    if action.apply(&mut clone, &mut next) {
+                        if next.has_errors() {
+                            self.reporter.failed(
+                                givens,
+                                &start,
+                                &board,
+                                action,
+                                &next,
+                                runtime.elapsed(),
+                                &counts,
+                            );
+                            return false;
                         }
+
+                        board = clone;
+                        let count = counts.entry(action.strategy()).or_default();
+                        *count += 1;
                     }
-                    actions = next;
                 }
+                effects = next;
             }
 
             if board.is_solved() {
-                return Resolution::Solved(board, difficulty, runtime.elapsed(), counts);
+                self.reporter.solved(
+                    givens,
+                    &start,
+                    &board,
+                    difficulty,
+                    runtime.elapsed(),
+                    &counts,
+                );
+                return true;
             }
 
             let mut found = false;
@@ -59,13 +77,15 @@ impl Solver {
                     if solver.difficulty() > difficulty {
                         difficulty = solver.difficulty()
                     }
-                    actions = moves;
+                    effects = moves;
                     found = true;
                     break;
                 }
             }
             if !found {
-                return Resolution::Unsolved(board, runtime.elapsed(), counts);
+                self.reporter
+                    .unsolved(givens, &start, &board, runtime.elapsed(), &counts);
+                return false;
             }
         }
     }

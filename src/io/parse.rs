@@ -64,6 +64,7 @@ impl ParsePacked {
     pub fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>) {
         let mut board = Board::new();
         let mut effects = Effects::new();
+        let mut singles = Effects::new();
         let mut c = 0;
 
         for char in input.chars() {
@@ -77,20 +78,22 @@ impl ParsePacked {
                         if board.is_candidate(cell, known) {
                             board.set_given(cell, known, &mut effects);
                             if effects.has_errors() && self.stop_on_error {
+                                effects.move_actions(&mut singles);
                                 return (board, effects, Some((cell, known)));
                             }
                             if self.solve_singles {
                                 effects.apply_all(&mut board);
                             } else {
+                                singles.move_actions(&mut effects);
                                 effects.apply_all_strategy(&mut board, Strategy::Peer);
                             }
-                            effects.clear_actions();
                         } else if self.stop_on_error {
                             if let Some(known) = current.known() {
                                 effects.add_error(Error::AlreadySolved(cell, known, known));
                             } else {
                                 effects.add_error(Error::NotCandidate(cell, known));
                             }
+                            effects.move_actions(&mut singles);
                             return (board, effects, Some((cell, known)));
                         }
                     }
@@ -101,7 +104,7 @@ impl ParsePacked {
             c += 1;
         }
 
-        (board, effects, None)
+        (board, singles, None)
     }
 }
 

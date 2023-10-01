@@ -105,6 +105,10 @@ impl Effects {
         })
     }
 
+    pub fn move_actions(&mut self, other: &mut Effects) {
+        self.actions.append(&mut other.actions);
+    }
+
     pub fn apply(&self, board: &mut Board, effects: &mut Effects) -> bool {
         self.actions.iter().fold(false, |changed, action| {
             action.apply(board, effects) || changed

@@ -169,6 +169,12 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
                 let mut clone = *board;
                 let mut effects = Effects::new();
                 clone.set_known(cell, known, &mut effects);
+                if effects.has_errors() {
+                    println!("\n==> Invalid move\n");
+                    effects.print_errors();
+                    println!();
+                    continue;
+                }
                 if let Some(errors) = effects.apply_all(&mut clone) {
                     println!("\n==> Invalid move\n");
                     errors.print_errors();
