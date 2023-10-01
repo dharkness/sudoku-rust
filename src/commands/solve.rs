@@ -148,7 +148,7 @@ impl Reporter for DetailedReporter {
             "solved {:?} in {} µs - {}\n",
             difficulty,
             format_runtime(runtime),
-            solution.packed_string('.')
+            solution.packed_string()
         );
         print_values(solution);
         println!();
@@ -240,10 +240,10 @@ impl Reporter for CSVReporter {
         counts: &HashMap<Strategy, i32>,
     ) {
         println!(
-            "failed     {:>10} {} {} {:?} {}",
+            "           {:>10} {} {} {:?} {}",
             format_runtime(runtime),
             self.format_counts(counts),
-            stopped.packed_string('.'),
+            stopped.packed_string(),
             action.strategy(),
             action
         );
@@ -262,7 +262,7 @@ impl Reporter for CSVReporter {
             format_runtime(runtime),
             self.format_counts(counts),
             // givens,
-            stopped.packed_string('.')
+            stopped.packed_string()
         );
     }
 
@@ -280,8 +280,7 @@ impl Reporter for CSVReporter {
             format!("{:?}", difficulty),
             format_runtime(runtime),
             self.format_counts(counts),
-            // givens,
-            solution.packed_string('.')
+            solution.packed_string()
         );
     }
 }

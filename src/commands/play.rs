@@ -10,7 +10,7 @@ use crate::io::{
 };
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Board, Effects};
-use crate::solve::TECHNIQUES;
+use crate::solve::NON_PEER_TECHNIQUES;
 use crate::symbols::UNKNOWN_VALUE;
 
 const SUDOKUWIKI_URL: &str = "https://www.sudokuwiki.org/sudoku.htm?bd=";
@@ -187,7 +187,7 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
             }
             "F" => {
                 let mut found = false;
-                TECHNIQUES.iter().for_each(|solver| {
+                NON_PEER_TECHNIQUES.iter().for_each(|solver| {
                     if let Some(effects) = solver.solve(board) {
                         found = true;
                         println!(
@@ -207,7 +207,7 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
             "A" => {
                 let mut found = false;
                 let mut clone = *board;
-                let _ = TECHNIQUES.iter().try_for_each(|solver| {
+                let _ = NON_PEER_TECHNIQUES.iter().try_for_each(|solver| {
                     if let Some(effects) = solver.solve(board) {
                         found = true;
                         if let Some(errors) = effects.apply_all(&mut clone) {

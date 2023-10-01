@@ -3,7 +3,7 @@ use std::time::Instant;
 
 use crate::io::{Parse, ParsePacked};
 use crate::puzzle::Effects;
-use crate::solve::{Difficulty, Reporter, TECHNIQUES};
+use crate::solve::{Difficulty, Reporter, MANUAL_TECHNIQUES};
 
 pub struct Solver<'a> {
     parser: ParsePacked,
@@ -72,7 +72,7 @@ impl Solver<'_> {
             }
 
             let mut found = false;
-            for solver in TECHNIQUES {
+            for solver in MANUAL_TECHNIQUES {
                 if let Some(moves) = solver.solve(&board) {
                     if solver.difficulty() > difficulty {
                         difficulty = solver.difficulty()

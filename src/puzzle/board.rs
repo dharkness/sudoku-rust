@@ -269,20 +269,19 @@ impl Board {
         true
     }
 
-    pub fn packed_string(&self, unknown: char) -> String {
+    pub fn packed_string(&self) -> String {
         let mut result = String::new();
         House::rows_iter().for_each(|row| {
-            result += " ";
             row.cells().iter().for_each(|cell| {
                 let value = self.value(cell);
                 if !value {
-                    result.push(unknown);
+                    result.push('.');
                 } else {
                     result.push(value.label());
                 }
             })
         });
-        result[1..].to_string()
+        result
     }
 }
 
