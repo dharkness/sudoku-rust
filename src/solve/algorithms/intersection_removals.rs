@@ -88,7 +88,7 @@ mod tests {
 
     #[test]
     fn intersection_removals() {
-        let board = Parse::packed().parse_simple(
+        let board = Parse::packed().remove_peers().parse_simple(
             "
                 7..1....9
                 .2.3..7..

@@ -50,7 +50,7 @@ pub struct Solver<'a> {
 impl Solver<'_> {
     pub fn new(reporter: &'_ dyn Reporter, check: bool) -> Solver<'_> {
         Solver {
-            parser: Parse::packed().stop_on_error(),
+            parser: Parse::packed().remove_peers().stop_on_error(),
             reporter,
             check,
         }

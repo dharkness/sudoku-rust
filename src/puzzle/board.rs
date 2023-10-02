@@ -2,6 +2,7 @@ use std::fmt;
 
 use crate::io::format_for_fancy_console;
 use crate::layout::{Cell, CellSet, House, Known, KnownSet, Value};
+use crate::puzzle::options::Options;
 use crate::solve::creates_deadly_rectangles;
 
 use super::{Effects, Error, PseudoCell, Strategy};
@@ -15,18 +16,26 @@ pub struct Board {
     knowns: CellSet,
     /// Values for all cells.
     values: [Value; 81],
+
     /// Knowns that are still possible for each cell.
     candidate_knowns_by_cell: [KnownSet; 81],
     /// Cells that are still possible for each known.
     candidate_cells_by_known: [CellSet; 9],
     /// Cells that have N candidates.
     cells_with_n_candidates: [CellSet; 10],
-    /// Cells that have been solved for each known.
+    /// Cells that have been given or solved for each known.
     solved_cells_by_known: [CellSet; 9],
+
+    /// True avoids putting the board into an invalid state.
+    options: Options,
 }
 
 impl Board {
     pub const fn new() -> Board {
+        Self::new_with_options(Options::new())
+    }
+
+    pub const fn new_with_options(options: Options) -> Board {
         let mut board = Board {
             givens: CellSet::empty(),
             knowns: CellSet::empty(),
@@ -35,6 +44,7 @@ impl Board {
             candidate_cells_by_known: [CellSet::full(); 9],
             cells_with_n_candidates: [CellSet::empty(); 10],
             solved_cells_by_known: [CellSet::empty(); 9],
+            options,
         };
         board.cells_with_n_candidates[9] = CellSet::full();
         board
@@ -86,6 +96,10 @@ impl Board {
         self.knowns.is_full()
     }
 
+    pub fn is_house_known(&self, house: House, known: Known) -> bool {
+        !(self.solved_cells_by_known[known.usize()] & house.cells()).is_empty()
+    }
+
     pub fn pseudo_cell(&self, cells: CellSet) -> PseudoCell {
         PseudoCell::new(cells, self.all_candidates(cells))
     }
@@ -128,31 +142,37 @@ impl Board {
         self.candidate_cells_by_known[known.usize()]
     }
 
-    pub const fn house_candidate_cells(&self, house: House, known: Known) -> CellSet {
-        house.cells().intersect(self.candidate_cells(known))
+    pub fn house_candidate_cells(&self, house: House, known: Known) -> CellSet {
+        house.cells() & self.candidate_cells(known)
     }
 
     pub fn remove_candidate(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> bool {
         let knowns = &mut self.candidate_knowns_by_cell[cell.usize()];
-        if knowns[known] {
-            let size = knowns.size();
-            self.cells_with_n_candidates[size] -= cell;
-            self.cells_with_n_candidates[size - 1] += cell;
-            *knowns -= known;
-            if knowns.is_empty() {
-                effects.add_error(Error::UnsolvableCell(cell));
-            } else if knowns.size() == 1 {
-                effects.add_set(Strategy::NakedSingle, cell, knowns.as_single().unwrap());
-            }
-
-            let cells = &mut self.candidate_cells_by_known[known.usize()];
-            debug_assert!(cells[cell]);
-            *cells -= cell;
-            self.remove_candidate_cell_from_houses(cell, known, effects);
-            true
-        } else {
-            false
+        if !knowns[known] {
+            return false;
         }
+
+        let size = knowns.size();
+        self.cells_with_n_candidates[size] -= cell;
+        self.cells_with_n_candidates[size - 1] += cell;
+        *knowns -= known;
+        if knowns.is_empty() {
+            effects.add_error(Error::UnsolvableCell(cell));
+        } else if knowns.size() == 1 {
+            let single = knowns.as_single().unwrap();
+            if self.options.solve_naked_singles {
+                self.set_known(cell, single, effects);
+            } else {
+                effects.add_set(Strategy::NakedSingle, cell, single);
+            }
+        }
+
+        let cells = &mut self.candidate_cells_by_known[known.usize()];
+        debug_assert!(cells[cell]);
+        *cells -= cell;
+        self.remove_candidate_cell_from_houses(cell, known, effects);
+
+        true
     }
 
     fn remove_candidate_cell_from_houses(
@@ -161,19 +181,20 @@ impl Board {
         known: Known,
         effects: &mut Effects,
     ) {
-        let all_candidates = self.candidate_cells_by_known[known.usize()];
         for house in cell.houses() {
-            let house_cells = house.cells();
-            if (self.solved_cells_by_known[known.usize()] & house_cells).is_empty() {
-                let candidates = all_candidates & house_cells;
-                if candidates.is_empty() {
-                    effects.add_error(Error::UnsolvableHouse(house, known));
-                } else if candidates.size() == 1 {
-                    effects.add_set(
-                        Strategy::HiddenSingle,
-                        candidates.as_single().unwrap(),
-                        known,
-                    );
+            if self.is_house_known(house, known) {
+                continue;
+            }
+
+            let candidates = self.house_candidate_cells(house, known);
+            if candidates.is_empty() {
+                effects.add_error(Error::UnsolvableHouse(house, known));
+            } else if candidates.size() == 1 {
+                let single = candidates.as_single().unwrap();
+                if self.options.solve_hidden_singles {
+                    self.set_known(single, known, effects);
+                } else {
+                    effects.add_set(Strategy::HiddenSingle, single, known);
                 }
             }
         }
@@ -222,13 +243,6 @@ impl Board {
         cells.iter().fold(KnownSet::empty(), |acc, cell| {
             self.value(cell).known().map_or(acc, |k| acc + k)
         })
-        // let mut knowns = KnownSet::empty();
-        // for cell in cells {
-        //     if let Some(known) = self.value(cell).known() {
-        //         knowns += known;
-        //     }
-        // }
-        // knowns
     }
 
     pub fn set_given(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> bool {
@@ -244,6 +258,7 @@ impl Board {
         if self.values[cell.usize()] == known.value() {
             return false;
         }
+
         if let Some(rectangles) = creates_deadly_rectangles(self, cell, known) {
             rectangles.into_iter().for_each(|r| {
                 effects.add_error(Error::DeadlyRectangle(r));
@@ -260,14 +275,17 @@ impl Board {
         self.cells_with_n_candidates[0] += cell;
         candidates -= known;
         self.candidate_knowns_by_cell[cell.usize()] = KnownSet::empty();
-        for known in candidates.iter() {
+        for known in candidates {
             self.candidate_cells_by_known[known.usize()] -= cell;
             self.remove_candidate_cell_from_houses(cell, known, effects);
         }
 
-        for peer in (self.candidate_cells_by_known[known.usize()] & cell.peers()).iter() {
-            self.remove_candidate(peer, known, effects);
-            // effects.add_erase(Strategy::Peer, peer, known);
+        for peer in self.candidate_cells_by_known[known.usize()] & cell.peers() {
+            if self.options.remove_peers {
+                self.remove_candidate(peer, known, effects);
+            } else {
+                effects.add_erase(Strategy::Peer, peer, known)
+            }
         }
 
         true

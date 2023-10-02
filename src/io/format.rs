@@ -263,7 +263,7 @@ mod tests {
 
     #[test]
     fn test_format_for_console() {
-        let board = Parse::packed().parse_simple(
+        let board = Parse::packed().remove_peers().parse_simple(
             "
                 .8.1.3.7.
                 .9.5.6...
@@ -285,7 +285,7 @@ mod tests {
 
     #[test]
     fn test_format_packed() {
-        let board = Parse::packed().parse_simple(
+        let board = Parse::packed().remove_peers().parse_simple(
             "
                 .8.1.3.7.
                 .9.5.6...
@@ -307,7 +307,7 @@ mod tests {
 
     #[test]
     fn test_format_grid() {
-        let board = Parse::packed().parse_simple(
+        let board = Parse::packed().remove_peers().parse_simple(
             "
                 ..2...376
                 .1..3.5..
@@ -346,7 +346,7 @@ mod tests {
 
     #[test]
     fn test_format_for_wiki() {
-        let board = Parse::packed().solve_singles().parse_simple(
+        let board = Parse::packed().remove_peers().solve_singles().parse_simple(
             "
                 ..2...376
                 .1..3.5..

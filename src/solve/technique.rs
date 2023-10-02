@@ -91,7 +91,7 @@ pub const NON_PEER_TECHNIQUES: [Technique; 21] = [
     TECHNIQUES[21],
 ];
 
-/// All techniques not automatically handled by the [`Board`].
+/// All techniques that cannot be handled automatically by the [`Board`].
 #[rustfmt::skip]
 pub const MANUAL_TECHNIQUES: [Technique; 19] = [
     TECHNIQUES[3],  TECHNIQUES[4],  TECHNIQUES[5],  TECHNIQUES[6],  TECHNIQUES[7],

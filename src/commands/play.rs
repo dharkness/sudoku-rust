@@ -26,7 +26,7 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
 
     match args.puzzle {
         Some(clues) => {
-            let parser = Parse::packed().stop_on_error();
+            let parser = Parse::packed().stop_on_error().remove_peers();
             let (board, effects, failure) = parser.parse(&clues);
 
             boards.push(board);
@@ -322,7 +322,7 @@ fn create_new_puzzle() -> Option<Board> {
             continue;
         }
 
-        let parser = Parse::packed().stop_on_error();
+        let parser = Parse::packed().stop_on_error().remove_peers();
         let (board, effects, failure) = parser.parse(&input);
 
         if let Some((cell, known)) = failure {

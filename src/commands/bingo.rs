@@ -24,7 +24,10 @@ pub struct BingoArgs {
 /// Creates a new puzzle and prints it to stdout.
 pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
     let runtime = Instant::now();
-    let parser = Parse::packed().stop_on_error();
+    let parser = Parse::packed()
+        .stop_on_error()
+        .remove_peers()
+        .solve_singles();
     let (board, effects, failure) = parser.parse(&args.puzzle);
 
     if let Some((cell, known)) = failure {

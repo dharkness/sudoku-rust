@@ -1,7 +1,7 @@
 use itertools::Itertools;
 
 use crate::layout::{Cell, Known, KnownSet};
-use crate::puzzle::{Board, Effects, Error, Strategy};
+use crate::puzzle::{Board, Effects, Error, Options};
 
 /// Provides helper methods for parsing puzzle strings into [`Board`]s.
 pub struct Parse {}
@@ -28,8 +28,8 @@ impl Parse {
 /// and/or automatically solving naked and hidden singles.
 #[derive(Default)]
 pub struct ParsePacked {
-    stop_on_error: bool,
-    solve_singles: bool,
+    pub stop_on_error: bool,
+    pub options: Options,
 }
 
 impl ParsePacked {
@@ -37,16 +37,35 @@ impl ParsePacked {
         ParsePacked::default()
     }
 
-    /// Sets the parser to stop on the first error.
-    pub fn stop_on_error(mut self) -> Self {
-        self.stop_on_error = true;
-        self
+    pub fn stop_on_error(self) -> Self {
+        let mut copy = self;
+        copy.stop_on_error = true;
+        copy
     }
 
-    /// Sets the parser to automatically solve naked and hidden singles.
-    pub fn solve_singles(mut self) -> Self {
-        self.solve_singles = true;
-        self
+    pub fn remove_peers(self) -> Self {
+        let mut copy = self;
+        copy.options.remove_peers = true;
+        copy
+    }
+
+    pub fn solve_naked_singles(self) -> Self {
+        let mut copy = self;
+        copy.options.solve_naked_singles = true;
+        copy
+    }
+
+    pub fn solve_hidden_singles(self) -> Self {
+        let mut copy = self;
+        copy.options.solve_hidden_singles = true;
+        copy
+    }
+
+    pub fn solve_singles(self) -> Self {
+        let mut copy = self;
+        copy.options.solve_naked_singles = true;
+        copy.options.solve_hidden_singles = true;
+        copy
     }
 
     /// Builds a new [`Board`] using an input string to set some cells,
@@ -62,7 +81,7 @@ impl ParsePacked {
     /// - Use whitespace, pipes, and underscores for readability.
     /// - Use any other character to leave a cell unsolved.
     pub fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>) {
-        let mut board = Board::new();
+        let mut board = Board::new_with_options(self.options);
         let mut effects = Effects::new();
         let mut singles = Effects::new();
         let mut c = 0;
@@ -81,12 +100,7 @@ impl ParsePacked {
                                 effects.move_actions(&mut singles);
                                 return (board, effects, Some((cell, known)));
                             }
-                            if self.solve_singles {
-                                effects.apply_all(&mut board);
-                            } else {
-                                singles.move_actions(&mut effects);
-                                effects.apply_all_strategy(&mut board, Strategy::Peer);
-                            }
+                            singles.move_actions(&mut effects);
                         } else if self.stop_on_error {
                             if let Some(known) = current.known() {
                                 effects.add_error(Error::AlreadySolved(cell, known, known));
@@ -279,7 +293,10 @@ mod tests {
 
     #[test]
     fn test_parse_packed() {
-        let parser = Parse::packed().stop_on_error().solve_singles();
+        let parser = Parse::packed()
+            .stop_on_error()
+            .remove_peers()
+            .solve_singles();
         let (board, effects, failed) = parser.parse(
             "
             .1..7....
