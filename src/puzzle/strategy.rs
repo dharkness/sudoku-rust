@@ -91,4 +91,6 @@ pub enum Strategy {
     UniqueRectangle, // (Cell, Cell, Cell, Cell)
 
     EmptyRectangle, // (Known, Block, Row, Column, Cell) - CellSet instead of three houses
+
+    BruteForce,
 }

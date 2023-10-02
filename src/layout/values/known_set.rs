@@ -142,6 +142,24 @@ impl KnownSet {
         }
     }
 
+    pub const fn first(&self) -> Option<Known> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(Known::from_index(self.bits().trailing_zeros()))
+        }
+    }
+
+    pub fn pop(&mut self) -> Option<Known> {
+        if self.is_empty() {
+            None
+        } else {
+            let known = Known::from_index(self.bits().trailing_zeros());
+            self.remove(known);
+            Some(known)
+        }
+    }
+
     pub const fn union(&self, set: Self) -> KnownSet {
         if self.0 == set.0 {
             *self

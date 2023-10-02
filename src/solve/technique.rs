@@ -44,13 +44,14 @@ pub enum Difficulty {
     Tough,
     Diabolical,
     Extreme,
+    BruteForce,
 }
 
 type TechniqueFunc = fn(&Board) -> Option<Effects>;
 
 /// All techniques implemented by this solver.
 #[rustfmt::skip]
-pub const TECHNIQUES: [Technique; 22] = [
+pub const TECHNIQUES: [Technique; 23] = [
     Technique::new(Difficulty::Trivial, "peer", algorithms::find_peers),
     Technique::new(Difficulty::Trivial, "naked single", algorithms::find_naked_singles),
     Technique::new(Difficulty::Trivial, "hidden single", algorithms::find_hidden_singles),
@@ -79,6 +80,9 @@ pub const TECHNIQUES: [Technique; 22] = [
     Technique::new(Difficulty::Tough, "bug", algorithms::find_bugs),
 
     Technique::new(Difficulty::Extreme, "empty rectangle", algorithms::find_empty_rectangles),
+
+    // used to check if a solver is making invalid moves
+    Technique::new(Difficulty::BruteForce, "brute force", algorithms::find_brute_force),
 ];
 
 /// All techniques except finding peers.

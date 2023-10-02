@@ -1,11 +1,15 @@
 //! Provides the [`Parse`] and [`Format`] traits with several implementations.
 
-pub mod cancelable;
-pub mod format;
-pub mod parse;
-pub mod print;
+mod cancelable;
+mod format;
+mod numbers;
+mod parse;
+mod print;
+
+pub const SUDOKUWIKI_URL: &str = "https://www.sudokuwiki.org/sudoku.htm?bd=";
 
 pub use cancelable::{create_signal, Cancelable};
 pub use format::{format_for_fancy_console, format_for_wiki, format_grid, format_packed, Format};
+pub use numbers::{format_number, format_runtime};
 pub use parse::{Parse, ParseGrid, ParsePacked, ParseWiki};
 pub use print::{print_candidate, print_candidates, print_values};

@@ -1,20 +1,22 @@
 use std::collections::HashMap;
 use std::time::Instant;
 
-use crate::io::{Parse, ParsePacked};
+use crate::io::{print_candidates, Parse, ParsePacked};
 use crate::puzzle::Effects;
-use crate::solve::{Difficulty, Reporter, MANUAL_TECHNIQUES};
+use crate::solve::{find_brute_force, Difficulty, Reporter, MANUAL_TECHNIQUES};
 
 pub struct Solver<'a> {
     parser: ParsePacked,
     reporter: &'a dyn Reporter,
+    check: bool,
 }
 
 impl Solver<'_> {
-    pub fn new(reporter: &'_ dyn Reporter) -> Solver<'_> {
+    pub fn new(reporter: &'_ dyn Reporter, check: bool) -> Solver<'_> {
         Solver {
             parser: Parse::packed().stop_on_error(),
             reporter,
+            check,
         }
     }
 
@@ -38,6 +40,18 @@ impl Solver<'_> {
                 for action in effects.actions() {
                     let mut clone = board;
                     if action.apply(&mut clone, &mut next) {
+                        if self.check {
+                            if find_brute_force(&clone).is_none() {
+                                print_candidates(&board);
+                                println!(
+                                    "\nbrute force failed for {:?} {}",
+                                    action.strategy(),
+                                    action
+                                );
+                                return false;
+                            }
+                        }
+
                         if next.has_errors() {
                             self.reporter.failed(
                                 givens,

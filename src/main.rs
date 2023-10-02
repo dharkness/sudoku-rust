@@ -11,7 +11,7 @@ mod solve;
 mod symbols;
 
 use crate::commands::{
-    create_puzzle, solve_puzzles, start_player, CreateArgs, PlayArgs, SolveArgs,
+    bingo, create_puzzle, solve_puzzles, start_player, BingoArgs, CreateArgs, PlayArgs, SolveArgs,
 };
 use crate::io::create_signal;
 
@@ -41,6 +41,7 @@ enum Commands {
         long_about = "Solves puzzles from STDIN if no puzzle is given"
     )]
     Solve(SolveArgs),
+    Bingo(BingoArgs),
 }
 
 /// Starts the interactive player or creates a new puzzle.
@@ -52,5 +53,6 @@ fn main() {
         Commands::Create(args) => create_puzzle(args, &canceler),
         Commands::Play(args) => start_player(args, &canceler),
         Commands::Solve(args) => solve_puzzles(args, &canceler),
+        Commands::Bingo(args) => bingo(args, &canceler),
     }
 }

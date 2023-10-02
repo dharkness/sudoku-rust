@@ -68,6 +68,10 @@ impl Board {
         self.knowns
     }
 
+    pub fn unknowns(&self) -> CellSet {
+        -self.knowns
+    }
+
     pub const fn solved(&self) -> CellSet {
         self.knowns.minus(self.givens)
     }

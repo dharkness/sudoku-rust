@@ -6,14 +6,12 @@ use std::io::{stdout, Write};
 use crate::build::Generator;
 use crate::io::{
     format_for_fancy_console, format_for_wiki, format_grid, format_packed, print_candidate,
-    print_candidates, Cancelable, Parse,
+    print_candidates, Cancelable, Parse, SUDOKUWIKI_URL,
 };
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Board, Effects};
 use crate::solve::NON_PEER_TECHNIQUES;
 use crate::symbols::UNKNOWN_VALUE;
-
-const SUDOKUWIKI_URL: &str = "https://www.sudokuwiki.org/sudoku.htm?bd=";
 
 #[derive(Debug, Args)]
 pub struct PlayArgs {

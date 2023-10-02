@@ -4,13 +4,20 @@ use std::collections::HashMap;
 use std::io::BufRead;
 use std::time::{Duration, Instant};
 
-use crate::io::{format_for_wiki, print_candidates, print_values, Cancelable};
+use crate::io::{
+    format_for_wiki, format_number, format_runtime, print_candidates, print_values, Cancelable,
+    SUDOKUWIKI_URL,
+};
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Action, Board, Effects, Strategy};
 use crate::solve::{Difficulty, Reporter, Solver};
 
 #[derive(Debug, Args)]
 pub struct SolveArgs {
+    /// Check the results of each solver strategy using brute force
+    #[clap(short = 'c', long = "check")]
+    check: bool,
+
     /// Clues for one or more puzzles to solve with detailed output
     puzzles: Option<Vec<String>>,
 }
@@ -20,7 +27,7 @@ pub fn solve_puzzles(args: SolveArgs, cancelable: &Cancelable) {
     match args.puzzles {
         Some(puzzles) => {
             let reporter = DetailedReporter::new();
-            let solver = Solver::new(&reporter);
+            let solver = Solver::new(&reporter, args.check);
 
             for puzzle in puzzles {
                 solver.solve(&puzzle);
@@ -31,7 +38,7 @@ pub fn solve_puzzles(args: SolveArgs, cancelable: &Cancelable) {
         }
         None => {
             let reporter = CSVReporter::new();
-            let solver = Solver::new(&reporter);
+            let solver = Solver::new(&reporter, args.check);
             let stdin = std::io::stdin();
 
             let runtime = Instant::now();
@@ -154,24 +161,6 @@ impl Reporter for DetailedReporter {
         println!();
         self.print_counts(counts);
     }
-}
-
-const SUDOKUWIKI_URL: &str = "https://www.sudokuwiki.org/sudoku.htm?bd=";
-
-fn format_runtime(runtime: Duration) -> String {
-    format_number(runtime.as_micros())
-}
-
-fn format_number(number: u128) -> String {
-    number
-        .to_string()
-        .as_bytes()
-        .rchunks(3)
-        .rev()
-        .map(std::str::from_utf8)
-        .collect::<Result<Vec<&str>, _>>()
-        .unwrap()
-        .join(",")
 }
 
 struct CSVReporter {}
