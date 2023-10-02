@@ -1,6 +1,5 @@
 use std::collections::{HashMap, HashSet};
 
-use super::hidden_tuples;
 use super::naked_tuples;
 use super::*;
 
@@ -91,6 +90,7 @@ fn check_type_one(
     found_type_ones.insert(rectangle);
     let mut action = Action::new(Strategy::UniqueRectangle);
     action.erase_knowns(fourth, pair);
+    // println!("type 1 {} - {}", rectangle, action);
     effects.add_action(action);
 }
 
@@ -310,6 +310,7 @@ impl Candidate {
 
         let mut action = Action::new(Strategy::UniqueRectangle);
         action.erase_cells(cells, extra);
+        // println!("type 2 {} - {}", self.rectangle, action);
         effects.add_action(action);
     }
 
@@ -318,8 +319,6 @@ impl Candidate {
             return;
         }
 
-        // pick the left roof as a pseudo cell containing all of the roof extras
-        let pseudo_roof = self.roof_left;
         let mut action = Action::new(Strategy::UniqueRectangle);
 
         for house in self.roof_left.common_houses(self.roof_right) {
@@ -327,24 +326,6 @@ impl Candidate {
             let peer_knowns: Vec<(Cell, KnownSet)> = peers
                 .iter()
                 .map(|cell| (cell, board.candidates(cell)))
-                .collect();
-            let known_peers: Vec<(Known, CellSet)> = Known::iter()
-                .map(|known| {
-                    (
-                        known,
-                        if self.pair.has(known) {
-                            // common pair cannot be part of hidden tuple
-                            CellSet::empty()
-                        } else if self.roof_extras.has(known) {
-                            // pseudo roof cell contains all of the roof extras
-                            (peers & board.candidate_cells(known)) + pseudo_roof
-                        } else {
-                            // otherwise use what's found in the peer cells
-                            peers & board.candidate_cells(known)
-                        },
-                    )
-                })
-                .filter(|(_, cells)| !cells.is_empty())
                 .collect();
 
             for size in 2..=4 {
@@ -373,35 +354,10 @@ impl Candidate {
                             .iter()
                             .for_each(|k| action.erase_cells(cells & board.candidate_cells(k), k));
                     });
-
-                // find hidden tuples
-                known_peers
-                    .iter()
-                    .filter(|(_, cells)| (2..=size).contains(&cells.size()))
-                    .combinations(size)
-                    .for_each(|known_peers| {
-                        let knowns = known_peers.iter().map(|(k, _)| *k).union() as KnownSet;
-                        if !knowns.has_all(self.roof_extras) {
-                            return;
-                        }
-
-                        let cell_sets: Vec<CellSet> =
-                            known_peers.iter().map(|(_, cs)| *cs).collect();
-                        let cells = cell_sets.iter().copied().union();
-                        if cells.size() != size
-                            || hidden_tuples::is_degenerate(&cell_sets, size, 2)
-                            || hidden_tuples::is_degenerate(&cell_sets, size, 3)
-                        {
-                            return;
-                        }
-
-                        (cells - pseudo_roof)
-                            .iter()
-                            .for_each(|c| action.erase_knowns(c, board.candidates(c) - knowns));
-                    });
             }
         }
 
+        // println!("type 3 {} - {}", self.rectangle, action);
         effects.add_action(action);
     }
 
@@ -426,6 +382,7 @@ impl Candidate {
             };
             let mut action = Action::new(Strategy::UniqueRectangle);
             action.erase_cells(self.roof, erase);
+            // println!("type 4 {} - {}", self.rectangle, action);
             effects.add_action(action);
             return;
         }
@@ -455,6 +412,7 @@ impl Candidate {
                 CellSet::from_iter([self.floor_left, self.floor_right]),
                 erase,
             );
+            // println!("type 5 {} - {}", self.rectangle, action);
             effects.add_action(action);
         }
     }
