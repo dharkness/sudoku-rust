@@ -9,6 +9,14 @@ use crate::solve::find_brute_force;
 
 #[derive(Debug, Args)]
 pub struct BingoArgs {
+    /// Log each cell and candidate tried
+    #[clap(short = 'l', long = "log")]
+    log: bool,
+
+    /// Pause in milliseconds between each step taken
+    #[clap(short = 'p', long = "pause")]
+    pause: Option<u32>,
+
     /// Clues for a puzzle to solve using Bowman's Bingo
     puzzle: String,
 }
@@ -32,7 +40,7 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
         return;
     }
 
-    if let Some(effects) = find_brute_force(&board) {
+    if let Some(effects) = find_brute_force(&board, cancelable, args.log, args.pause.unwrap_or(0)) {
         println!("solved in {} µs\n", format_runtime(runtime.elapsed()));
         let mut clone = board.clone();
         if effects.apply_all(&mut clone).is_some() {
@@ -42,7 +50,17 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
             print_values(&clone);
         }
     } else {
-        println!("unsolvable in {} µs\n", format_runtime(runtime.elapsed()));
         print_candidates(&board);
+        println!(
+            "\n{} {} µs - {}{}",
+            if cancelable.is_canceled() {
+                "canceled after"
+            } else {
+                "unsolvable in"
+            },
+            format_runtime(runtime.elapsed()),
+            SUDOKUWIKI_URL,
+            format_for_wiki(&board)
+        );
     }
 }

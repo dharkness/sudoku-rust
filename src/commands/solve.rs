@@ -30,7 +30,7 @@ pub fn solve_puzzles(args: SolveArgs, cancelable: &Cancelable) {
             let solver = Solver::new(&reporter, args.check);
 
             for puzzle in puzzles {
-                solver.solve(&puzzle);
+                solver.solve(&puzzle, cancelable);
                 if cancelable.is_canceled() {
                     break;
                 }
@@ -47,7 +47,7 @@ pub fn solve_puzzles(args: SolveArgs, cancelable: &Cancelable) {
 
             println!("                   µs NP NT NQ HP HT HQ PP PT BL XW SC YW SF XZ JF SK AR XY UR BG ER");
             for puzzle in stdin.lock().lines() {
-                if solver.solve(&puzzle.unwrap()) {
+                if solver.solve(&puzzle.unwrap(), cancelable).is_solved() {
                     solved += 1;
                 }
                 count += 1;

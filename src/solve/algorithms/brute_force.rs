@@ -1,11 +1,16 @@
 use super::*;
-use crate::io::print_candidates;
+use crate::io::{print_candidates, Cancelable};
 use std::thread::sleep;
 use std::time::Duration;
 
 const MINIMUM_KNOWNS_TO_BE_SOLVABLE: usize = 17;
 
-pub fn find_brute_force(board: &Board) -> Option<Effects> {
+pub fn find_brute_force(
+    board: &Board,
+    cancelable: &Cancelable,
+    log: bool,
+    pause: u32,
+) -> Option<Effects> {
     if board.is_solved() || board.known_count() < MINIMUM_KNOWNS_TO_BE_SOLVABLE {
         return None;
     }
@@ -14,7 +19,12 @@ pub fn find_brute_force(board: &Board) -> Option<Effects> {
     stack.push(Entry::new(*board, Effects::new()));
 
     while !stack.is_empty() {
-        // println!("stack size {}\n", stack.len());
+        if cancelable.is_canceled() {
+            return None;
+        }
+        if log {
+            println!("stack size {}\n", stack.len());
+        }
 
         let Entry {
             board,
@@ -24,36 +34,53 @@ pub fn find_brute_force(board: &Board) -> Option<Effects> {
         } = stack.last_mut().unwrap();
 
         if candidates.is_empty() {
-            // println!("backtrack\n");
+            if log {
+                println!("backtrack\n");
+            }
             stack.pop();
             continue;
         }
 
-        // print_candidates(board);
-        // println!("\ncell {} candidates {}\n", cell, candidates);
+        if log {
+            print_candidates(board);
+            println!("\ncell {} candidates {}\n", cell, candidates);
+        };
 
         let known = candidates.pop().unwrap();
         let mut clone = *board;
         let mut effects = Effects::new();
 
-        // println!("try {}\n", known);
+        if log {
+            println!("try {}\n", known);
+            if pause > 0 {
+                sleep(Duration::from_millis(1000));
+            }
+        }
 
         clone.set_known(*cell, known, &mut effects);
-        // print_candidates(&clone);
+        if log {
+            print_candidates(&clone);
+        }
         if effects.has_errors() {
-            // println!("failed\n");
-            // effects.print_errors();
+            if log {
+                println!("failed\n");
+                effects.print_errors();
+            }
         } else {
             if let Some(errors) = effects.apply_all(&mut clone) {
-                // print_candidates(&clone);
-                // println!("super failed\n");
-                // errors.print_errors();
+                if log {
+                    print_candidates(&clone);
+                    println!("super failed\n");
+                    errors.print_errors();
+                }
             } else {
                 let mut actions = actions.clone();
                 actions.add_set(Strategy::BruteForce, *cell, known);
 
                 if clone.is_solved() {
-                    // println!("solved\n");
+                    if log {
+                        println!("solved\n");
+                    }
                     return Some(actions);
                 }
 
