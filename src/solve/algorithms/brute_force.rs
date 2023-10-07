@@ -6,11 +6,15 @@ use crate::io::{print_candidates, Cancelable};
 
 const MINIMUM_KNOWNS_TO_BE_UNIQUELY_SOLVABLE: usize = 17;
 
+const MAXIMUM_SOLUTIONS: usize = 1_000_000;
+const DEFAULT_MAXIMUM_SOLUTIONS: usize = 1_000;
+
 pub fn find_brute_force(
     board: &Board,
     cancelable: &Cancelable,
     log: bool,
     pause: u32,
+    mut max_solutions: usize,
 ) -> BruteForceResult {
     if board.is_solved() {
         return BruteForceResult::AlreadySolved;
@@ -24,6 +28,11 @@ pub fn find_brute_force(
         return BruteForceResult::UnsolvableCells(empty);
     }
 
+    if !(1..=MAXIMUM_SOLUTIONS).contains(&max_solutions) {
+        max_solutions = DEFAULT_MAXIMUM_SOLUTIONS;
+    }
+
+    let mut solutions: Vec<Effects> = Vec::new();
     let mut stack = Vec::with_capacity(81);
     stack.push(Entry::new(*board, Effects::new()));
 
@@ -87,10 +96,19 @@ pub fn find_brute_force(
                 actions.add_set(Strategy::BruteForce, *cell, known);
 
                 if clone.is_solved() {
+                    solutions.push(actions.clone());
                     if log {
-                        println!("solved\n");
+                        println!("found solution {}\n", solutions.len());
                     }
-                    return BruteForceResult::Solved(actions);
+                    if solutions.len() >= max_solutions {
+                        return BruteForceResult::MultipleSolutions(solutions);
+                    } else {
+                        if log {
+                            println!("backtrack\n");
+                        }
+                        stack.pop();
+                        continue;
+                    }
                 }
 
                 stack.push(Entry::new(clone, actions));
@@ -98,7 +116,11 @@ pub fn find_brute_force(
         }
     }
 
-    BruteForceResult::Unsolvable
+    match solutions.len() {
+        0 => BruteForceResult::Unsolvable,
+        1 => BruteForceResult::Solved(solutions.pop().unwrap()),
+        _ => BruteForceResult::MultipleSolutions(solutions),
+    }
 }
 
 pub enum BruteForceResult {
@@ -108,6 +130,7 @@ pub enum BruteForceResult {
     Canceled,
     Unsolvable,
     Solved(Effects),
+    MultipleSolutions(Vec<Effects>),
 }
 
 impl BruteForceResult {

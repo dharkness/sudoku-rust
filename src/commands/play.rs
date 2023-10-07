@@ -14,6 +14,8 @@ use crate::puzzle::{Board, Effects};
 use crate::solve::{find_brute_force, BruteForceResult, NON_PEER_TECHNIQUES};
 use crate::symbols::UNKNOWN_VALUE;
 
+const MAXIMUM_SOLUTIONS: usize = 100;
+
 #[derive(Debug, Args)]
 pub struct PlayArgs {
     /// Clues for a starting puzzle
@@ -218,7 +220,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
             }
             "V" => {
                 let runtime = Instant::now();
-                match find_brute_force(&board, cancelable, false, 0) {
+                match find_brute_force(&board, cancelable, false, 0, MAXIMUM_SOLUTIONS) {
                     BruteForceResult::AlreadySolved => {
                         println!("\n==> The puzzle is already solved\n");
                     }
@@ -244,6 +246,18 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                     BruteForceResult::Solved(_) => {
                         println!(
                             "\n==> The puzzle is solvable - took {} µs\n",
+                            format_runtime(runtime.elapsed())
+                        );
+                    }
+                    BruteForceResult::MultipleSolutions(solutions) => {
+                        println!(
+                            "\n==> The puzzle has {}{} solutions - took {} µs\n",
+                            if solutions.len() > MAXIMUM_SOLUTIONS {
+                                "at least "
+                            } else {
+                                ""
+                            },
+                            solutions.len(),
                             format_runtime(runtime.elapsed())
                         );
                     }

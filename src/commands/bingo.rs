@@ -14,8 +14,12 @@ pub struct BingoArgs {
     log: bool,
 
     /// Pause in milliseconds between each step taken
-    #[clap(short = 'p', long = "pause")]
-    pause: Option<u32>,
+    #[clap(short = 'p', long = "pause", default_value = "0")]
+    pause: u32,
+
+    /// Maximum number of solutions to find before stopping
+    #[clap(short = 'm', long = "max", default_value = "10")]
+    max: usize,
 
     /// Clues for a puzzle to solve using Bowman's Bingo
     puzzle: String,
@@ -43,18 +47,42 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
     }
 
     let runtime = Instant::now();
-    let (label, empty_cells, solution) =
-        match find_brute_force(&board, cancelable, args.log, args.pause.unwrap_or(0)) {
-            BruteForceResult::AlreadySolved => ("already solved in", None, None),
-            BruteForceResult::TooFewKnowns => ("not enough givens in", None, None),
-            BruteForceResult::UnsolvableCells(cells) => ("unsolvable in", Some(cells), None),
-            BruteForceResult::Canceled => ("canceled after", None, None),
-            BruteForceResult::Unsolvable => ("unsolvable in", None, None),
-            BruteForceResult::Solved(effects) => ("solved in", None, Some(effects)),
+    let (label, empty_cells, solution, solutions) =
+        match find_brute_force(&board, cancelable, args.log, args.pause, args.max) {
+            BruteForceResult::AlreadySolved => ("already solved in".to_string(), None, None, None),
+            BruteForceResult::TooFewKnowns => {
+                ("not enough givens in".to_string(), None, None, None)
+            }
+            BruteForceResult::UnsolvableCells(cells) => {
+                ("unsolvable in".to_string(), Some(cells), None, None)
+            }
+            BruteForceResult::Canceled => ("canceled after".to_string(), None, None, None),
+            BruteForceResult::Unsolvable => ("unsolvable in".to_string(), None, None, None),
+            BruteForceResult::Solved(solution) => {
+                ("solved in".to_string(), None, Some(solution), None)
+            }
+            BruteForceResult::MultipleSolutions(solutions) => (
+                format!("found {} solutions in", solutions.len()),
+                None,
+                None,
+                Some(solutions),
+            ),
         };
 
     println!("\n{} {} µs", label, format_runtime(runtime.elapsed()));
 
+    if let Some(solutions) = solutions {
+        for (i, solution) in solutions.iter().enumerate() {
+            if i == 10 {
+                break;
+            }
+            let mut clone = board;
+            solution.apply_all(&mut clone);
+            println!("\nsolution {}\n", i + 1);
+            print_values(&clone);
+            println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&clone));
+        }
+    }
     if let Some(cells) = empty_cells {
         println!(
             "\nthe puzzle has {} empty cells\n\n=> {}",
@@ -62,9 +90,9 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
             cells
         );
     }
-    if let Some(effects) = solution {
+    if let Some(solution) = solution {
         let mut clone = board.clone();
-        if let Some(errors) = effects.apply_all(&mut clone) {
+        if let Some(errors) = solution.apply_all(&mut clone) {
             println!("\nbrute force caused errors\n");
             errors.print_errors();
         } else {

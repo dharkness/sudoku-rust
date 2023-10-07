@@ -81,7 +81,7 @@ impl Solver<'_> {
                     let mut clone = board;
                     if action.apply(&mut clone, &mut next) {
                         let failed = if self.check && !clone.is_solved() {
-                            find_brute_force(&clone, cancelable, false, 0).is_solved()
+                            !find_brute_force(&clone, cancelable, false, 0, 2).is_solved()
                         } else {
                             next.has_errors()
                         };
