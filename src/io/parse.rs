@@ -95,11 +95,13 @@ impl ParsePacked {
                     let current = board.value(cell);
                     if current != known.value() {
                         if board.is_candidate(cell, known) {
-                            board.set_given(cell, known, &mut effects);
+                            let mut clone = board;
+                            clone.set_given(cell, known, &mut effects);
                             if effects.has_errors() && self.stop_on_error {
                                 effects.take_actions(&mut singles);
                                 return (board, effects, Some((cell, known)));
                             }
+                            board = clone;
                             singles.take_actions(&mut effects);
                         } else if self.stop_on_error {
                             if let Some(known) = current.known() {

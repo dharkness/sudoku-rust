@@ -39,7 +39,7 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
     if effects.has_errors() {
         println!("\ninvalid puzzle");
         if let Some((cell, known)) = failure {
-            println!("\nsetting {} to {} caused\n", cell, known);
+            println!("\nsetting {} to {} will cause errors\n", cell, known);
         }
 
         effects.print_errors();
@@ -95,6 +95,8 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
         if let Some(errors) = solution.apply_all(&mut clone) {
             println!("\nbrute force caused errors\n");
             errors.print_errors();
+            println!();
+            print_candidates(&clone);
         } else {
             board = clone;
         }

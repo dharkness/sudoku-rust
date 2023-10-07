@@ -9,8 +9,6 @@ use crate::solve::{find_brute_force, Difficulty, Reporter, MANUAL_TECHNIQUES};
 pub enum Resolution {
     /// Returned when the givens for the initial puzzle are invalid
     /// along with the invalid board state and the cell that caused it.
-    ///
-    /// FIXME return the last valid board state instead of the invalid one
     Invalid(Board, Cell, Known, Effects),
 
     /// Returned when the puzzle is made invalid by one of the strategies

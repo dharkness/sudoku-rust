@@ -96,7 +96,7 @@ impl Reporter for DetailedReporter {
     ) {
         println!("invalid in {} µs\n", format_runtime(runtime));
         print_candidates(partial);
-        println!("\nsetting {} to {} causes\n", cell, known);
+        println!("\nsetting {} to {} will cause errors\n", cell, known);
         errors.print_errors();
     }
 

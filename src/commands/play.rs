@@ -36,9 +36,9 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
             if let Some((cell, known)) = failure {
                 println!();
                 print_candidates(&board);
-                println!();
+                println!("\n==> Setting {} to {} will cause errors\n", cell, known);
                 effects.print_errors();
-                println!("\n==> Setting {} to {} caused errors\n", cell, known);
+                println!();
             } else {
                 show_board = true;
             }
@@ -80,7 +80,6 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                 if let Some(board) = create_new_puzzle() {
                     boards.push(board);
                     println!();
-                    show_board = true
                 }
             }
             "C" => {
@@ -378,7 +377,7 @@ fn create_new_puzzle() -> Option<Board> {
         "  - enter 'E' for an empty puzzle\n",
     ));
 
-    'input: loop {
+    loop {
         print!("> ");
         let _ = stdout().flush();
 
@@ -386,10 +385,15 @@ fn create_new_puzzle() -> Option<Board> {
         std::io::stdin().read_line(&mut input).unwrap();
         let input = input.trim().replace(' ', "").to_uppercase();
         if input.is_empty() {
+            println!();
             return None;
         }
         if input == "E" {
-            return Some(Board::new());
+            let board = Board::new();
+
+            println!();
+            print_candidates(&board);
+            return Some(board);
         }
         if input.len() > 81 {
             println!(
@@ -408,24 +412,17 @@ fn create_new_puzzle() -> Option<Board> {
         let (board, effects, failure) = parser.parse(&input);
 
         if let Some((cell, known)) = failure {
-            println!("\n==> Setting {} to {} caused errors\n", cell, known);
-            effects.print_errors();
             println!();
             print_candidates(&board);
-            println!();
-            break 'input;
-        } else if effects.has_errors() {
+            println!("\n==> Setting {} to {} will cause errors\n", cell, known);
             effects.print_errors();
+        } else {
             println!();
             print_candidates(&board);
-            println!();
-            break 'input;
         }
 
         return Some(board);
     }
-
-    None
 }
 
 fn pluralize(count: usize, label: &str) -> String {
