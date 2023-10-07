@@ -60,7 +60,11 @@ pub fn print_candidates(board: &Board) {
             } else {
                 lines[0].push_str("   ");
                 lines[1].push_str(&format!(" {} ", value));
-                lines[2].push_str("   ");
+                if board.is_given(cell) {
+                    lines[2].push_str(&format!(" {} ", MISSING));
+                } else {
+                    lines[2].push_str("   ");
+                }
             }
             if column.is_block_right() {
                 if !column.is_right() {
