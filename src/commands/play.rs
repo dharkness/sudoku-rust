@@ -2,15 +2,16 @@
 
 use clap::Args;
 use std::io::{stdout, Write};
+use std::time::Instant;
 
 use crate::build::Generator;
 use crate::io::{
-    format_for_fancy_console, format_for_wiki, format_grid, format_packed, print_candidate,
-    print_candidates, Cancelable, Parse, SUDOKUWIKI_URL,
+    format_for_fancy_console, format_for_wiki, format_grid, format_packed, format_runtime,
+    print_candidate, print_candidates, Cancelable, Parse, SUDOKUWIKI_URL,
 };
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Board, Effects};
-use crate::solve::NON_PEER_TECHNIQUES;
+use crate::solve::{find_brute_force, BruteForceResult, NON_PEER_TECHNIQUES};
 use crate::symbols::UNKNOWN_VALUE;
 
 #[derive(Debug, Args)]
@@ -20,7 +21,7 @@ pub struct PlayArgs {
     puzzle: Option<String>,
 }
 
-pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
+pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
     let mut boards = vec![];
     let mut show_board = false;
 
@@ -83,7 +84,7 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
             "C" => {
                 println!();
                 let mut generator = Generator::new(false);
-                match generator.generate(canceler) {
+                match generator.generate(cancelable) {
                     Some(board) => {
                         println!("\n==> Clues: {}\n", board);
                         boards.push(board);
@@ -92,7 +93,7 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
                         println!("\n==> Failed to create a new puzzle\n");
                     }
                 }
-                canceler.clear();
+                cancelable.clear();
             }
             "P" => {
                 if input.len() >= 2 {
@@ -129,21 +130,25 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
             "M" => {
                 println!("\n{}\n", format_grid(board));
             }
-            "E" => {
+            "G" => {
                 if input.len() != 3 {
-                    println!("\n==> E <cell> <digits>\n");
+                    println!("\n==> G <cell> <digit>\n");
                     continue;
                 }
-                let cell = Cell::from(input[1]);
+                let cell = Cell::from(input[1].to_uppercase());
+                let known = Known::from(input[2]);
+                if !board.is_candidate(cell, known) {
+                    println!("\n==> {} is not a candidate for {}\n", known, cell);
+                    continue;
+                }
                 let mut clone = *board;
                 let mut effects = Effects::new();
-                for c in input[2].chars() {
-                    let known = Known::from(c);
-                    if !board.is_candidate(cell, known) {
-                        println!("\n==> {} is not a candidate for {}\n", known, cell);
-                        continue;
-                    }
-                    clone.remove_candidate(cell, known, &mut effects);
+                clone.set_given(cell, known, &mut effects);
+                if effects.has_errors() {
+                    println!("\n==> Invalid move\n");
+                    effects.print_errors();
+                    println!();
+                    continue;
                 }
                 if let Some(errors) = effects.apply_all(&mut clone) {
                     println!("\n==> Invalid move\n");
@@ -185,25 +190,21 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
                 println!();
                 show_board = true;
             }
-            "G" => {
+            "E" => {
                 if input.len() != 3 {
-                    println!("\n==> G <cell> <digit>\n");
+                    println!("\n==> E <cell> <digits>\n");
                     continue;
                 }
-                let cell = Cell::from(input[1].to_uppercase());
-                let known = Known::from(input[2]);
-                if !board.is_candidate(cell, known) {
-                    println!("\n==> {} is not a candidate for {}\n", known, cell);
-                    continue;
-                }
+                let cell = Cell::from(input[1]);
                 let mut clone = *board;
                 let mut effects = Effects::new();
-                clone.set_given(cell, known, &mut effects);
-                if effects.has_errors() {
-                    println!("\n==> Invalid move\n");
-                    effects.print_errors();
-                    println!();
-                    continue;
+                for c in input[2].chars() {
+                    let known = Known::from(c);
+                    if !board.is_candidate(cell, known) {
+                        println!("\n==> {} is not a candidate for {}\n", known, cell);
+                        continue;
+                    }
+                    clone.remove_candidate(cell, known, &mut effects);
                 }
                 if let Some(errors) = effects.apply_all(&mut clone) {
                     println!("\n==> Invalid move\n");
@@ -214,6 +215,39 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
                 boards.push(clone);
                 println!();
                 show_board = true;
+            }
+            "V" => {
+                let runtime = Instant::now();
+                match find_brute_force(&board, cancelable, false, 0) {
+                    BruteForceResult::AlreadySolved => {
+                        println!("\n==> The puzzle is already solved\n");
+                    }
+                    BruteForceResult::TooFewKnowns => {
+                        println!("\n==> The puzzle needs at least 17 solved cells to verify\n");
+                    }
+                    BruteForceResult::UnsolvableCells(cells) => {
+                        println!("\n==> The puzzle cannot be solved with these {} empty cells\n\n    {}\n", cells.size(), cells);
+                    }
+                    BruteForceResult::Canceled => {
+                        println!(
+                            "\n==> The verification was canceled - took {} µs\n",
+                            format_runtime(runtime.elapsed())
+                        );
+                        cancelable.clear();
+                    }
+                    BruteForceResult::Unsolvable => {
+                        println!(
+                            "\n==> The puzzle cannot be solved - took {} µs\n",
+                            format_runtime(runtime.elapsed())
+                        );
+                    }
+                    BruteForceResult::Solved(_) => {
+                        println!(
+                            "\n==> The puzzle is solvable - took {} µs\n",
+                            format_runtime(runtime.elapsed())
+                        );
+                    }
+                }
             }
             "F" => {
                 let mut found = false;
@@ -303,9 +337,10 @@ fn print_help() {
         "  X [char]          - export the puzzle with optional character for unsolved cells\n",
         "  W                 - print URL to play on SudokuWiki.org\n",
         "  M                 - print the puzzle as a grid suitable for email\n",
-        "  E <cell> <digits> - erase one or more candidates\n",
-        "  S <cell> <digit>  - solve a cell\n",
         "  G <cell> <digit>  - set the given (clue) for a cell\n",
+        "  S <cell> <digit>  - solve a cell\n",
+        "  E <cell> <digits> - erase one or more candidates\n",
+        "  V                 - verify puzzle is solvable\n",
         "  F                 - find deductions\n",
         "  A                 - apply deductions\n",
         "  R                 - reset candidates based on solved cells\n",

@@ -46,13 +46,13 @@ enum Commands {
 
 /// Starts the interactive player or creates a new puzzle.
 fn main() {
-    let canceler = create_signal();
+    let cancelable = create_signal();
 
     let app = App::parse();
     match app.command {
-        Commands::Create(args) => create_puzzle(args, &canceler),
-        Commands::Play(args) => start_player(args, &canceler),
-        Commands::Solve(args) => solve_puzzles(args, &canceler),
-        Commands::Bingo(args) => bingo(args, &canceler),
+        Commands::Create(args) => create_puzzle(args, &cancelable),
+        Commands::Play(args) => start_player(args, &cancelable),
+        Commands::Solve(args) => solve_puzzles(args, &cancelable),
+        Commands::Bingo(args) => bingo(args, &cancelable),
     }
 }

@@ -1,18 +1,27 @@
-use super::*;
-use crate::io::{print_candidates, Cancelable};
 use std::thread::sleep;
 use std::time::Duration;
 
-const MINIMUM_KNOWNS_TO_BE_SOLVABLE: usize = 17;
+use super::*;
+use crate::io::{print_candidates, Cancelable};
+
+const MINIMUM_KNOWNS_TO_BE_UNIQUELY_SOLVABLE: usize = 17;
 
 pub fn find_brute_force(
     board: &Board,
     cancelable: &Cancelable,
     log: bool,
     pause: u32,
-) -> Option<Effects> {
-    if board.is_solved() || board.known_count() < MINIMUM_KNOWNS_TO_BE_SOLVABLE {
-        return None;
+) -> BruteForceResult {
+    if board.is_solved() {
+        return BruteForceResult::AlreadySolved;
+    }
+    if board.known_count() < MINIMUM_KNOWNS_TO_BE_UNIQUELY_SOLVABLE {
+        return BruteForceResult::TooFewKnowns;
+    }
+
+    let empty = board.unknowns() & board.cells_with_n_candidates(0);
+    if !empty.is_empty() {
+        return BruteForceResult::UnsolvableCells(empty);
     }
 
     let mut stack = Vec::with_capacity(81);
@@ -20,7 +29,7 @@ pub fn find_brute_force(
 
     while !stack.is_empty() {
         if cancelable.is_canceled() {
-            return None;
+            return BruteForceResult::Canceled;
         }
         if log {
             println!("stack size {}\n", stack.len());
@@ -81,7 +90,7 @@ pub fn find_brute_force(
                     if log {
                         println!("solved\n");
                     }
-                    return Some(actions);
+                    return BruteForceResult::Solved(actions);
                 }
 
                 stack.push(Entry::new(clone, actions));
@@ -89,7 +98,22 @@ pub fn find_brute_force(
         }
     }
 
-    None
+    BruteForceResult::Unsolvable
+}
+
+pub enum BruteForceResult {
+    AlreadySolved,
+    TooFewKnowns,
+    UnsolvableCells(CellSet),
+    Canceled,
+    Unsolvable,
+    Solved(Effects),
+}
+
+impl BruteForceResult {
+    pub fn is_solved(&self) -> bool {
+        matches!(self, Self::AlreadySolved) || matches!(self, Self::Solved(_))
+    }
 }
 
 struct Entry {

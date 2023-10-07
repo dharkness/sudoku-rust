@@ -22,7 +22,7 @@ mod xyz_wings;
 mod y_wings;
 
 pub use avoidable_rectangles::find_avoidable_rectangles;
-pub use brute_force::find_brute_force;
+pub use brute_force::{find_brute_force, BruteForceResult};
 pub use bugs::find_bugs;
 pub use empty_rectangles::find_empty_rectangles;
 pub use fish::find_jellyfish;
