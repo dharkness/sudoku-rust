@@ -97,17 +97,17 @@ impl ParsePacked {
                         if board.is_candidate(cell, known) {
                             board.set_given(cell, known, &mut effects);
                             if effects.has_errors() && self.stop_on_error {
-                                effects.move_actions(&mut singles);
+                                effects.take_actions(&mut singles);
                                 return (board, effects, Some((cell, known)));
                             }
-                            singles.move_actions(&mut effects);
+                            singles.take_actions(&mut effects);
                         } else if self.stop_on_error {
                             if let Some(known) = current.known() {
                                 effects.add_error(Error::AlreadySolved(cell, known, known));
                             } else {
                                 effects.add_error(Error::NotCandidate(cell, known));
                             }
-                            effects.move_actions(&mut singles);
+                            effects.take_actions(&mut singles);
                             return (board, effects, Some((cell, known)));
                         }
                     }

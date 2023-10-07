@@ -105,8 +105,8 @@ impl Effects {
         })
     }
 
-    pub fn move_actions(&mut self, other: &mut Effects) {
-        self.actions.append(&mut other.actions);
+    pub fn take_actions(&mut self, from: &mut Effects) {
+        self.actions.append(&mut from.actions);
     }
 
     pub fn apply(&self, board: &mut Board, effects: &mut Effects) -> bool {
