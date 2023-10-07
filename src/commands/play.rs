@@ -131,18 +131,20 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
             }
             "E" => {
                 if input.len() != 3 {
-                    println!("\n==> c <cell> <value>\n");
+                    println!("\n==> E <cell> <digits>\n");
                     continue;
                 }
                 let cell = Cell::from(input[1]);
-                let known = Known::from(input[2]);
-                if !board.is_candidate(cell, known) {
-                    println!("\n==> {} is not a candidate for {}\n", known, cell);
-                    continue;
-                }
                 let mut clone = *board;
                 let mut effects = Effects::new();
-                clone.remove_candidate(cell, known, &mut effects);
+                for c in input[2].chars() {
+                    let known = Known::from(c);
+                    if !board.is_candidate(cell, known) {
+                        println!("\n==> {} is not a candidate for {}\n", known, cell);
+                        continue;
+                    }
+                    clone.remove_candidate(cell, known, &mut effects);
+                }
                 if let Some(errors) = effects.apply_all(&mut clone) {
                     println!("\n==> Invalid move\n");
                     errors.print_errors();
@@ -155,7 +157,7 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
             }
             "S" => {
                 if input.len() != 3 {
-                    println!("\n==> s <cell> <value>\n");
+                    println!("\n==> S <cell> <digit>\n");
                     continue;
                 }
                 let cell = Cell::from(input[1].to_uppercase());
@@ -265,20 +267,20 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
 fn print_help() {
     println!(concat!(
         "\n==> Help\n\n",
-        "  N                - start or input a new puzzle\n",
-        "  G                - generate a random puzzle\n",
-        "  P <digit>        - print the puzzle, optionally limited to a single candidate\n",
-        "  X [char]         - export the puzzle with optional character for unsolved cells\n",
-        "  W                - print URL to play on SudokuWiki.org\n",
-        "  M                - print the puzzle as a grid suitable for email\n",
-        "  E <cell> <digit> - erase a candidate\n",
-        "  S <cell> <digit> - solve a cell\n",
-        "  F                - find deductions\n",
-        "  A                - apply deductions\n",
-        "  R                - reset candidates based on solved cells\n",
-        "  Z                - undo last change\n",
-        "  H                - this help message\n",
-        "  Q                - quit\n\n",
+        "  N                 - start or input a new puzzle\n",
+        "  G                 - generate a random puzzle\n",
+        "  P <digit>         - print the puzzle, optionally limited to a single candidate\n",
+        "  X [char]          - export the puzzle with optional character for unsolved cells\n",
+        "  W                 - print URL to play on SudokuWiki.org\n",
+        "  M                 - print the puzzle as a grid suitable for email\n",
+        "  E <cell> <digits> - erase one or more candidates\n",
+        "  S <cell> <digit>  - solve a cell\n",
+        "  F                 - find deductions\n",
+        "  A                 - apply deductions\n",
+        "  R                 - reset candidates based on solved cells\n",
+        "  Z                 - undo last change\n",
+        "  H                 - this help message\n",
+        "  Q                 - quit\n\n",
         "      <cell>  - A1 to J9\n",
         "      <digit> - 1 to 9\n",
         "      <char>  - any single character\n\n",
