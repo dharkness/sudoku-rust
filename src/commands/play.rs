@@ -80,7 +80,7 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
                     show_board = true
                 }
             }
-            "G" => {
+            "C" => {
                 println!();
                 let mut generator = Generator::new(false);
                 match generator.generate(canceler) {
@@ -89,7 +89,7 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
                         boards.push(board);
                     }
                     None => {
-                        println!("\n==> Failed to generate a puzzle\n");
+                        println!("\n==> Failed to create a new puzzle\n");
                     }
                 }
                 canceler.clear();
@@ -169,6 +169,36 @@ pub fn start_player(args: PlayArgs, canceler: &Cancelable) {
                 let mut clone = *board;
                 let mut effects = Effects::new();
                 clone.set_known(cell, known, &mut effects);
+                if effects.has_errors() {
+                    println!("\n==> Invalid move\n");
+                    effects.print_errors();
+                    println!();
+                    continue;
+                }
+                if let Some(errors) = effects.apply_all(&mut clone) {
+                    println!("\n==> Invalid move\n");
+                    errors.print_errors();
+                    println!();
+                    continue;
+                }
+                boards.push(clone);
+                println!();
+                show_board = true;
+            }
+            "G" => {
+                if input.len() != 3 {
+                    println!("\n==> G <cell> <digit>\n");
+                    continue;
+                }
+                let cell = Cell::from(input[1].to_uppercase());
+                let known = Known::from(input[2]);
+                if !board.is_candidate(cell, known) {
+                    println!("\n==> {} is not a candidate for {}\n", known, cell);
+                    continue;
+                }
+                let mut clone = *board;
+                let mut effects = Effects::new();
+                clone.set_given(cell, known, &mut effects);
                 if effects.has_errors() {
                     println!("\n==> Invalid move\n");
                     effects.print_errors();
@@ -268,13 +298,14 @@ fn print_help() {
     println!(concat!(
         "\n==> Help\n\n",
         "  N                 - start or input a new puzzle\n",
-        "  G                 - generate a random puzzle\n",
+        "  C                 - create a new random puzzle\n",
         "  P <digit>         - print the puzzle, optionally limited to a single candidate\n",
         "  X [char]          - export the puzzle with optional character for unsolved cells\n",
         "  W                 - print URL to play on SudokuWiki.org\n",
         "  M                 - print the puzzle as a grid suitable for email\n",
         "  E <cell> <digits> - erase one or more candidates\n",
         "  S <cell> <digit>  - solve a cell\n",
+        "  G <cell> <digit>  - set the given (clue) for a cell\n",
         "  F                 - find deductions\n",
         "  A                 - apply deductions\n",
         "  R                 - reset candidates based on solved cells\n",
