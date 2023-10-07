@@ -82,6 +82,12 @@ impl Board {
         -self.knowns
     }
 
+    pub fn unknown_iter(&self) -> impl Iterator<Item = (Cell, KnownSet)> + '_ {
+        self.unknowns()
+            .into_iter()
+            .map(|cell| (cell, self.candidates(cell)))
+    }
+
     pub const fn solved(&self) -> CellSet {
         self.knowns.minus(self.givens)
     }
