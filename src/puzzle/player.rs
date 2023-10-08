@@ -5,8 +5,8 @@ use super::{Action, Board, Effects, Options};
 
 pub enum Change {
     None,
-    Valid(Board, Effects),
-    Invalid(Board, Board, Action, Effects),
+    Valid(Box<Board>, Effects),
+    Invalid(Box<Board>, Box<Board>, Action, Effects),
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -44,7 +44,7 @@ impl Player {
         if !action.apply(&mut after, &mut effects) {
             Change::None
         } else if self.options.stop_on_error && effects.has_errors() {
-            Change::Invalid(*board, after, action.clone(), effects)
+            Change::Invalid(Box::new(*board), Box::new(after), action.clone(), effects)
         } else {
             self.apply_all_changed(&after, &effects, true)
         }
@@ -66,7 +66,12 @@ impl Player {
                     let mut maybe = good;
                     changed = action.apply(&mut maybe, &mut next) || changed;
                     if self.options.stop_on_error && next.has_errors() {
-                        return Change::Invalid(good, maybe, action.clone(), next);
+                        return Change::Invalid(
+                            Box::new(good),
+                            Box::new(maybe),
+                            action.clone(),
+                            next,
+                        );
                     }
                     good = maybe;
                 } else {
@@ -77,7 +82,7 @@ impl Player {
         }
 
         if changed {
-            Change::Valid(good, unapplied)
+            Change::Valid(Box::new(good), unapplied)
         } else {
             Change::None
         }

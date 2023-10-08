@@ -86,7 +86,7 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
         match player.apply_all(&board, &solution) {
             Change::None => (),
             Change::Valid(after, _) => {
-                board = after;
+                board = *after;
             }
             Change::Invalid(before, _, action, errors) => {
                 println!();

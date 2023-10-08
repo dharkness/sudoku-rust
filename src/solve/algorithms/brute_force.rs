@@ -100,7 +100,7 @@ pub fn find_brute_force(
                     }
                 }
 
-                stack.push(Entry::new(after, actions));
+                stack.push(Entry::new(*after, actions));
             }
             Change::Invalid(_, _, _, errors) => {
                 if log {

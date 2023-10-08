@@ -84,12 +84,12 @@ impl ParsePacked {
                             match self.player.apply(&board, &action) {
                                 Change::None => (),
                                 Change::Valid(after, mut actions) => {
-                                    board = after;
+                                    board = *after;
                                     singles.take_actions(&mut actions);
                                 }
                                 Change::Invalid(before, ..) => {
                                     if self.player.options.stop_on_error {
-                                        return (before, singles, Some((cell, known)));
+                                        return (*before, singles, Some((cell, known)));
                                     }
                                 }
                             }

@@ -84,7 +84,7 @@ impl Solver<'_> {
                     match self.player.apply(&board, action) {
                         Change::None => (),
                         Change::Valid(after, mut actions) => {
-                            board = after;
+                            board = *after;
                             next.take_actions(&mut actions);
                             let count = counts.entry(action.strategy()).or_default();
                             *count += 1;

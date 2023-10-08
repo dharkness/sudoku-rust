@@ -222,7 +222,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                         continue;
                     }
                     Change::Valid(after, _) => {
-                        boards.push(after);
+                        boards.push(*after);
                         println!();
                         show_board = true;
                     }
@@ -247,7 +247,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                         continue;
                     }
                     Change::Valid(after, _) => {
-                        boards.push(after);
+                        boards.push(*after);
                         println!();
                         show_board = true;
                     }
@@ -275,7 +275,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                             continue;
                         }
                         Change::Valid(after, _) => {
-                            clone = after;
+                            clone = *after;
                             changed = true;
                         }
                         Change::Invalid(_, _, _, errors) => {
@@ -368,7 +368,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                                 Change::None => (),
                                 Change::Valid(after, _) => {
                                     applied += 1;
-                                    clone = after;
+                                    clone = *after;
                                 }
                                 Change::Invalid(_, _, _, errors) => {
                                     println!(
