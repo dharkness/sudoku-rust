@@ -10,7 +10,7 @@ use crate::io::{
 };
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Action, Board, Effects, Strategy};
-use crate::solve::{Difficulty, Reporter, Solver};
+use crate::solve::{Difficulty, Reporter, Resolution, Solver};
 
 #[derive(Debug, Args)]
 pub struct SolveArgs {
@@ -30,8 +30,7 @@ pub fn solve_puzzles(args: SolveArgs, cancelable: &Cancelable) {
             let solver = Solver::new(&reporter, args.check);
 
             for puzzle in puzzles {
-                solver.solve(&puzzle, cancelable);
-                if cancelable.is_canceled() {
+                if solver.solve(&puzzle, cancelable).is_canceled() {
                     break;
                 }
             }
@@ -47,14 +46,12 @@ pub fn solve_puzzles(args: SolveArgs, cancelable: &Cancelable) {
 
             println!("                   µs NS NP NT NQ HS HP HT HQ PP PT BL XW SC YW SF XZ JF SK AR XY UR BG ER");
             for puzzle in stdin.lock().lines() {
-                if solver.solve(&puzzle.unwrap(), cancelable).is_solved() {
-                    solved += 1;
+                match solver.solve(&puzzle.unwrap(), cancelable) {
+                    Resolution::Canceled => break,
+                    Resolution::Solved(_, _) => solved += 1,
+                    _ => (),
                 }
                 count += 1;
-
-                if cancelable.is_canceled() {
-                    break;
-                }
             }
 
             eprintln!(

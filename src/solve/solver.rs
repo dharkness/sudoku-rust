@@ -7,6 +7,9 @@ use crate::puzzle::{Action, Board, Change, Effects, Options, Player};
 use crate::solve::{find_brute_force, Difficulty, Reporter, NON_PEER_TECHNIQUES};
 
 pub enum Resolution {
+    /// Returned when the user interrupts the solver.
+    Canceled,
+
     /// Returned when the givens for the initial puzzle are invalid
     /// along with the invalid board state and the cell that caused it.
     Invalid(Board, Cell, Known, Effects),
@@ -24,6 +27,10 @@ pub enum Resolution {
 }
 
 impl Resolution {
+    pub fn is_canceled(&self) -> bool {
+        matches!(self, Resolution::Canceled)
+    }
+
     pub fn is_solved(&self) -> bool {
         matches!(self, Resolution::Solved(_, _))
     }
@@ -78,7 +85,7 @@ impl Solver<'_> {
                 let mut next = Effects::new();
                 for action in effects.actions() {
                     if cancelable.is_canceled() {
-                        return Resolution::Unsolved(board);
+                        return Resolution::Canceled;
                     }
 
                     match self.player.apply(&board, action) {
@@ -130,7 +137,7 @@ impl Solver<'_> {
             let mut found = false;
             for solver in NON_PEER_TECHNIQUES {
                 if cancelable.is_canceled() {
-                    return Resolution::Unsolved(board);
+                    return Resolution::Canceled;
                 }
 
                 if let Some(moves) = solver.solve(&board) {
