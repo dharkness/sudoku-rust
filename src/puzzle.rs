@@ -7,6 +7,7 @@ mod board;
 mod effects;
 mod error;
 mod options;
+mod player;
 mod pseudo_cell;
 mod strategy;
 
@@ -15,5 +16,6 @@ pub use board::Board;
 pub use effects::Effects;
 pub use error::Error;
 pub use options::Options;
+pub use player::{Change, Player};
 pub use pseudo_cell::PseudoCell;
 pub use strategy::Strategy;

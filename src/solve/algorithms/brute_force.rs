@@ -32,6 +32,7 @@ pub fn find_brute_force(
         max_solutions = DEFAULT_MAXIMUM_SOLUTIONS;
     }
 
+    let player = Player::new(Options::all());
     let mut solutions: Vec<Effects> = Vec::new();
     let mut stack = Vec::with_capacity(81);
     stack.push(Entry::new(*board, Effects::new()));
@@ -65,52 +66,48 @@ pub fn find_brute_force(
         };
 
         let known = candidates.pop().unwrap();
-        let mut clone = *board;
-        let mut effects = Effects::new();
-
+        let action = Action::new_set(Strategy::BruteForce, *cell, known);
         if log {
-            println!("try {}\n", known);
+            println!("try {}\n", action);
             if pause > 0 {
                 sleep(Duration::from_millis(1000));
             }
         }
 
-        clone.set_known(*cell, known, &mut effects);
-        if log {
-            print_candidates(&clone);
-        }
-        if effects.has_errors() {
-            if log {
-                println!("failed\n");
-                effects.print_errors();
-            }
-        } else if let Some(errors) = effects.apply_all(&mut clone) {
-            if log {
-                print_candidates(&clone);
-                println!("super failed\n");
-                errors.print_errors();
-            }
-        } else {
-            let mut actions = actions.clone();
-            actions.add_set(Strategy::BruteForce, *cell, known);
-
-            if clone.is_solved() {
-                solutions.push(actions.clone());
+        match player.apply(board, &action) {
+            Change::None => (),
+            Change::Valid(after, _) => {
                 if log {
-                    println!("found solution {}\n", solutions.len());
+                    print_candidates(&after);
                 }
-                if solutions.len() >= max_solutions {
-                    return BruteForceResult::MultipleSolutions(solutions);
-                } else {
+
+                let mut actions = actions.clone();
+                actions.add_action(action);
+
+                if after.is_solved() {
+                    solutions.push(actions);
                     if log {
-                        println!("backtrack\n");
+                        println!("found solution {}\n", solutions.len());
                     }
-                    stack.pop();
-                    continue;
+                    if solutions.len() >= max_solutions {
+                        return BruteForceResult::MultipleSolutions(solutions);
+                    } else {
+                        if log {
+                            println!("backtrack\n");
+                        }
+                        stack.pop();
+                        continue;
+                    }
+                }
+
+                stack.push(Entry::new(after, actions));
+            }
+            Change::Invalid(_, _, _, errors) => {
+                if log {
+                    println!("failed\n");
+                    errors.print_errors();
                 }
             }
-
-            stack.push(Entry::new(clone, actions));
         }
     }
 

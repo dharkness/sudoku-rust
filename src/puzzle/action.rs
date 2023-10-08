@@ -119,9 +119,17 @@ impl Action {
                 changed = board.remove_candidate(*cell, known, effects) || changed;
             }
         }
-        for (cell, known) in &self.set {
-            // println!("set {} to {}", cell, known);
-            changed = board.set_known(*cell, *known, effects) || changed;
+
+        if matches!(self.strategy, Strategy::Given) {
+            for (cell, known) in &self.set {
+                // println!("give {} to {}", cell, known);
+                changed = board.set_given(*cell, *known, effects) || changed;
+            }
+        } else {
+            for (cell, known) in &self.set {
+                // println!("set {} to {}", cell, known);
+                changed = board.set_known(*cell, *known, effects) || changed;
+            }
         }
 
         changed

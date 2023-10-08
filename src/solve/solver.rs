@@ -3,8 +3,8 @@ use std::time::Instant;
 
 use crate::io::{Cancelable, Parse, ParsePacked};
 use crate::layout::{Cell, Known};
-use crate::puzzle::{Action, Board, Effects};
-use crate::solve::{find_brute_force, Difficulty, Reporter, MANUAL_TECHNIQUES};
+use crate::puzzle::{Action, Board, Change, Effects, Options, Player};
+use crate::solve::{find_brute_force, Difficulty, Reporter, NON_PEER_TECHNIQUES};
 
 pub enum Resolution {
     /// Returned when the givens for the initial puzzle are invalid
@@ -31,6 +31,9 @@ impl Resolution {
 
 /// Attempts to solve puzzles using the available strategy algorithms.
 pub struct Solver<'a> {
+    /// Applies actions to the board to solve the puzzle.
+    player: Player,
+
     /// Parses input to create each puzzle.
     parser: ParsePacked,
 
@@ -47,8 +50,10 @@ pub struct Solver<'a> {
 
 impl Solver<'_> {
     pub fn new(reporter: &'_ dyn Reporter, check: bool) -> Solver<'_> {
+        let player = Player::new(Options::all().return_singles());
         Solver {
-            parser: Parse::packed().remove_peers().stop_on_error(),
+            player,
+            parser: Parse::packed_with_player(player),
             reporter,
             check,
         }
@@ -76,30 +81,35 @@ impl Solver<'_> {
                         return Resolution::Unsolved(board);
                     }
 
-                    let mut clone = board;
-                    if action.apply(&mut clone, &mut next) {
-                        let failed = if self.check && !clone.is_solved() {
-                            !find_brute_force(&clone, cancelable, false, 0, 2).is_solved()
-                        } else {
-                            next.has_errors()
-                        };
-
-                        if failed {
+                    match self.player.apply(&board, action) {
+                        Change::None => (),
+                        Change::Valid(after, mut actions) => {
+                            board = after;
+                            next.take_actions(&mut actions);
+                            let count = counts.entry(action.strategy()).or_default();
+                            *count += 1;
+                        }
+                        Change::Invalid(before, _, action, errors) => {
+                            if action.to_string() == "J1 ⇨ 6" {
+                                println!("\ncannot set J1 to 6\n");
+                                errors.print_errors();
+                            }
+                            if self.check
+                                && find_brute_force(&start, cancelable, false, 0, 2).is_solved()
+                            {
+                                eprintln!("error: solver caused errors in solvable puzzle");
+                            }
                             self.reporter.failed(
                                 givens,
                                 &start,
-                                &board,
-                                action,
-                                &next,
+                                &before,
+                                &action,
+                                &errors,
                                 runtime.elapsed(),
                                 &counts,
                             );
-                            return Resolution::Failed(board, action.clone(), next);
+                            return Resolution::Failed(board, action.clone(), errors);
                         }
-
-                        board = clone;
-                        let count = counts.entry(action.strategy()).or_default();
-                        *count += 1;
                     }
                 }
                 effects = next;
@@ -118,7 +128,7 @@ impl Solver<'_> {
             }
 
             let mut found = false;
-            for solver in MANUAL_TECHNIQUES {
+            for solver in NON_PEER_TECHNIQUES {
                 if cancelable.is_canceled() {
                     return Resolution::Unsolved(board);
                 }

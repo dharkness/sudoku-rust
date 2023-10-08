@@ -10,8 +10,8 @@ use crate::io::{
     print_candidate, print_candidates, Cancelable, Parse, SUDOKUWIKI_URL,
 };
 use crate::layout::{Cell, Known};
-use crate::puzzle::{Board, Effects, Options};
-use crate::solve::{find_brute_force, BruteForceResult, TECHNIQUES};
+use crate::puzzle::{Board, Change, Effects, Options, Player, Strategy};
+use crate::solve::{find_brute_force, BruteForceResult, NON_PEER_TECHNIQUES};
 use crate::symbols::UNKNOWN_VALUE;
 
 const MAXIMUM_SOLUTIONS: usize = 100;
@@ -46,6 +46,7 @@ pub struct PlayArgs {
 impl PlayArgs {
     pub fn options(&self) -> Options {
         Options {
+            stop_on_error: true,
             remove_peers: !self.peers,
             solve_naked_singles: !self.naked && !self.singles,
             solve_hidden_singles: !self.hidden && !self.singles,
@@ -54,13 +55,13 @@ impl PlayArgs {
 }
 
 pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
-    let mut options = args.options();
+    let mut player = Player::new(args.options());
     let mut boards = vec![];
     let mut show_board = false;
 
     match args.puzzle {
         Some(clues) => {
-            let parser = Parse::packed_with_options(true, options);
+            let parser = Parse::packed_with_player(player);
             let (board, effects, failure) = parser.parse(&clues);
 
             boards.push(board);
@@ -112,13 +113,15 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                     for c in input[1].to_uppercase().chars() {
                         match c {
                             'P' => {
-                                options.remove_peers = !options.remove_peers;
+                                player.options.remove_peers = !player.options.remove_peers;
                             }
                             'N' => {
-                                options.solve_naked_singles = !options.solve_naked_singles;
+                                player.options.solve_naked_singles =
+                                    !player.options.solve_naked_singles;
                             }
                             'H' => {
-                                options.solve_hidden_singles = !options.solve_hidden_singles;
+                                player.options.solve_hidden_singles =
+                                    !player.options.solve_hidden_singles;
                             }
                             _ => println!("\n==> Unknown option: {}", input[1].to_uppercase()),
                         }
@@ -132,17 +135,17 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                         "  N - {} naked singles\n",
                         "  H - {} hidden singles\n",
                     ),
-                    if options.remove_peers {
+                    if player.options.remove_peers {
                         "removing"
                     } else {
                         "not removing"
                     },
-                    if options.solve_naked_singles {
+                    if player.options.solve_naked_singles {
                         "solving"
                     } else {
                         "not solving"
                     },
-                    if options.solve_hidden_singles {
+                    if player.options.solve_hidden_singles {
                         "solving"
                     } else {
                         "not solving"
@@ -150,7 +153,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                 );
             }
             "N" => {
-                if let Some(board) = create_new_puzzle(options) {
+                if let Some(board) = create_new_puzzle(player) {
                     boards.push(board);
                     println!();
                 }
@@ -169,6 +172,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                 }
                 cancelable.clear();
             }
+
             "P" => {
                 if input.len() >= 2 {
                     let k = input[1].chars().next().unwrap();
@@ -204,6 +208,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
             "M" => {
                 println!("\n{}\n", format_grid(board));
             }
+
             "G" => {
                 if input.len() != 3 {
                     println!("\n==> G <cell> <digit>\n");
@@ -211,22 +216,23 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                 }
                 let cell = Cell::from(input[1].to_uppercase());
                 let known = Known::from(input[2]);
-                if !board.is_candidate(cell, known) {
-                    println!("\n==> {} is not a candidate for {}\n", known, cell);
-                    continue;
+                match player.set_given(board, Strategy::Given, cell, known) {
+                    Change::None => {
+                        println!("\n==> {} is not a candidate for {}\n", known, cell);
+                        continue;
+                    }
+                    Change::Valid(after, _) => {
+                        boards.push(after);
+                        println!();
+                        show_board = true;
+                    }
+                    Change::Invalid(_, _, _, errors) => {
+                        println!("\n==> Invalid move\n");
+                        errors.print_errors();
+                        println!();
+                        continue;
+                    }
                 }
-                let mut clone = board.with_options(options);
-                let mut effects = Effects::new();
-                clone.set_given(cell, known, &mut effects);
-                if effects.has_errors() {
-                    println!("\n==> Invalid move\n");
-                    effects.print_errors();
-                    println!();
-                    continue;
-                }
-                boards.push(clone);
-                println!();
-                show_board = true;
             }
             "S" => {
                 if input.len() != 3 {
@@ -235,22 +241,23 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                 }
                 let cell = Cell::from(input[1].to_uppercase());
                 let known = Known::from(input[2]);
-                if !board.is_candidate(cell, known) {
-                    println!("\n==> {} is not a candidate for {}\n", known, cell);
-                    continue;
+                match player.set_known(board, Strategy::Solve, cell, known) {
+                    Change::None => {
+                        println!("\n==> {} is not a candidate for {}\n", known, cell);
+                        continue;
+                    }
+                    Change::Valid(after, _) => {
+                        boards.push(after);
+                        println!();
+                        show_board = true;
+                    }
+                    Change::Invalid(_, _, _, errors) => {
+                        println!("\n==> Invalid move\n");
+                        errors.print_errors();
+                        println!();
+                        continue;
+                    }
                 }
-                let mut clone = board.with_options(options);
-                let mut effects = Effects::new();
-                clone.set_known(cell, known, &mut effects);
-                if effects.has_errors() {
-                    println!("\n==> Invalid move\n");
-                    effects.print_errors();
-                    println!();
-                    continue;
-                }
-                boards.push(clone);
-                println!();
-                show_board = true;
             }
             "E" => {
                 if input.len() != 3 {
@@ -258,26 +265,34 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                     continue;
                 }
                 let cell = Cell::from(input[1]);
-                let mut clone = board.with_options(options);
-                let mut effects = Effects::new();
+                let mut clone = *board;
+                let mut changed = false;
                 for c in input[2].chars() {
                     let known = Known::from(c);
-                    if !board.is_candidate(cell, known) {
-                        println!("\n==> {} is not a candidate for {}\n", known, cell);
-                        continue;
+                    match player.remove_candidate(&clone, Strategy::Erase, cell, known) {
+                        Change::None => {
+                            println!("\n==> {} is not a candidate for {}\n", known, cell);
+                            continue;
+                        }
+                        Change::Valid(after, _) => {
+                            clone = after;
+                            changed = true;
+                        }
+                        Change::Invalid(_, _, _, errors) => {
+                            println!("\n==> Invalid move\n");
+                            errors.print_errors();
+                            println!();
+                            continue;
+                        }
                     }
-                    clone.remove_candidate(cell, known, &mut effects);
                 }
-                if effects.has_errors() {
-                    println!("\n==> Invalid move\n");
-                    effects.print_errors();
+                if changed {
+                    boards.push(clone);
                     println!();
-                    continue;
+                    show_board = true;
                 }
-                boards.push(clone);
-                println!();
-                show_board = true;
             }
+
             "V" => {
                 let runtime = Instant::now();
                 match find_brute_force(board, cancelable, false, 0, MAXIMUM_SOLUTIONS) {
@@ -325,7 +340,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
             }
             "F" => {
                 let mut found = false;
-                TECHNIQUES.iter().for_each(|solver| {
+                NON_PEER_TECHNIQUES.iter().for_each(|solver| {
                     if let Some(effects) = solver.solve(board) {
                         found = true;
                         println!(
@@ -344,24 +359,27 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
             }
             "A" => {
                 let mut any_applied = false;
-                let mut clone = board.with_options(options);
-                let _ = TECHNIQUES.iter().try_for_each(|solver| {
-                    if let Some(deductions) = solver.solve(board) {
+                let mut clone = *board;
+                let _ = NON_PEER_TECHNIQUES.iter().try_for_each(|solver| {
+                    if let Some(actions) = solver.solve(board) {
                         let mut applied = 0;
-                        for deduction in deductions.actions() {
-                            let mut next = clone;
-                            deduction.apply(&mut clone, &mut Effects::new());
-                            if let Some(errors) = deductions.apply_all(&mut next) {
-                                println!(
-                                    "\n==> Applying {} will cause errors\n    {}\n\n",
-                                    solver.name(),
-                                    deduction
-                                );
-                                errors.print_errors();
-                                return Err(());
+                        for action in actions.actions() {
+                            match player.apply(&clone, action) {
+                                Change::None => (),
+                                Change::Valid(after, _) => {
+                                    applied += 1;
+                                    clone = after;
+                                }
+                                Change::Invalid(_, _, _, errors) => {
+                                    println!(
+                                        "\n==> Applying {} will cause errors\n    {}\n",
+                                        solver.name(),
+                                        action
+                                    );
+                                    errors.print_errors();
+                                    return Err(());
+                                }
                             }
-                            applied += 1;
-                            clone = next;
                         }
                         if applied > 0 {
                             any_applied = true;
@@ -400,8 +418,10 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                     show_board = true
                 }
             }
+
             "?" | "H" => print_help(),
             "Q" => break,
+
             _ => println!("\n==> Unknown command: {}\n", input[0]),
         }
     }
@@ -443,7 +463,7 @@ fn print_help() {
     ))
 }
 
-fn create_new_puzzle(options: Options) -> Option<Board> {
+fn create_new_puzzle(player: Player) -> Option<Board> {
     println!(concat!(
         "\n==> Enter the givens\n\n",
         "  - enter up to 81 digits\n",
@@ -484,7 +504,7 @@ fn create_new_puzzle(options: Options) -> Option<Board> {
             continue;
         }
 
-        let parser = Parse::packed_with_options(true, options);
+        let parser = Parse::packed_with_player(player);
         let (board, effects, failure) = parser.parse(&input);
 
         if let Some((cell, known)) = failure {

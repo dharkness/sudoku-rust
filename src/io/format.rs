@@ -260,10 +260,11 @@ impl FormatWiki {
 mod tests {
     use super::*;
     use crate::io::Parse;
+    use crate::puzzle::Options;
 
     #[test]
     fn test_format_for_console() {
-        let board = Parse::packed().remove_peers().parse_simple(
+        let board = Parse::packed_with_options(Options::all().return_singles()).parse_simple(
             "
                 .8.1.3.7.
                 .9.5.6...
@@ -285,7 +286,7 @@ mod tests {
 
     #[test]
     fn test_format_packed() {
-        let board = Parse::packed().remove_peers().parse_simple(
+        let board = Parse::packed_with_options(Options::all().return_singles()).parse_simple(
             "
                 .8.1.3.7.
                 .9.5.6...
@@ -307,7 +308,7 @@ mod tests {
 
     #[test]
     fn test_format_grid() {
-        let board = Parse::packed().remove_peers().parse_simple(
+        let board = Parse::packed_with_options(Options::all().return_singles()).parse_simple(
             "
                 ..2...376
                 .1..3.5..
@@ -346,7 +347,7 @@ mod tests {
 
     #[test]
     fn test_format_for_wiki() {
-        let board = Parse::packed().remove_peers().solve_singles().parse_simple(
+        let board = Parse::packed_with_options(Options::all()).parse_simple(
             "
                 ..2...376
                 .1..3.5..

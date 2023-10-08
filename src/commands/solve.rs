@@ -45,7 +45,7 @@ pub fn solve_puzzles(args: SolveArgs, cancelable: &Cancelable) {
             let mut count = 0;
             let mut solved = 0;
 
-            println!("                   µs NP NT NQ HP HT HQ PP PT BL XW SC YW SF XZ JF SK AR XY UR BG ER");
+            println!("                   µs NS NP NT NQ HS HP HT HQ PP PT BL XW SC YW SF XZ JF SK AR XY UR BG ER");
             for puzzle in stdin.lock().lines() {
                 if solver.solve(&puzzle.unwrap(), cancelable).is_solved() {
                     solved += 1;
@@ -172,14 +172,16 @@ impl CSVReporter {
 
     fn format_counts(&self, counts: &HashMap<Strategy, i32>) -> String {
         format!(
-            "{:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2}",
+            "{:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2}",
             // counts.get(&Strategy::Peer).unwrap_or(0),
             // counts.get(&Strategy::NakedSingle).unwrap_or(0),
             // counts.get(&Strategy::HiddenSingle).unwrap_or(0),
 
+            counts.get(&Strategy::NakedSingle).unwrap_or(&0),
             counts.get(&Strategy::NakedPair).unwrap_or(&0),
             counts.get(&Strategy::NakedTriple).unwrap_or(&0),
             counts.get(&Strategy::NakedQuad).unwrap_or(&0),
+            counts.get(&Strategy::HiddenSingle).unwrap_or(&0),
             counts.get(&Strategy::HiddenPair).unwrap_or(&0),
             counts.get(&Strategy::HiddenTriple).unwrap_or(&0),
             counts.get(&Strategy::HiddenQuad).unwrap_or(&0),

@@ -11,8 +11,10 @@ pub struct Effects {
     actions: Vec<Action>,
 }
 
+pub type Result = std::result::Result<Effects, Effects>;
+
 impl Effects {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             errors: vec![],
             actions: vec![],

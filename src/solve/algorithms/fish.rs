@@ -94,7 +94,7 @@ mod tests {
 
     #[test]
     fn x_wing() {
-        let board = Parse::packed().remove_peers().parse_simple(
+        let board = Parse::packed_with_options(Options::all().return_singles()).parse_simple(
             "
                 1.....569
                 492.561.8
@@ -117,7 +117,7 @@ mod tests {
 
     #[test]
     fn swordfish() {
-        let board = Parse::packed().remove_peers().parse_simple(
+        let board = Parse::packed_with_options(Options::all().return_singles()).parse_simple(
             "
                 52941.7.3
                 ..6..3..2
@@ -140,7 +140,7 @@ mod tests {
 
     #[test]
     fn jellyfish() {
-        let board = Parse::packed().remove_peers().parse_simple(
+        let board = Parse::packed_with_options(Options::all().return_singles()).parse_simple(
             "
                 ..17538..
                 .5......7

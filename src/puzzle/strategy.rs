@@ -30,6 +30,13 @@
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq, PartialOrd, Ord)]
 pub enum Strategy {
     // these become the Clues; copy and generalize for Strategy
+    /// The player or parser has provided a given (clue).
+    Given, // (Known, Cell)
+    /// The player has solved a cell.
+    Solve, // (Known, Cell)
+    /// The player has erased a candidate from a cell.
+    Erase, // (Known, Cell)
+
     /// When a cell becomes solved, the value may be removed as a candidate
     /// from every cell in the same row, column or box.
     Peer, // (Known, Cell)

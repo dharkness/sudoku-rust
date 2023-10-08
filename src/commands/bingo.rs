@@ -5,6 +5,7 @@ use crate::io::{
     format_for_wiki, format_runtime, print_candidates, print_values, Cancelable, Parse,
     SUDOKUWIKI_URL,
 };
+use crate::puzzle::{Change, Options, Player};
 use crate::solve::{find_brute_force, BruteForceResult};
 
 #[derive(Debug, Args)]
@@ -27,22 +28,25 @@ pub struct BingoArgs {
 
 /// Creates a new puzzle and prints it to stdout.
 pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
-    let parser = Parse::packed().stop_on_error().remove_peers();
-    let (mut board, effects, failure) = parser.parse(&args.puzzle);
+    let player = Player::new(Options::all());
+    let parser = Parse::packed_with_player(player);
 
+    let (mut board, effects, failure) = parser.parse(&args.puzzle);
     if !board.is_solved() {
         print_candidates(&board);
         println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&board));
     }
 
-    effects.apply_all(&mut board);
-    if effects.has_errors() {
+    if let Some((cell, known)) = failure {
         println!("\ninvalid puzzle");
-        if let Some((cell, known)) = failure {
-            println!("\nsetting {} to {} will cause errors\n", cell, known);
-        }
-
+        println!("\nsetting {} to {} will cause errors\n", cell, known);
         effects.print_errors();
+        return;
+    }
+    if let Change::Invalid(_, _, action, errors) = player.apply_all(&board, &effects) {
+        println!("\ninvalid puzzle");
+        println!("\napplying {} will cause errors\n", action);
+        errors.print_errors();
         return;
     }
 
@@ -71,18 +75,6 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
 
     println!("\n{} {} µs", label, format_runtime(runtime.elapsed()));
 
-    if let Some(solutions) = solutions {
-        for (i, solution) in solutions.iter().enumerate() {
-            if i == 10 {
-                break;
-            }
-            let mut clone = board;
-            solution.apply_all(&mut clone);
-            println!("\nsolution {}\n", i + 1);
-            print_values(&clone);
-            println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&clone));
-        }
-    }
     if let Some(cells) = empty_cells {
         println!(
             "\nthe puzzle has {} empty cells\n\n=> {}",
@@ -91,14 +83,40 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
         );
     }
     if let Some(solution) = solution {
-        let mut clone = board;
-        if let Some(errors) = solution.apply_all(&mut clone) {
-            println!("\nbrute force caused errors\n");
-            errors.print_errors();
-            println!();
-            print_candidates(&clone);
-        } else {
-            board = clone;
+        match player.apply_all(&board, &solution) {
+            Change::None => (),
+            Change::Valid(after, _) => {
+                board = after;
+            }
+            Change::Invalid(before, _, action, errors) => {
+                println!();
+                print_candidates(&before);
+                println!("\nbrute force will cause errors with {}\n", action);
+                errors.print_errors();
+                println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&before));
+            }
+        }
+    }
+    if let Some(solutions) = solutions {
+        for (i, solution) in solutions.iter().enumerate() {
+            if i == 10 {
+                break;
+            }
+            match player.apply_all(&board, solution) {
+                Change::None => (),
+                Change::Valid(after, _) => {
+                    println!("\nsolution {}\n", i + 1);
+                    print_values(&after);
+                    println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&after));
+                }
+                Change::Invalid(before, _, action, errors) => {
+                    println!();
+                    print_candidates(&before);
+                    println!("\nsolution {} will cause errors with {}\n", i + 1, action);
+                    errors.print_errors();
+                    println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&before));
+                }
+            }
         }
     }
 
