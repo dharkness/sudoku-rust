@@ -84,35 +84,33 @@ pub fn find_brute_force(
                 println!("failed\n");
                 effects.print_errors();
             }
-        } else {
-            if let Some(errors) = effects.apply_all(&mut clone) {
-                if log {
-                    print_candidates(&clone);
-                    println!("super failed\n");
-                    errors.print_errors();
-                }
-            } else {
-                let mut actions = actions.clone();
-                actions.add_set(Strategy::BruteForce, *cell, known);
-
-                if clone.is_solved() {
-                    solutions.push(actions.clone());
-                    if log {
-                        println!("found solution {}\n", solutions.len());
-                    }
-                    if solutions.len() >= max_solutions {
-                        return BruteForceResult::MultipleSolutions(solutions);
-                    } else {
-                        if log {
-                            println!("backtrack\n");
-                        }
-                        stack.pop();
-                        continue;
-                    }
-                }
-
-                stack.push(Entry::new(clone, actions));
+        } else if let Some(errors) = effects.apply_all(&mut clone) {
+            if log {
+                print_candidates(&clone);
+                println!("super failed\n");
+                errors.print_errors();
             }
+        } else {
+            let mut actions = actions.clone();
+            actions.add_set(Strategy::BruteForce, *cell, known);
+
+            if clone.is_solved() {
+                solutions.push(actions.clone());
+                if log {
+                    println!("found solution {}\n", solutions.len());
+                }
+                if solutions.len() >= max_solutions {
+                    return BruteForceResult::MultipleSolutions(solutions);
+                } else {
+                    if log {
+                        println!("backtrack\n");
+                    }
+                    stack.pop();
+                    continue;
+                }
+            }
+
+            stack.push(Entry::new(clone, actions));
         }
     }
 
