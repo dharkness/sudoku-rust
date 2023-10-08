@@ -91,7 +91,7 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
         );
     }
     if let Some(solution) = solution {
-        let mut clone = board.clone();
+        let mut clone = board;
         if let Some(errors) = solution.apply_all(&mut clone) {
             println!("\nbrute force caused errors\n");
             errors.print_errors();
