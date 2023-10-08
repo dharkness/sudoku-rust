@@ -32,15 +32,17 @@ enum Commands {
     /// Generates a new complete puzzle
     #[clap(alias = "c")]
     Create(CreateArgs),
+
     /// Starts the interactive player
     #[clap(alias = "p")]
     Play(PlayArgs),
+
     /// Solves a given puzzle or all puzzles from STDIN
-    #[clap(
-        alias = "s",
-        long_about = "Solves puzzles from STDIN if no puzzle is given"
-    )]
+    #[clap(alias = "s")]
     Solve(SolveArgs),
+
+    /// Solves a given puzzle using Bowman's Bingo
+    #[clap(alias = "b")]
     Bingo(BingoArgs),
 }
 

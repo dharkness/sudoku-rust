@@ -50,6 +50,12 @@ impl Board {
         board
     }
 
+    pub fn with_options(&self, options: Options) -> Board {
+        let mut clone = *self;
+        clone.options = options;
+        clone
+    }
+
     pub const fn given_count(&self) -> usize {
         self.givens.size()
     }

@@ -6,11 +6,11 @@ use crate::io::{print_candidates, print_values, Cancelable};
 #[derive(Debug, Args)]
 pub struct CreateArgs {
     /// Shuffles the cells before generating
-    #[clap(short = 's', long = "shuffle")]
+    #[clap(short, long)]
     shuffle: bool,
 
     /// Identifies the cells that will receive starting clues
-    #[clap(long, short = 'p')]
+    #[clap(short, long)]
     pattern: Option<String>,
 }
 

@@ -10,15 +10,15 @@ use crate::solve::{find_brute_force, BruteForceResult};
 #[derive(Debug, Args)]
 pub struct BingoArgs {
     /// Log each cell and candidate tried
-    #[clap(short = 'l', long = "log")]
+    #[clap(short, long)]
     log: bool,
 
     /// Pause in milliseconds between each step taken
-    #[clap(short = 'p', long = "pause", default_value = "0")]
+    #[clap(short, long, default_value = "0")]
     pause: u32,
 
     /// Maximum number of solutions to find before stopping
-    #[clap(short = 'm', long = "max", default_value = "10")]
+    #[clap(short, long, default_value = "10")]
     max: usize,
 
     /// Clues for a puzzle to solve using Bowman's Bingo

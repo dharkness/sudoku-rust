@@ -15,7 +15,7 @@ use crate::solve::{Difficulty, Reporter, Solver};
 #[derive(Debug, Args)]
 pub struct SolveArgs {
     /// Check the results of each solver strategy using brute force
-    #[clap(short = 'c', long = "check")]
+    #[clap(short, long)]
     check: bool,
 
     /// Clues for one or more puzzles to solve with detailed output

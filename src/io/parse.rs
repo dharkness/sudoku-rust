@@ -13,6 +13,12 @@ impl Parse {
         ParsePacked::new()
     }
 
+    /// Returns a new [`ParsePacked`] that ignores errors
+    /// and won't solve hidden/naked single automatically.
+    pub fn packed_with_options(stop_on_error: bool, options: Options) -> ParsePacked {
+        ParsePacked::new_with_options(stop_on_error, options)
+    }
+
     /// Returns a new [`ParseGrid`] that ignores errors.
     pub fn grid() -> ParseGrid {
         ParseGrid::new()
@@ -35,6 +41,13 @@ pub struct ParsePacked {
 impl ParsePacked {
     pub fn new() -> Self {
         ParsePacked::default()
+    }
+
+    pub fn new_with_options(stop_on_error: bool, options: Options) -> Self {
+        ParsePacked {
+            stop_on_error,
+            options,
+        }
     }
 
     pub fn stop_on_error(self) -> Self {

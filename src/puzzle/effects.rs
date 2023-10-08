@@ -131,18 +131,17 @@ impl Effects {
     }
 
     pub fn apply_all(&self, board: &mut Board) -> Option<Effects> {
-        let mut effects = self.clone();
-        loop {
-            if effects.has_errors() {
-                return Some(effects);
-            }
-            if !effects.has_actions() {
-                return None;
-            }
-            let mut next = Effects::new();
-            effects.apply(board, &mut next);
-            effects = next;
+        if self.has_errors() {
+            return Some(self.clone());
         }
+        if self.has_actions() {
+            let mut next = Effects::new();
+            self.apply(board, &mut next);
+            if next.has_errors() {
+                return Some(next);
+            }
+        }
+        None
     }
 
     pub fn apply_all_strategy(&self, board: &mut Board, strategy: Strategy) -> Option<Effects> {
