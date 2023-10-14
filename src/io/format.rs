@@ -264,7 +264,7 @@ mod tests {
 
     #[test]
     fn test_format_for_console() {
-        let board = Parse::packed_with_options(Options::all().return_singles()).parse_simple(
+        let board = Parse::packed_with_options(Options::errors_and_peers()).parse_simple(
             "
                 .8.1.3.7.
                 .9.5.6...
@@ -286,7 +286,7 @@ mod tests {
 
     #[test]
     fn test_format_packed() {
-        let board = Parse::packed_with_options(Options::all().return_singles()).parse_simple(
+        let board = Parse::packed_with_options(Options::errors_and_peers()).parse_simple(
             "
                 .8.1.3.7.
                 .9.5.6...
@@ -308,7 +308,7 @@ mod tests {
 
     #[test]
     fn test_format_grid() {
-        let board = Parse::packed_with_options(Options::all().return_singles()).parse_simple(
+        let board = Parse::packed_with_options(Options::errors_and_peers()).parse_simple(
             "
                 ..2...376
                 .1..3.5..
@@ -347,8 +347,9 @@ mod tests {
 
     #[test]
     fn test_format_for_wiki() {
-        let board = Parse::packed_with_options(Options::all()).parse_simple(
-            "
+        let board = Parse::packed_with_options(Options::all().return_intersection_removals())
+            .parse_simple(
+                "
                 ..2...376
                 .1..3.5..
                 .......9.
@@ -359,7 +360,7 @@ mod tests {
                 ..3.4..6.
                 147...2..
             ",
-        );
+            );
 
         assert_eq!(
             "8gg0051i8292094121cg03agmk09q4118k8k0870bg7ke4b402g18kg1082g811124400k03c070b209260hq094p40530bi22g141a09g092081g05444080g0250100409k20ho2o021s0030h41j0a0r00508p0",

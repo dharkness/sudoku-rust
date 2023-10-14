@@ -1,5 +1,6 @@
 use crate::layout::{Cell, Known};
 use crate::puzzle::Strategy;
+use crate::solve::find_intersection_removals;
 
 use super::{Action, Board, Effects, Options};
 
@@ -78,6 +79,13 @@ impl Player {
                     unapplied.add_action(action.clone());
                 }
             }
+
+            if self.options.solve_intersection_removals && next.is_empty() {
+                if let Some(effects) = find_intersection_removals(&good) {
+                    next = effects;
+                }
+            }
+
             applying = next;
         }
 

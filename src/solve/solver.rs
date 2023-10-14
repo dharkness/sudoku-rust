@@ -57,7 +57,7 @@ pub struct Solver<'a> {
 
 impl Solver<'_> {
     pub fn new(reporter: &'_ dyn Reporter, check: bool) -> Solver<'_> {
-        let player = Player::new(Options::all().return_singles());
+        let player = Player::new(Options::errors_and_peers());
         Solver {
             player,
             parser: Parse::packed_with_player(player),

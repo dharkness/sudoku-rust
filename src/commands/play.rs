@@ -39,6 +39,10 @@ pub struct PlayArgs {
     #[clap(short, long)]
     singles: bool,
 
+    /// Do not automatically solve intersection removals
+    #[clap(short, long)]
+    intersection: bool,
+
     /// Clues for a starting puzzle
     puzzle: Option<String>,
 }
@@ -50,6 +54,7 @@ impl PlayArgs {
             remove_peers: !self.peers,
             solve_naked_singles: !self.naked && !self.singles,
             solve_hidden_singles: !self.hidden && !self.singles,
+            solve_intersection_removals: !self.intersection,
         }
     }
 }
@@ -123,6 +128,10 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                                 player.options.solve_hidden_singles =
                                     !player.options.solve_hidden_singles;
                             }
+                            'I' => {
+                                player.options.solve_intersection_removals =
+                                    !player.options.solve_intersection_removals;
+                            }
                             _ => println!("\n==> Unknown option: {}", input[1].to_uppercase()),
                         }
                     }
@@ -134,6 +143,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                         "  P - {} peer candidates\n",
                         "  N - {} naked singles\n",
                         "  H - {} hidden singles\n",
+                        "  I - {} intersection removals\n",
                     ),
                     if player.options.remove_peers {
                         "removing"
@@ -146,6 +156,11 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                         "not solving"
                     },
                     if player.options.solve_hidden_singles {
+                        "solving"
+                    } else {
+                        "not solving"
+                    },
+                    if player.options.solve_intersection_removals {
                         "solving"
                     } else {
                         "not solving"
