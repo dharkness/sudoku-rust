@@ -5,6 +5,7 @@ mod format;
 mod numbers;
 mod parse;
 mod print;
+mod progress;
 
 pub const SUDOKUWIKI_URL: &str = "https://www.sudokuwiki.org/sudoku.htm?bd=";
 
@@ -13,3 +14,4 @@ pub use format::{format_for_fancy_console, format_for_wiki, format_grid, format_
 pub use numbers::{format_number, format_runtime};
 pub use parse::{Parse, ParseGrid, ParsePacked, ParseWiki};
 pub use print::{print_candidate, print_candidates, print_values};
+pub use progress::show_progress;

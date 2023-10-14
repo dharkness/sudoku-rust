@@ -1,15 +1,10 @@
 use rand::rngs::ThreadRng;
 use rand::seq::SliceRandom;
 
-use crate::io::Cancelable;
+use crate::io::{show_progress, Cancelable};
 use crate::layout::{Cell, Known, KnownSet};
 use crate::puzzle::{Board, Change, Player, Strategy};
 use crate::solve::find_intersection_removals;
-
-const FILLED: &str =
-    "|---------=========---------=========---------=========---------=========---------|";
-const EMPTY: &str =
-    "|                                                                                 |";
 
 /// Generates a complete puzzle solution.
 pub struct Generator {
@@ -38,21 +33,16 @@ impl Generator {
         });
 
         while !stack.is_empty() {
-            println!(
-                "{}{}",
-                &FILLED[..stack.len() + 1],
-                &EMPTY[stack.len() + 1..]
-            );
-
             let Entry {
                 board,
                 cell,
                 mut candidates,
             } = stack.pop().unwrap();
+
+            show_progress(stack.len());
             if cancelable.is_canceled() {
                 return Some(board);
             }
-
             if candidates.is_empty() {
                 continue;
             }
