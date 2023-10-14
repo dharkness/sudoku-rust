@@ -176,7 +176,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
             "C" => {
                 println!();
                 let mut generator = Generator::new(false);
-                match generator.generate(cancelable) {
+                match generator.generate(&player, cancelable) {
                     Some(board) => {
                         println!("\n==> Clues: {}\n", board);
                         boards.push(board);

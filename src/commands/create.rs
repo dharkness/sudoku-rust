@@ -2,6 +2,7 @@ use clap::Args;
 
 use crate::build::Generator;
 use crate::io::{print_candidates, print_values, Cancelable};
+use crate::puzzle::{Options, Player};
 
 #[derive(Debug, Args)]
 pub struct CreateArgs {
@@ -16,9 +17,10 @@ pub struct CreateArgs {
 
 /// Creates a new puzzle and prints it to stdout.
 pub fn create_puzzle(args: CreateArgs, cancelable: &Cancelable) {
+    let player = Player::new(Options::all());
     let mut generator = Generator::new(args.shuffle);
 
-    match generator.generate(cancelable) {
+    match generator.generate(&player, cancelable) {
         Some(board) => {
             print_values(&board);
             if !board.is_solved() {
