@@ -68,7 +68,7 @@ impl ParsePacked {
     /// - Use any other character to leave a cell unsolved.
     pub fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>) {
         let mut board = Board::new();
-        let mut singles = Effects::new();
+        let mut unapplied = Effects::new();
         let mut c = 0;
 
         for char in input.chars() {
@@ -85,21 +85,26 @@ impl ParsePacked {
                                 Change::None => (),
                                 Change::Valid(after, mut actions) => {
                                     board = *after;
-                                    singles.take_actions(&mut actions);
+                                    unapplied.take_actions(&mut actions);
                                 }
-                                Change::Invalid(before, ..) => {
+                                Change::Invalid(before, _, _, mut errors) => {
                                     if self.player.options.stop_on_error {
-                                        return (*before, singles, Some((cell, known)));
+                                        errors.take_actions(&mut unapplied);
+                                        return (*before, errors, Some((cell, known)));
                                     }
                                 }
                             }
                         } else if self.player.options.stop_on_error {
                             if let Some(current_known) = current.known() {
-                                singles.add_error(Error::AlreadySolved(cell, known, current_known));
+                                unapplied.add_error(Error::AlreadySolved(
+                                    cell,
+                                    known,
+                                    current_known,
+                                ));
                             } else {
-                                singles.add_error(Error::NotCandidate(cell, known));
+                                unapplied.add_error(Error::NotCandidate(cell, known));
                             }
-                            return (board, singles, Some((cell, known)));
+                            return (board, unapplied, Some((cell, known)));
                         }
                     }
                 }
@@ -109,7 +114,7 @@ impl ParsePacked {
             c += 1;
         }
 
-        (board, singles, None)
+        (board, unapplied, None)
     }
 }
 
