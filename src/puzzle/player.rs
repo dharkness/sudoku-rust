@@ -4,12 +4,16 @@ use crate::solve::find_intersection_removals;
 
 use super::{Action, Board, Effects, Options};
 
+/// Indicates the result of a single manual action or any applied automatic actions.
 pub enum Change {
     None,
     Valid(Box<Board>, Effects),
     Invalid(Box<Board>, Box<Board>, Action, Effects),
 }
 
+/// Applies manual and automatic actions to a board based on the selected options.
+///
+/// None of the methods modify the given board.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Player {
     pub options: Options,
@@ -20,14 +24,17 @@ impl Player {
         Self { options }
     }
 
+    /// Sets the given (clue) for a single cell.
     pub fn set_given(&self, board: &Board, strategy: Strategy, cell: Cell, known: Known) -> Change {
         self.apply(board, &Action::new_set(strategy, cell, known))
     }
 
+    /// Solves a single cell to one of its candidates.
     pub fn set_known(&self, board: &Board, strategy: Strategy, cell: Cell, known: Known) -> Change {
         self.apply(board, &Action::new_set(strategy, cell, known))
     }
 
+    /// Removes a candidate from a single cell.
     pub fn remove_candidate(
         &self,
         board: &Board,
@@ -38,6 +45,7 @@ impl Player {
         self.apply(board, &Action::new_erase(strategy, cell, known))
     }
 
+    /// Applies the given action and any automatic actions it creates.
     pub fn apply(&self, board: &Board, action: &Action) -> Change {
         let mut after = *board;
         let mut effects = Effects::new();
@@ -47,15 +55,22 @@ impl Player {
         } else if self.options.stop_on_error && effects.has_errors() {
             Change::Invalid(Box::new(*board), Box::new(after), action.clone(), effects)
         } else {
-            self.apply_all_changed(&after, &effects, true)
+            self.apply_all_changed(board, &after, &effects, true)
         }
     }
 
+    /// Applies all automatic actions to the given board.
     pub fn apply_all(&self, board: &Board, actions: &Effects) -> Change {
-        self.apply_all_changed(board, actions, false)
+        self.apply_all_changed(board, board, actions, false)
     }
 
-    fn apply_all_changed(&self, board: &Board, actions: &Effects, mut changed: bool) -> Change {
+    fn apply_all_changed(
+        &self,
+        before: &Board,
+        board: &Board,
+        actions: &Effects,
+        mut changed: bool,
+    ) -> Change {
         let mut good = *board;
         let mut applying = actions.clone();
         let mut unapplied = Effects::new();
@@ -68,7 +83,7 @@ impl Player {
                     changed = action.apply(&mut maybe, &mut next) || changed;
                     if self.options.stop_on_error && next.has_errors() {
                         return Change::Invalid(
-                            Box::new(good),
+                            Box::new(*before),
                             Box::new(maybe),
                             action.clone(),
                             next,
