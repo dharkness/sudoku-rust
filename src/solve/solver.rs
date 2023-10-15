@@ -53,8 +53,9 @@ impl Solver<'_> {
         }
     }
 
-    pub fn solve(&self, start: &Board, mut effects: Effects) -> Resolution {
+    pub fn solve(&self, start: &Board, unapplied: &Effects) -> Resolution {
         let mut board = *start;
+        let mut effects = unapplied.clone();
         let mut applied = Effects::new();
         let mut difficulty = Difficulty::Basic;
 
@@ -75,8 +76,7 @@ impl Solver<'_> {
                         }
                         Change::Invalid(before, _, action, errors) => {
                             if self.check
-                                && find_brute_force(&start, self.cancelable, false, 0, 2)
-                                    .is_solved()
+                                && find_brute_force(start, self.cancelable, false, 0, 2).is_solved()
                             {
                                 eprintln!("error: solver caused errors in solvable puzzle");
                             }

@@ -46,7 +46,7 @@ enum Commands {
     Bingo(BingoArgs),
 }
 
-/// Starts the interactive player or creates a new puzzle.
+/// Executes the specified subcommand.
 fn main() {
     let cancelable = create_signal();
 

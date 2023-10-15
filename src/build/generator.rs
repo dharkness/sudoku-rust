@@ -10,15 +10,17 @@ use crate::solve::find_intersection_removals;
 pub struct Generator {
     rng: ThreadRng,
     shuffle: bool,
+    bar: bool,
 }
 
 impl Generator {
     /// Pass true for shuffle to randomize the order the cells are solved.
     /// This will take longer and likely solve fewer cells using singles.
-    pub fn new(shuffle: bool) -> Generator {
+    pub fn new(shuffle: bool, bar: bool) -> Generator {
         Generator {
             rng: rand::thread_rng(),
             shuffle,
+            bar,
         }
     }
 
@@ -32,14 +34,15 @@ impl Generator {
             candidates: self.shuffle_candidates(KnownSet::full()),
         });
 
-        while !stack.is_empty() {
-            let Entry {
-                board,
-                cell,
-                mut candidates,
-            } = stack.pop().unwrap();
-
-            show_progress(stack.len());
+        while let Some(Entry {
+            board,
+            cell,
+            mut candidates,
+        }) = stack.pop()
+        {
+            if self.bar {
+                show_progress(stack.len());
+            }
             if cancelable.is_canceled() {
                 return Some(board);
             }

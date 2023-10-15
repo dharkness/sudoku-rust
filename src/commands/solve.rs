@@ -50,7 +50,7 @@ pub fn solve_puzzles(args: SolveArgs, cancelable: &Cancelable) {
             let mut solved = 0;
 
             println!("                   µs NS NP NT NQ HS HP HT HQ PP PT BL XW SC YW SF XZ JF SK AR XY UR BG ER");
-            for puzzle in stdin.lock().lines().filter_map(|line| line.ok()) {
+            for puzzle in stdin.lock().lines().map_while(Result::ok) {
                 if cancelable.is_canceled() {
                     break;
                 }
@@ -99,7 +99,7 @@ impl ParserSolver<'_> {
             return false;
         }
 
-        match self.solver.solve(&start, effects) {
+        match self.solver.solve(&start, &effects) {
             Resolution::Canceled(..) => (),
             Resolution::Failed(board, applied, _, action, errors) => self.reporter.failed(
                 givens,

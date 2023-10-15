@@ -1,21 +1,35 @@
 use clap::Args;
+use itertools::Itertools;
 use std::process::exit;
+use std::time::Instant;
 
 use crate::build::{Finder, Generator};
-use crate::io::{print_candidates, print_values, Cancelable, Parse};
+use crate::io::{format_runtime, print_candidates, print_values, Cancelable, Parse};
 use crate::puzzle::{Options, Player};
 
 #[derive(Debug, Args)]
 pub struct CreateArgs {
-    /// Randomizes the cells before generating
+    /// Randomize the cells before generating
     #[clap(short, long)]
     randomize: bool,
 
-    /// Identifies the cells that will receive starting clues
+    /// Stop once a puzzle with the given number of clues is found
+    #[clap(short, long)]
+    clues: Option<usize>,
+
+    /// Stop after the given number of seconds
+    #[clap(short, long)]
+    time: Option<u64>,
+
+    /// Show a progress bar while running
+    #[clap(short, long)]
+    bar: bool,
+
+    /// Identify the cells that will receive starting clues
     #[clap(short, long)]
     pattern: Option<String>,
 
-    /// Provides the solution to start from
+    /// The completed puzzle to use as a starting point
     #[clap(short, long)]
     solution: Option<String>,
 }
@@ -44,7 +58,7 @@ pub fn create_puzzle(args: CreateArgs, cancelable: &Cancelable) {
         }
         None => {
             let player = Player::new(Options::all());
-            let mut generator = Generator::new(args.randomize);
+            let mut generator = Generator::new(args.randomize, args.bar);
 
             match generator.generate(&player, cancelable) {
                 Some(board) => {
@@ -70,17 +84,26 @@ pub fn create_puzzle(args: CreateArgs, cancelable: &Cancelable) {
     };
 
     print_values(&board);
-    println!("\n==> Seeking a solvable starting puzzle...");
+    println!("\n==> Seeking a solvable starting puzzle...\n");
 
-    let mut finder = Finder::new();
-    match finder.backtracking_find(board, cancelable) {
-        Some(board) => {
-            print_values(&board);
-            println!("\n==> Puzzle created");
-        }
-        None => {
-            println!("\n==> Failed to find a solvable starting puzzle");
-            exit(1);
-        }
-    }
+    let runtime = Instant::now();
+    let mut finder = Finder::new(args.clues.unwrap_or(22), args.time.unwrap_or(10), args.bar);
+    let (start, actions) = finder.backtracking_find(board, cancelable);
+
+    println!();
+    print_candidates(&start);
+    println!(
+        "\n==> Created puzzle with {} clues in {} µs\n\n    {}\n",
+        start.known_count(),
+        start.packed_string(),
+        format_runtime(runtime.elapsed())
+    );
+
+    let counts = actions.action_counts();
+    counts
+        .iter()
+        .sorted_by(|a, b| a.0.cmp(b.0))
+        .for_each(|(strategy, count)| {
+            println!("- {:>2} {:?}", count, strategy);
+        });
 }
