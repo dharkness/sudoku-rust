@@ -12,7 +12,7 @@ use crate::io::{
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Board, Change, Effects, Options, Player, Strategy};
 use crate::solve::{find_brute_force, BruteForceResult, NON_PEER_TECHNIQUES};
-use crate::symbols::UNKNOWN_VALUE;
+use crate::symbols::{MISSING, UNKNOWN_VALUE};
 
 const MAXIMUM_SOLUTIONS: usize = 100;
 
@@ -494,7 +494,11 @@ fn create_new_puzzle(player: Player) -> Option<Board> {
 
         let mut input = String::new();
         std::io::stdin().read_line(&mut input).unwrap();
-        let input = input.trim().replace(' ', "").to_uppercase();
+        let input = input
+            .trim()
+            .replace(' ', "")
+            .replace(MISSING, ".")
+            .to_uppercase();
         if input.is_empty() {
             println!();
             return None;
