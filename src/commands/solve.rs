@@ -6,10 +6,10 @@ use std::time::{Duration, Instant};
 
 use crate::io::{
     format_for_wiki, format_number, format_runtime, print_candidates, print_values, Cancelable,
-    SUDOKUWIKI_URL,
+    ParsePacked, SUDOKUWIKI_URL,
 };
 use crate::layout::{Cell, Known};
-use crate::puzzle::{Action, Board, Effects, Strategy};
+use crate::puzzle::{Action, Board, Effects, Options, Player, Strategy};
 use crate::solve::{Difficulty, Reporter, Resolution, Solver};
 
 #[derive(Debug, Args)]
@@ -24,20 +24,25 @@ pub struct SolveArgs {
 
 /// Creates a new puzzle and prints it to stdout.
 pub fn solve_puzzles(args: SolveArgs, cancelable: &Cancelable) {
+    let player = Player::new(Options::errors_and_peers());
+    let parser = ParsePacked::new_with_player(player);
+    let solver = Solver::new(cancelable, args.check);
+
     match args.puzzles {
         Some(puzzles) => {
             let reporter = DetailedReporter::new();
-            let solver = Solver::new(&reporter, args.check);
+            let parser_solver = ParserSolver::new(&parser, &solver, &reporter);
 
             for puzzle in puzzles {
-                if solver.solve(&puzzle, cancelable).is_canceled() {
+                parser_solver.parse_and_solve(&puzzle);
+                if cancelable.is_canceled() {
                     break;
                 }
             }
         }
         None => {
             let reporter = CSVReporter::new();
-            let solver = Solver::new(&reporter, args.check);
+            let parser_solver = ParserSolver::new(&parser, &solver, &reporter);
             let stdin = std::io::stdin();
 
             let runtime = Instant::now();
@@ -45,22 +50,86 @@ pub fn solve_puzzles(args: SolveArgs, cancelable: &Cancelable) {
             let mut solved = 0;
 
             println!("                   µs NS NP NT NQ HS HP HT HQ PP PT BL XW SC YW SF XZ JF SK AR XY UR BG ER");
-            for puzzle in stdin.lock().lines() {
-                match solver.solve(&puzzle.unwrap(), cancelable) {
-                    Resolution::Canceled => break,
-                    Resolution::Solved(_, _) => solved += 1,
-                    _ => (),
+            for puzzle in stdin.lock().lines().filter_map(|line| line.ok()) {
+                if cancelable.is_canceled() {
+                    break;
+                }
+                if parser_solver.parse_and_solve(&puzzle) {
+                    solved += 1;
                 }
                 count += 1;
             }
 
-            eprintln!(
+            println!(
                 "solved {} of {} puzzles in {} µs",
                 format_number(solved),
                 format_number(count),
                 format_runtime(runtime.elapsed())
             );
         }
+    }
+}
+
+struct ParserSolver<'a> {
+    parser: &'a ParsePacked,
+    solver: &'a Solver<'a>,
+    reporter: &'a dyn Reporter,
+}
+
+impl ParserSolver<'_> {
+    fn new<'a>(
+        parser: &'a ParsePacked,
+        solver: &'a Solver<'a>,
+        reporter: &'a dyn Reporter,
+    ) -> ParserSolver<'a> {
+        ParserSolver {
+            parser,
+            solver,
+            reporter,
+        }
+    }
+
+    fn parse_and_solve(&self, givens: &str) -> bool {
+        let runtime = Instant::now();
+        let (start, effects, failure) = self.parser.parse(givens);
+
+        if let Some((cell, known)) = failure {
+            self.reporter
+                .invalid(givens, &start, &effects, cell, known, runtime.elapsed());
+            return false;
+        }
+
+        match self.solver.solve(&start, effects) {
+            Resolution::Canceled(..) => (),
+            Resolution::Failed(board, applied, _, action, errors) => self.reporter.failed(
+                givens,
+                &start,
+                &board,
+                &action,
+                &errors,
+                runtime.elapsed(),
+                &applied.action_counts(),
+            ),
+            Resolution::Unsolved(board, applied, _) => self.reporter.unsolved(
+                givens,
+                &start,
+                &board,
+                runtime.elapsed(),
+                &applied.action_counts(),
+            ),
+            Resolution::Solved(solution, actions, difficulty) => {
+                self.reporter.solved(
+                    givens,
+                    &solution,
+                    difficulty,
+                    runtime.elapsed(),
+                    &actions.action_counts(),
+                );
+                return true;
+            }
+        }
+
+        false
     }
 }
 
@@ -142,7 +211,6 @@ impl Reporter for DetailedReporter {
     fn solved(
         &self,
         _givens: &str,
-        _start: &Board,
         solution: &Board,
         difficulty: Difficulty,
         runtime: Duration,
@@ -257,7 +325,6 @@ impl Reporter for CSVReporter {
     fn solved(
         &self,
         _givens: &str,
-        _start: &Board,
         solution: &Board,
         difficulty: Difficulty,
         runtime: Duration,

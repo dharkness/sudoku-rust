@@ -45,7 +45,6 @@ pub trait Reporter {
     fn solved(
         &self,
         givens: &str,
-        start: &Board,
         solution: &Board,
         difficulty: Difficulty,
         runtime: Duration,

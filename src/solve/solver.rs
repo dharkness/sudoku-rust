@@ -1,38 +1,33 @@
-use std::collections::HashMap;
-use std::time::Instant;
-
-use crate::io::{Cancelable, Parse, ParsePacked};
-use crate::layout::{Cell, Known};
+use crate::io::Cancelable;
 use crate::puzzle::{Action, Board, Change, Effects, Options, Player};
-use crate::solve::{find_brute_force, Difficulty, Reporter, NON_PEER_TECHNIQUES};
+use crate::solve::{find_brute_force, Difficulty, NON_PEER_TECHNIQUES};
 
 pub enum Resolution {
-    /// Returned when the user interrupts the solver.
-    Canceled,
-
-    /// Returned when the givens for the initial puzzle are invalid
-    /// along with the invalid board state and the cell that caused it.
-    Invalid(Board, Cell, Known, Effects),
+    /// Returned when the user interrupts the solver
+    /// along with the current puzzle state and actions applied.
+    Canceled(Board, Effects, Difficulty),
 
     /// Returned when the puzzle is made invalid by one of the strategies
-    /// along with the invalid board and errors the strategy caused.
-    Failed(Board, Action, Effects),
+    /// along with the invalid board, the valid actions applied,
+    /// and the action and errors the strategy caused.
+    Failed(Board, Effects, Difficulty, Action, Effects),
 
-    /// Returned when the puzzle cannot be solved using the available techniques.
-    Unsolved(Board),
+    /// Returned when the puzzle cannot be solved using the available techniques
+    /// along with the partially completed puzzle and the valid actions applied.
+    Unsolved(Board, Effects, Difficulty),
 
-    /// Returned when the puzzle is completely solved along with the solution
-    /// and the maximum difficulty of the strategies employed.
-    Solved(Board, Difficulty),
+    /// Returned when the puzzle is completely solved along with the solution,
+    /// actions applied to find it, and the highest solver difficulty required.
+    Solved(Board, Effects, Difficulty),
 }
 
 impl Resolution {
     pub fn is_canceled(&self) -> bool {
-        matches!(self, Resolution::Canceled)
+        matches!(self, Resolution::Canceled(..))
     }
 
     pub fn is_solved(&self) -> bool {
-        matches!(self, Resolution::Solved(_, _))
+        matches!(self, Resolution::Solved(..))
     }
 }
 
@@ -41,14 +36,8 @@ pub struct Solver<'a> {
     /// Applies actions to the board to solve the puzzle.
     player: Player,
 
-    /// Parses input to create each puzzle.
-    parser: ParsePacked,
-
-    /// Receives notifications about the result of solving each puzzle.
-    ///
-    /// The reporter receives the runtime and number of times each
-    /// strategy was employed in addition to what's returned from [`solve()`].
-    reporter: &'a dyn Reporter,
+    /// Allows canceling the solver.
+    cancelable: &'a Cancelable,
 
     /// The check option for the solve command verifies that the puzzle is solvable
     /// after each action to detect when an algorithm gives faulty deductions.
@@ -56,66 +45,48 @@ pub struct Solver<'a> {
 }
 
 impl Solver<'_> {
-    pub fn new(reporter: &'_ dyn Reporter, check: bool) -> Solver<'_> {
-        let player = Player::new(Options::errors_and_peers());
+    pub fn new(cancelable: &'_ Cancelable, check: bool) -> Solver<'_> {
         Solver {
-            player,
-            parser: Parse::packed_with_player(player),
-            reporter,
+            player: Player::new(Options::errors_and_peers()),
+            cancelable,
             check,
         }
     }
 
-    pub fn solve(&self, givens: &str, cancelable: &Cancelable) -> Resolution {
-        let runtime = Instant::now();
-        let (start, mut effects, failure) = self.parser.parse(givens);
-
-        if let Some((cell, known)) = failure {
-            self.reporter
-                .invalid(givens, &start, &effects, cell, known, runtime.elapsed());
-            return Resolution::Invalid(start, cell, known, effects);
-        }
-
-        let mut board = start;
-        let mut counts = HashMap::new();
+    pub fn solve(&self, start: &Board, mut effects: Effects) -> Resolution {
+        let mut board = *start;
+        let mut applied = Effects::new();
         let mut difficulty = Difficulty::Basic;
 
         loop {
             while effects.has_actions() {
                 let mut next = Effects::new();
                 for action in effects.actions() {
-                    if cancelable.is_canceled() {
-                        return Resolution::Canceled;
+                    if self.cancelable.is_canceled() {
+                        return Resolution::Canceled(board, applied, difficulty);
                     }
 
                     match self.player.apply(&board, action) {
                         Change::None => (),
                         Change::Valid(after, mut actions) => {
+                            applied.add_action(action.clone());
                             board = *after;
                             next.take_actions(&mut actions);
-                            let count = counts.entry(action.strategy()).or_default();
-                            *count += 1;
                         }
                         Change::Invalid(before, _, action, errors) => {
-                            if action.to_string() == "J1 ⇨ 6" {
-                                println!("\ncannot set J1 to 6\n");
-                                errors.print_errors();
-                            }
                             if self.check
-                                && find_brute_force(&start, cancelable, false, 0, 2).is_solved()
+                                && find_brute_force(&start, self.cancelable, false, 0, 2)
+                                    .is_solved()
                             {
                                 eprintln!("error: solver caused errors in solvable puzzle");
                             }
-                            self.reporter.failed(
-                                givens,
-                                &start,
-                                &before,
-                                &action,
-                                &errors,
-                                runtime.elapsed(),
-                                &counts,
+                            return Resolution::Failed(
+                                *before,
+                                applied,
+                                difficulty,
+                                action.clone(),
+                                errors,
                             );
-                            return Resolution::Failed(board, action.clone(), errors);
                         }
                     }
                 }
@@ -123,21 +94,13 @@ impl Solver<'_> {
             }
 
             if board.is_solved() {
-                self.reporter.solved(
-                    givens,
-                    &start,
-                    &board,
-                    difficulty,
-                    runtime.elapsed(),
-                    &counts,
-                );
-                return Resolution::Solved(board, difficulty);
+                return Resolution::Solved(board, applied, difficulty);
             }
 
             let mut found = false;
             for solver in NON_PEER_TECHNIQUES {
-                if cancelable.is_canceled() {
-                    return Resolution::Canceled;
+                if self.cancelable.is_canceled() {
+                    return Resolution::Canceled(board, applied, difficulty);
                 }
 
                 if let Some(moves) = solver.solve(&board) {
@@ -151,9 +114,7 @@ impl Solver<'_> {
             }
 
             if !found {
-                self.reporter
-                    .unsolved(givens, &start, &board, runtime.elapsed(), &counts);
-                return Resolution::Unsolved(board);
+                return Resolution::Unsolved(board, applied, difficulty);
             }
         }
     }

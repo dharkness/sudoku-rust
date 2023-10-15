@@ -1,4 +1,5 @@
 use core::fmt;
+use std::collections::HashMap;
 
 use crate::layout::{Cell, CellSet, Known, KnownSet};
 
@@ -59,6 +60,16 @@ impl Effects {
 
     pub fn action_count(&self) -> usize {
         self.actions.len()
+    }
+
+    pub fn action_counts(&self) -> HashMap<Strategy, i32> {
+        self.actions
+            .iter()
+            .fold(HashMap::new(), |mut counts, action| {
+                let count = counts.entry(action.strategy()).or_default();
+                *count += 1;
+                counts
+            })
     }
 
     pub fn clear_actions(&mut self) {

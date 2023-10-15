@@ -110,4 +110,21 @@ impl Player {
             Change::None
         }
     }
+
+    pub fn without(&self, board: &Board, cell: Cell) -> Board {
+        match board.known_count() {
+            0 => *board,
+            1 => Board::new(),
+            _ => {
+                let mut effects = Effects::new();
+                board.known_iter().filter(|(c, _)| *c != cell).fold(
+                    Board::new(),
+                    |mut b, (c, k)| {
+                        b.set_known(c, k, &mut effects);
+                        b
+                    },
+                )
+            }
+        }
+    }
 }
