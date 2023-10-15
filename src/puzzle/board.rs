@@ -279,6 +279,26 @@ impl Board {
         true
     }
 
+    pub fn with_givens(&self, pattern: CellSet) -> (Board, Effects) {
+        (pattern & self.knowns()).iter().fold(
+            (Board::new(), Effects::new()),
+            |(mut b, mut e), c| {
+                b.set_given(c, self.value(c).known().unwrap(), &mut e);
+                (b, e)
+            },
+        )
+    }
+
+    pub fn without(&self, cell: Cell) -> (Board, Effects) {
+        self.known_iter().filter(|(c, _)| *c != cell).fold(
+            (Board::new(), Effects::new()),
+            |(mut b, mut e), (c, k)| {
+                b.set_given(c, k, &mut e);
+                (b, e)
+            },
+        )
+    }
+
     pub fn packed_string(&self) -> String {
         let mut result = String::new();
         House::rows_iter().for_each(|row| {

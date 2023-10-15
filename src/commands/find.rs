@@ -53,7 +53,7 @@ pub fn find_pattern(args: FindArgs, cancelable: &Cancelable) {
         }
 
         count += 1;
-        let (start, effects) = player.with_givens(board, CellSet::new_from_pattern(&pattern));
+        let (start, effects) = board.with_givens(CellSet::new_from_pattern(&pattern));
         match solver.solve(&start, &effects) {
             Resolution::Canceled(..) => break,
             // Resolution::Failed(board, applied, _, action, errors) => (),

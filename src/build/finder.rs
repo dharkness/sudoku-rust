@@ -3,7 +3,7 @@ use rand::seq::SliceRandom;
 
 use crate::io::{show_progress, Cancelable};
 use crate::layout::{Cell, CellSet};
-use crate::puzzle::{Board, Effects, Options, Player};
+use crate::puzzle::{Board, Effects};
 use crate::solve::{Resolution, Solver};
 
 /// Finds a solvable starting puzzle from a full solution.
@@ -25,7 +25,6 @@ impl Finder {
     }
 
     pub fn backtracking_find(&mut self, board: Board, cancelable: &Cancelable) -> (Board, Effects) {
-        let player = Player::new(Options::errors_and_peers());
         let solver = Solver::new(cancelable, false);
         let runtime = std::time::Instant::now();
 
@@ -57,7 +56,7 @@ impl Finder {
             }
 
             let cell = entry.cells.pop().unwrap();
-            let (next, unapplied) = player.without(&entry.board, cell);
+            let (next, unapplied) = entry.board.without(cell);
 
             match solver.solve(&next, &unapplied) {
                 Resolution::Canceled(..) => break,
