@@ -25,10 +25,6 @@ pub struct CreateArgs {
     #[clap(short, long)]
     bar: bool,
 
-    /// Identify the cells that will receive starting clues
-    #[clap(short, long)]
-    pattern: Option<String>,
-
     /// The completed puzzle to use as a starting point
     #[clap(short, long)]
     solution: Option<String>,
