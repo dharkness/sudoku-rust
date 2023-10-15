@@ -49,6 +49,21 @@ impl CellSet {
         CellSet(pack(bits, bits.count_ones() as Size))
     }
 
+    pub fn new_from_pattern(puzzle: &str) -> CellSet {
+        let mut bits: Bits = 0;
+        let mut c = 0;
+
+        for char in puzzle.chars() {
+            match char {
+                ' ' | '\r' | '\n' | '|' | '_' => continue,
+                '1'..='9' => bits |= Cell::new(c).bit().bit(),
+                _ => (),
+            }
+            c += 1;
+        }
+        CellSet::new(bits)
+    }
+
     pub const fn of<const N: usize>(cells: &[Cell; N]) -> CellSet {
         let mut bits: Bits = 0;
         let mut i = 0;
@@ -248,6 +263,12 @@ impl CellSet {
 
     pub const fn bit_iter(&self) -> BitIter {
         BitIter { bits: self.bits() }
+    }
+
+    pub fn pattern_string(&self) -> String {
+        (0..Cell::COUNT)
+            .map(|i| if self.has(Cell::new(i)) { '1' } else { '.' })
+            .collect()
     }
 
     pub fn debug(&self) -> String {

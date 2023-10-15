@@ -11,7 +11,8 @@ mod solve;
 mod symbols;
 
 use crate::commands::{
-    bingo, create_puzzle, solve_puzzles, start_player, BingoArgs, CreateArgs, PlayArgs, SolveArgs,
+    bingo, create_puzzle, extract_patterns, solve_puzzles, start_player, BingoArgs, CreateArgs,
+    ExtractArgs, PlayArgs, SolveArgs,
 };
 use crate::io::create_signal;
 
@@ -29,21 +30,25 @@ pub struct App {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
-    /// Generates a new complete puzzle
+    /// Generate a new complete puzzle
     #[clap(alias = "c")]
     Create(CreateArgs),
 
-    /// Starts the interactive player
+    /// Start the interactive player
     #[clap(alias = "p")]
     Play(PlayArgs),
 
-    /// Solves a given puzzle or all puzzles from STDIN
+    /// Solve a puzzle or all puzzles from STDIN
     #[clap(alias = "s")]
     Solve(SolveArgs),
 
-    /// Solves a given puzzle using Bowman's Bingo
+    /// Brute force a puzzle using Bowman's Bingo
     #[clap(alias = "b")]
     Bingo(BingoArgs),
+
+    /// Extract patterns from puzzles from STDIN
+    #[clap(alias = "e")]
+    Extract(ExtractArgs),
 }
 
 /// Executes the specified subcommand.
@@ -56,5 +61,6 @@ fn main() {
         Commands::Play(args) => start_player(args, &cancelable),
         Commands::Solve(args) => solve_puzzles(args, &cancelable),
         Commands::Bingo(args) => bingo(args, &cancelable),
+        Commands::Extract(args) => extract_patterns(args, &cancelable),
     }
 }
