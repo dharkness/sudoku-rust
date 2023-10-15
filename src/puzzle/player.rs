@@ -1,4 +1,4 @@
-use crate::layout::{Cell, Known};
+use crate::layout::{Cell, CellSet, Known};
 use crate::puzzle::Strategy;
 use crate::solve::find_intersection_removals;
 
@@ -109,6 +109,16 @@ impl Player {
         } else {
             Change::None
         }
+    }
+
+    pub fn with_givens(&self, board: Board, pattern: CellSet) -> (Board, Effects) {
+        (pattern & board.knowns()).iter().fold(
+            (Board::new(), Effects::new()),
+            |(mut b, mut e), c| {
+                b.set_given(c, board.value(c).known().unwrap(), &mut e);
+                (b, e)
+            },
+        )
     }
 
     pub fn without(&self, board: &Board, cell: Cell) -> (Board, Effects) {

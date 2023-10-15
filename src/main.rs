@@ -11,8 +11,8 @@ mod solve;
 mod symbols;
 
 use crate::commands::{
-    bingo, create_puzzle, extract_patterns, solve_puzzles, start_player, BingoArgs, CreateArgs,
-    ExtractArgs, PlayArgs, SolveArgs,
+    bingo, create_puzzle, extract_patterns, find_pattern, solve_puzzles, start_player, BingoArgs,
+    CreateArgs, ExtractArgs, FindArgs, PlayArgs, SolveArgs,
 };
 use crate::io::create_signal;
 
@@ -49,6 +49,10 @@ enum Commands {
     /// Extract patterns from puzzles from STDIN
     #[clap(alias = "e")]
     Extract(ExtractArgs),
+
+    /// Find a solvable set of clues using patterns from STDIN
+    #[clap(alias = "f")]
+    Find(FindArgs),
 }
 
 /// Executes the specified subcommand.
@@ -62,5 +66,6 @@ fn main() {
         Commands::Solve(args) => solve_puzzles(args, &cancelable),
         Commands::Bingo(args) => bingo(args, &cancelable),
         Commands::Extract(args) => extract_patterns(args, &cancelable),
+        Commands::Find(args) => find_pattern(args, &cancelable),
     }
 }
