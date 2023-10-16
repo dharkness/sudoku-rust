@@ -2,15 +2,15 @@ use super::*;
 use itertools::Itertools;
 
 pub fn find_hidden_pairs(board: &Board) -> Option<Effects> {
-    find_hidden_tuples(board, 2, Strategy::NakedPair)
+    find_hidden_tuples(board, 2, Strategy::HiddenPair)
 }
 
 pub fn find_hidden_triples(board: &Board) -> Option<Effects> {
-    find_hidden_tuples(board, 3, Strategy::NakedTriple)
+    find_hidden_tuples(board, 3, Strategy::HiddenTriple)
 }
 
 pub fn find_hidden_quads(board: &Board) -> Option<Effects> {
-    find_hidden_tuples(board, 4, Strategy::NakedQuad)
+    find_hidden_tuples(board, 4, Strategy::HiddenQuad)
 }
 
 pub fn find_hidden_tuples(board: &Board, size: usize, strategy: Strategy) -> Option<Effects> {
