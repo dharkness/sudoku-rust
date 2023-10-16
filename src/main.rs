@@ -9,6 +9,7 @@ mod layout;
 mod puzzle;
 mod solve;
 mod symbols;
+mod testing;
 
 use crate::commands::{
     bingo, create_puzzle, extract_patterns, find_pattern, solve_puzzles, start_player, BingoArgs,

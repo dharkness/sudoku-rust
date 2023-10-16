@@ -261,6 +261,7 @@ mod tests {
     use super::*;
     use crate::io::Parse;
     use crate::puzzle::Options;
+    use crate::testing::strip_leading_whitespace;
 
     #[test]
     fn test_format_for_console() {
@@ -322,7 +323,8 @@ mod tests {
             ",
         );
 
-        let want = "
+        let want = strip_leading_whitespace(
+            "
             +-------------------+---------------------+-----------------+
             | 458    59   2     | 1459   18    1589   | 3    7    6     |
             | 4678   1    4689  | 24679  3     2689   | 5    248  248   |
@@ -336,11 +338,8 @@ mod tests {
             | 5      259  3     | 12579  4     12589  | 1789 6    5789  |
             | 1      4    7     | 569    68    35689  | 2    358  589   |
             +-------------------+---------------------+-----------------+
-        "
-        .lines()
-        .map(|line| line.trim())
-        .filter(|line| !line.is_empty())
-        .join("\n");
+        ",
+        );
 
         assert_eq!(want, format_grid(&board));
     }
