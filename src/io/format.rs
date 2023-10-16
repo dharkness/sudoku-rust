@@ -127,7 +127,7 @@ impl FormatGrid {
         FormatGrid {}
     }
 
-    fn format(&self, board: &Board) -> String {
+    pub fn format(&self, board: &Board) -> String {
         let mut border = String::new();
         let mut rows: [String; 9] = Default::default();
         let widths = House::columns_iter()
@@ -220,7 +220,7 @@ impl FormatWiki {
         self
     }
 
-    fn format(&self, board: &Board) -> String {
+    pub fn format(&self, board: &Board) -> String {
         let mut result = String::new();
 
         House::rows_iter().for_each(|row| {
