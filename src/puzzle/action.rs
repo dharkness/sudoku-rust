@@ -139,17 +139,34 @@ impl Action {
 
 impl fmt::Display for Action {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:20}", format!("{}", self.strategy))?;
         if self.is_empty() {
             f.write_str(EMPTY_SET)
         } else {
             let mut first = true;
-            for (cell, knowns) in self.erase.iter().sorted() {
+            for (knowns, cells) in self
+                .erase
+                .iter()
+                .fold(
+                    HashMap::new(),
+                    |mut map: HashMap<KnownSet, CellSet>, (cell, knowns)| {
+                        *map.entry(*knowns).or_default() += *cell;
+                        map
+                    },
+                )
+                .iter()
+                .sorted_by(|(_, a), (_, b)| b.size().cmp(&a.size()))
+            {
                 if first {
                     first = false;
                 } else {
                     f.write_str(", ")?;
                 }
-                write!(f, "{} {} ", cell, REMOVE_CANDIDATE)?;
+                if let Some(cell) = cells.as_single() {
+                    write!(f, "{} {} ", cell, REMOVE_CANDIDATE)?;
+                } else {
+                    write!(f, "{} {} ", cells, REMOVE_CANDIDATE)?;
+                }
                 for known in knowns.iter() {
                     f.write_char(known.label())?;
                 }

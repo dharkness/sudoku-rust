@@ -1,3 +1,5 @@
+use std::fmt;
+
 /// Identifies the logic used to solve cells and remove candidates.
 ///
 /// - Strategy stays a simple high-level enum with no values
@@ -100,4 +102,45 @@ pub enum Strategy {
     EmptyRectangle, // (Known, Block, Row, Column, Cell) - CellSet instead of three houses
 
     BruteForce,
+}
+
+impl Strategy {
+    pub fn label(&self) -> &str {
+        match self {
+            Self::Given => "Given",
+            Self::Solve => "Solve",
+            Self::Erase => "Erase",
+            Self::Peer => "Peer",
+            Self::PointingPair => "Pointing Pair",
+            Self::PointingTriple => "Pointing Triple",
+            Self::BoxLineReduction => "Box/Line Reduction",
+            Self::NakedSingle => "Naked Single",
+            Self::HiddenSingle => "Hidden Single",
+            Self::NakedPair => "Naked Pair",
+            Self::HiddenPair => "Hidden Pair",
+            Self::NakedTriple => "Naked Triple",
+            Self::HiddenTriple => "Hidden Triple",
+            Self::NakedQuad => "Naked Quad",
+            Self::HiddenQuad => "Hidden Quad",
+            Self::XWing => "X-Wing",
+            Self::Swordfish => "Swordfish",
+            Self::Jellyfish => "Jellyfish",
+            Self::Bug => "BUG",
+            Self::AvoidableRectangle => "Avoidable Rectangle",
+            Self::SinglesChain => "Singles Chain",
+            Self::Skyscraper => "Skyscraper",
+            Self::YWing => "Y-Wing",
+            Self::XYZWing => "XYZ-Wing",
+            Self::XYChain => "XY-Chain",
+            Self::UniqueRectangle => "Unique Rectangle",
+            Self::EmptyRectangle => "Empty Rectangle",
+            Self::BruteForce => "Brute Force",
+        }
+    }
+}
+
+impl fmt::Display for Strategy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.label())
+    }
 }

@@ -544,13 +544,15 @@ impl fmt::Display for CellSet {
             write!(f, "{}", EMPTY_SET)
         } else {
             let mut s = String::with_capacity(3 * self.size() + 2);
-            s.push('(');
+            let mut first = true;
             for cell in self.iter() {
-                s.push(' ');
+                if first {
+                    first = false;
+                } else {
+                    s.push(' ');
+                }
                 s.push_str(cell.label());
             }
-            s.push(' ');
-            s.push(')');
             write!(f, "{}", s)
         }
     }
@@ -786,6 +788,6 @@ mod tests {
         set += "F5";
         set += "H2";
 
-        assert_eq!("( B8 C4 F5 H2 )", set.to_string());
+        assert_eq!("B8 C4 F5 H2", set.to_string());
     }
 }

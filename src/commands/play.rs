@@ -354,22 +354,23 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                 };
             }
             "F" => {
-                let mut found = false;
+                let mut found = 0;
                 NON_PEER_TECHNIQUES.iter().for_each(|solver| {
-                    if let Some(effects) = solver.solve(board) {
-                        found = true;
-                        println!(
-                            "\n==> Found {}\n",
-                            pluralize(effects.action_count(), solver.name())
-                        );
-                        effects.print_actions();
+                    if let Some(actions) = solver.solve(board) {
+                        for action in actions.actions() {
+                            if found == 0 {
+                                println!();
+                            }
+                            found += 1;
+                            println!("  - {}", action);
+                        }
                     }
                 });
 
-                if !found {
+                if found == 0 {
                     println!("\n==> No deductions found\n");
                 } else {
-                    println!();
+                    println!("\n==> Found {}\n", pluralize(found, "deduction"));
                 }
             }
             "A" => {
