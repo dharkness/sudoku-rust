@@ -4,7 +4,7 @@ use clap::Args;
 use std::io::{stdout, Write};
 use std::time::Instant;
 
-use crate::build::Generator;
+use crate::build::{Finder, Generator};
 use crate::io::{
     format_for_fancy_console, format_for_wiki, format_grid, format_packed, format_runtime,
     print_candidate, print_candidates, Cancelable, Parse, SUDOKUWIKI_URL,
@@ -180,9 +180,12 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                 let mut generator = Generator::new(false, true);
                 match generator.generate(&player, cancelable) {
                     Some(board) => {
-                        println!("\n==> Clues: {}\n", board);
+                        let mut finder = Finder::new(22, 10, true);
+                        let (start, _) = finder.backtracking_find(board, cancelable);
+                        println!("\n==> Clues: {}\n", start);
                         deductions = None;
-                        boards.push(board);
+                        boards.push(start);
+                        show_board = true;
                     }
                     None => {
                         println!("\n==> Failed to create a new puzzle\n");
