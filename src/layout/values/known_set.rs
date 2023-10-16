@@ -13,7 +13,7 @@ type Bits = u16;
 type SizeAndBits = u16;
 
 /// A set of knowns implemented using a bit field.
-#[derive(Clone, Copy, Default, Hash, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct KnownSet(SizeAndBits);
 
 const BITS_MASK: Bits = (1 << 9) - 1;

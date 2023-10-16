@@ -1,3 +1,4 @@
+use itertools::Itertools;
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Write;
@@ -142,7 +143,7 @@ impl fmt::Display for Action {
             f.write_str(EMPTY_SET)
         } else {
             let mut first = true;
-            for (cell, knowns) in &self.erase {
+            for (cell, knowns) in self.erase.iter().sorted() {
                 if first {
                     first = false;
                 } else {
@@ -153,7 +154,7 @@ impl fmt::Display for Action {
                     f.write_char(known.label())?;
                 }
             }
-            for (cell, known) in &self.set {
+            for (cell, known) in self.set.iter().sorted() {
                 if first {
                     first = false;
                 } else {

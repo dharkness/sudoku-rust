@@ -11,7 +11,7 @@ use super::{Coord, CoordSet, House, Shape};
 
 const FULL: u16 = (1 << 9) - 1;
 
-#[derive(Clone, Copy, Default, Hash, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct HouseSet {
     shape: Shape,
     coords: CoordSet,

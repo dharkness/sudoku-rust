@@ -9,7 +9,7 @@ use crate::symbols::{EMPTY_SET, MISSING};
 use super::Coord;
 
 /// A set of coordinates in a [`House`] implemented using a bit field.
-#[derive(Clone, Copy, Default, Hash, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct CoordSet(u16);
 
 const FULL: u16 = (1 << 9) - 1;

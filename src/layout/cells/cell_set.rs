@@ -19,7 +19,7 @@ type Size = u8;
 type SizeAndBits = u128;
 
 /// A set of cells implemented using a bit field.
-#[derive(Clone, Copy, Default, Hash, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct CellSet(SizeAndBits);
 
 const ALL_CELLS: std::ops::Range<Size> = 0..Cell::COUNT;
