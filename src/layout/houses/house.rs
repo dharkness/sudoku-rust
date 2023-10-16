@@ -202,7 +202,10 @@ impl House {
 impl From<&str> for House {
     fn from(label: &str) -> Self {
         if label.len() != 2 {
-            panic!("Invalid house: \"{}\"; must (R | C | B) and a digit", label);
+            panic!(
+                "Invalid house: \"{}\"; must be (R | C | B) and a digit",
+                label
+            );
         }
         let mut chars = label.chars();
         let shape = chars.next().unwrap();
@@ -466,9 +469,9 @@ const COLUMN_COLUMNS: [HouseSet; 9] = [
 
 #[rustfmt::skip]
 const BLOCK_COLUMNS: [HouseSet; 9] = [
-    cols!(123), cols!(456), cols!(789), 
-    cols!(123), cols!(456), cols!(789), 
-    cols!(123), cols!(456), cols!(789), 
+    cols!(123), cols!(456), cols!(789),
+    cols!(123), cols!(456), cols!(789),
+    cols!(123), cols!(456), cols!(789),
 ];
 
 const ROW_BLOCKS: [HouseSet; 9] = [
