@@ -78,7 +78,10 @@ impl Solver<'_> {
                             if self.check
                                 && find_brute_force(start, self.cancelable, false, 0, 2).is_solved()
                             {
-                                eprintln!("error: solver caused errors in solvable puzzle");
+                                eprintln!(
+                                    "error: solver caused errors in solvable puzzle: {}",
+                                    start.packed_string()
+                                );
                             }
                             return Resolution::Failed(
                                 *before,
