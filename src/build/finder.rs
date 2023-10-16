@@ -4,7 +4,7 @@ use rand::seq::SliceRandom;
 use crate::io::{show_progress, Cancelable};
 use crate::layout::{Cell, CellSet};
 use crate::puzzle::{Board, Effects};
-use crate::solve::{Resolution, Solver};
+use crate::solve::{find_brute_force, Resolution, Solver};
 
 /// Finds a solvable starting puzzle from a full solution.
 pub struct Finder {
@@ -61,6 +61,9 @@ impl Finder {
             match solver.solve(&next, &unapplied) {
                 Resolution::Canceled(..) => break,
                 Resolution::Solved(_, actions, _) => {
+                    if !find_brute_force(&board, cancelable, false, 0, 2).is_solved() {
+                        continue;
+                    }
                     if next.known_count() < fewest_clues {
                         fewest_clues = next.known_count();
                         fewest_clues_board = next;
