@@ -93,7 +93,7 @@ impl Solver<'_> {
                 effects = next;
             }
 
-            if board.is_solved() {
+            if board.is_fully_solved() {
                 return Resolution::Solved(board, applied, difficulty);
             }
 

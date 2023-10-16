@@ -90,7 +90,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
         let board = boards.last().unwrap();
         if show_board {
             print_candidates(board);
-            if board.is_solved() {
+            if board.is_fully_solved() {
                 println!("\n==> Congratulations!\n");
             } else {
                 println!();

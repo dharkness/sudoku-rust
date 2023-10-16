@@ -16,7 +16,7 @@ pub fn find_brute_force(
     pause: u32,
     mut max_solutions: usize,
 ) -> BruteForceResult {
-    if board.is_solved() {
+    if board.is_fully_solved() {
         return BruteForceResult::AlreadySolved;
     }
     if board.known_count() < MINIMUM_KNOWNS_TO_BE_UNIQUELY_SOLVABLE {
@@ -84,7 +84,7 @@ pub fn find_brute_force(
                 let mut actions = actions.clone();
                 actions.add_action(action);
 
-                if after.is_solved() {
+                if after.is_fully_solved() {
                     solutions.push(actions);
                     if log {
                         println!("found solution {}\n", solutions.len());

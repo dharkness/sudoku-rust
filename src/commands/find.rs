@@ -31,7 +31,7 @@ pub fn find_pattern(args: FindArgs, cancelable: &Cancelable) {
         effects.print_errors();
         exit(1);
     }
-    if !board.is_solved() {
+    if !board.is_fully_solved() {
         print_candidates(&board);
         eprintln!("\n==> You must provide a complete solution");
         exit(1);

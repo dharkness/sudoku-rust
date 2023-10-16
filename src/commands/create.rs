@@ -44,7 +44,7 @@ pub fn create_puzzle(args: CreateArgs, cancelable: &Cancelable) {
                 effects.print_errors();
                 exit(1);
             }
-            if !board.is_solved() {
+            if !board.is_fully_solved() {
                 print_candidates(&board);
                 eprintln!("\n==> You must provide a complete solution");
                 exit(1);
@@ -63,7 +63,7 @@ pub fn create_puzzle(args: CreateArgs, cancelable: &Cancelable) {
                         println!("\n==> Puzzle generation canceled");
                         exit(1);
                     }
-                    if !board.is_solved() {
+                    if !board.is_fully_solved() {
                         print_candidates(&board);
                         println!("\n==> Failed to generate a complete solution");
                         exit(1);

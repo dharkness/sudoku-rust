@@ -32,7 +32,7 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
     let parser = Parse::packed_with_player(player);
 
     let (mut board, effects, failure) = parser.parse(&args.puzzle);
-    if !board.is_solved() {
+    if !board.is_fully_solved() {
         print_candidates(&board);
         println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&board));
     }
@@ -120,7 +120,7 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
         }
     }
 
-    if board.is_solved() {
+    if board.is_fully_solved() {
         println!();
         print_values(&board);
         println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&board));
