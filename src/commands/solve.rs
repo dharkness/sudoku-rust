@@ -49,7 +49,7 @@ pub fn solve_puzzles(args: SolveArgs, cancelable: &Cancelable) {
             let mut count = 0;
             let mut solved = 0;
 
-            println!("                   µs NS NP NT NQ HS HP HT HQ PP PT BL XW SC YW SF XZ JF SK AR XY UR BG ER");
+            println!("                   µs NS HS NP NT NQ HP HT HQ PP PT BL XW SC YW SF XZ JF SK AR XY UR BG ER");
             for puzzle in stdin.lock().lines().map_while(Result::ok) {
                 if cancelable.is_canceled() {
                     break;
@@ -120,6 +120,7 @@ impl ParserSolver<'_> {
             Resolution::Solved(solution, actions, difficulty) => {
                 self.reporter.solved(
                     givens,
+                    &start,
                     &solution,
                     difficulty,
                     runtime.elapsed(),
@@ -211,6 +212,7 @@ impl Reporter for DetailedReporter {
     fn solved(
         &self,
         _givens: &str,
+        _start: &Board,
         solution: &Board,
         difficulty: Difficulty,
         runtime: Duration,
@@ -243,10 +245,11 @@ impl CSVReporter {
             // counts.get(&Strategy::HiddenSingle).unwrap_or(0),
 
             counts.get(&Strategy::NakedSingle).unwrap_or(&0),
+            counts.get(&Strategy::HiddenSingle).unwrap_or(&0),
+
             counts.get(&Strategy::NakedPair).unwrap_or(&0),
             counts.get(&Strategy::NakedTriple).unwrap_or(&0),
             counts.get(&Strategy::NakedQuad).unwrap_or(&0),
-            counts.get(&Strategy::HiddenSingle).unwrap_or(&0),
             counts.get(&Strategy::HiddenPair).unwrap_or(&0),
             counts.get(&Strategy::HiddenTriple).unwrap_or(&0),
             counts.get(&Strategy::HiddenQuad).unwrap_or(&0),
@@ -288,8 +291,8 @@ impl Reporter for CSVReporter {
     fn failed(
         &self,
         _givens: &str,
-        _start: &Board,
-        stopped: &Board,
+        start: &Board,
+        _stopped: &Board,
         action: &Action,
         _errors: &Effects,
         runtime: Duration,
@@ -299,7 +302,7 @@ impl Reporter for CSVReporter {
             "           {:>10} {} {} {:?} {}",
             format_runtime(runtime),
             self.format_counts(counts),
-            stopped.packed_string(),
+            start.packed_string(),
             action.strategy(),
             action
         );
@@ -308,8 +311,8 @@ impl Reporter for CSVReporter {
     fn unsolved(
         &self,
         _givens: &str,
-        _start: &Board,
-        stopped: &Board,
+        start: &Board,
+        _stopped: &Board,
         runtime: Duration,
         counts: &HashMap<Strategy, i32>,
     ) {
@@ -318,14 +321,15 @@ impl Reporter for CSVReporter {
             format_runtime(runtime),
             self.format_counts(counts),
             // givens,
-            stopped.packed_string()
+            start.packed_string()
         );
     }
 
     fn solved(
         &self,
         _givens: &str,
-        solution: &Board,
+        start: &Board,
+        _solution: &Board,
         difficulty: Difficulty,
         runtime: Duration,
         counts: &HashMap<Strategy, i32>,
@@ -335,7 +339,7 @@ impl Reporter for CSVReporter {
             format!("{:?}", difficulty),
             format_runtime(runtime),
             self.format_counts(counts),
-            solution.packed_string()
+            start.packed_string()
         );
     }
 }
