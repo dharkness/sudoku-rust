@@ -351,7 +351,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                             format_runtime(runtime.elapsed())
                         );
                     }
-                }
+                };
             }
             "F" => {
                 let mut found = false;
@@ -411,6 +411,65 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                 } else {
                     println!("\n==> No deductions applied\n");
                 }
+            }
+            "B" => {
+                let runtime = Instant::now();
+                match find_brute_force(board, cancelable, false, 0, MAXIMUM_SOLUTIONS) {
+                    BruteForceResult::AlreadySolved => {
+                        println!("\n==> The puzzle is already solved\n");
+                    }
+                    BruteForceResult::TooFewKnowns => {
+                        println!("\n==> The puzzle needs at least 17 solved cells to verify\n");
+                    }
+                    BruteForceResult::UnsolvableCells(cells) => {
+                        println!("\n==> The puzzle cannot be solved with these {} empty cells\n\n    {}\n", cells.size(), cells);
+                    }
+                    BruteForceResult::Canceled => {
+                        println!(
+                            "\n==> The solution was canceled - took {} µs\n",
+                            format_runtime(runtime.elapsed())
+                        );
+                        cancelable.clear();
+                    }
+                    BruteForceResult::Unsolvable => {
+                        println!(
+                            "\n==> The puzzle cannot be solved - took {} µs\n",
+                            format_runtime(runtime.elapsed())
+                        );
+                    }
+                    BruteForceResult::Solved(actions) => {
+                        println!(
+                            "\n==> The puzzle was solved - took {} µs\n",
+                            format_runtime(runtime.elapsed())
+                        );
+                        match player.apply_all(board, &actions) {
+                            Change::None => (),
+                            Change::Valid(after, _) => {
+                                boards.push(*after);
+                                println!();
+                                show_board = true;
+                            }
+                            Change::Invalid(_, _, _, errors) => {
+                                println!("\n==> Solution caused errors\n");
+                                errors.print_errors();
+                                println!();
+                                continue;
+                            }
+                        }
+                    }
+                    BruteForceResult::MultipleSolutions(solutions) => {
+                        println!(
+                            "\n==> The puzzle has {}{} solutions - took {} µs\n",
+                            if solutions.len() > MAXIMUM_SOLUTIONS {
+                                "at least "
+                            } else {
+                                ""
+                            },
+                            solutions.len(),
+                            format_runtime(runtime.elapsed())
+                        );
+                    }
+                };
             }
             "R" => {
                 let mut reset = Board::new();
