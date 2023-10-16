@@ -5,7 +5,7 @@ use crate::puzzle::Board;
 ///
 /// A deadly rectangle occurs when two cells in one block
 /// and two cells in another block form a rectangle
-/// where the same values appears in opposite corners.
+/// where the same non-given values appear in opposite corners.
 /// This is not allowed because the two values could be swapped,
 /// and every valid Sudoku solution must be unique.
 ///
