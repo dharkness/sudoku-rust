@@ -89,6 +89,10 @@ impl Player {
                             next,
                         );
                     }
+                    if next.has_errors() {
+                        eprintln!("warning: action caused errors: {}", action);
+                        next.print_errors();
+                    }
                     good = maybe;
                 } else {
                     unapplied.add_action(action.clone());

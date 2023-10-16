@@ -69,10 +69,10 @@ impl Solver<'_> {
 
                     match self.player.apply(&board, action) {
                         Change::None => (),
-                        Change::Valid(after, mut actions) => {
+                        Change::Valid(after, actions) => {
                             applied.add_action(action.clone());
                             board = *after;
-                            next.take_actions(&mut actions);
+                            next.take_actions(actions);
                         }
                         Change::Invalid(before, _, action, errors) => {
                             if self.check

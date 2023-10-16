@@ -63,6 +63,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
     let mut player = Player::new(args.options());
     let mut boards = vec![];
     let mut show_board = false;
+    let mut deductions = None;
 
     match args.puzzle {
         Some(clues) => {
@@ -169,6 +170,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
             }
             "N" => {
                 if let Some(board) = create_new_puzzle(player) {
+                    deductions = None;
                     boards.push(board);
                     println!();
                 }
@@ -179,6 +181,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                 match generator.generate(&player, cancelable) {
                     Some(board) => {
                         println!("\n==> Clues: {}\n", board);
+                        deductions = None;
                         boards.push(board);
                     }
                     None => {
@@ -237,6 +240,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                         continue;
                     }
                     Change::Valid(after, _) => {
+                        deductions = None;
                         boards.push(*after);
                         println!();
                         show_board = true;
@@ -262,6 +266,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                         continue;
                     }
                     Change::Valid(after, _) => {
+                        deductions = None;
                         boards.push(*after);
                         println!();
                         show_board = true;
@@ -302,6 +307,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                     }
                 }
                 if changed {
+                    deductions = None;
                     boards.push(clone);
                     println!();
                     show_board = true;
@@ -354,26 +360,63 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                 };
             }
             "F" => {
-                let mut found = 0;
-                NON_PEER_TECHNIQUES.iter().for_each(|solver| {
-                    if let Some(actions) = solver.solve(board) {
-                        for action in actions.actions() {
-                            if found == 0 {
-                                println!();
-                            }
-                            found += 1;
-                            println!("  - {}", action);
+                if deductions.is_none() {
+                    let mut found = Effects::new();
+                    NON_PEER_TECHNIQUES.iter().for_each(|solver| {
+                        if let Some(actions) = solver.solve(board) {
+                            found.take_actions(actions);
                         }
-                    }
-                });
+                    });
+                    deductions = Some(found);
+                }
 
-                if found == 0 {
-                    println!("\n==> No deductions found\n");
+                if let Some(ref found) = deductions {
+                    println!(
+                        "\n==> Found {}\n",
+                        pluralize(found.action_count(), "deduction")
+                    );
+                    for (i, action) in found.actions().iter().enumerate() {
+                        println!("{:>4} - {}", i + 1, action);
+                    }
+                    println!();
                 } else {
-                    println!("\n==> Found {}\n", pluralize(found, "deduction"));
+                    println!("\n==> No deductions found\n");
                 }
             }
             "A" => {
+                if input.len() >= 2 {
+                    if let Some(ref mut found) = &mut deductions {
+                        let n = input[1].parse::<usize>().unwrap_or(0);
+                        if n < 1 || n > found.action_count() {
+                            println!(
+                                "\n==> Enter a deduction number 1 - {}",
+                                found.action_count()
+                            );
+                            continue;
+                        }
+                        let deduction = &found.actions()[n - 1];
+                        match player.apply(board, deduction) {
+                            Change::None => {
+                                println!("\n==> Did not apply {}\n", deduction);
+                            }
+                            Change::Valid(after, _) => {
+                                boards.push(*after);
+                                println!("\n==> Applied {}\n", deduction);
+                                deductions = None;
+                                show_board = true;
+                            }
+                            Change::Invalid(_, _, _, errors) => {
+                                println!("\n==> Applying {} will cause errors\n", deduction);
+                                errors.print_errors();
+                                println!();
+                            }
+                        }
+                    } else {
+                        println!("\n==> Find deductions first with F\n");
+                    }
+                    continue;
+                }
+
                 let mut any_applied = false;
                 let mut clone = *board;
                 let _ = NON_PEER_TECHNIQUES.iter().try_for_each(|solver| {
@@ -406,6 +449,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                 });
 
                 if any_applied {
+                    deductions = None;
                     boards.push(clone);
                     println!();
                     show_board = true;
@@ -440,7 +484,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                     }
                     BruteForceResult::Solved(actions) => {
                         println!(
-                            "\n==> The puzzle was solved - took {} µs\n",
+                            "\n==> The puzzle was solved - took {} µs",
                             format_runtime(runtime.elapsed())
                         );
                         match player.apply_all(board, &actions) {
@@ -482,6 +526,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                         effects.print_errors();
                     }
                 }
+                deductions = None;
                 boards.push(reset);
                 println!();
                 show_board = true;
@@ -510,7 +555,7 @@ fn print_help() {
         "  N                 - start or input a new puzzle\n",
         "  C                 - create a new random puzzle\n",
         "\n",
-        "  P <digit>         - print the puzzle, optionally limited to a single candidate\n",
+        "  P [digit]         - print the puzzle, optionally limited to a single candidate\n",
         "  X [char]          - export the puzzle with optional character for unsolved cells\n",
         "  W                 - print URL to play on SudokuWiki.org\n",
         "  M                 - print the puzzle as a grid suitable for email\n",
@@ -521,7 +566,7 @@ fn print_help() {
         "\n",
         "  V                 - verify puzzle is solvable\n",
         "  F                 - find deductions\n",
-        "  A                 - apply deductions\n",
+        "  A <num>           - apply a single or all deductions\n",
         "  B                 - use Bowman's Bingo to solve the puzzle if possible\n",
         "  R                 - reset candidates based on solved cells\n",
         "  Z                 - undo last change\n",
@@ -532,9 +577,10 @@ fn print_help() {
         "      <option> - P, N or H\n",
         "      <cell>   - A1 to J9\n",
         "      <digit>  - 1 to 9\n",
+        "      <num>    - any positive number\n",
         "      <char>   - any single character\n",
         "\n",
-        "  Note: commands and cells are not case-sensitive\n",
+        "  Commands and cells are not case-sensitive - \"s a2 4\" and \"E D8 6\" are fine\n",
     ))
 }
 

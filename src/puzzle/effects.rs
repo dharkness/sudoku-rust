@@ -118,7 +118,13 @@ impl Effects {
         })
     }
 
-    pub fn take_actions(&mut self, from: &mut Effects) {
+    pub fn without_action(&self, index: usize) -> Self {
+        let mut effects = self.clone();
+        effects.actions.remove(index);
+        effects
+    }
+
+    pub fn take_actions(&mut self, mut from: Effects) {
         self.actions.append(&mut from.actions);
     }
 

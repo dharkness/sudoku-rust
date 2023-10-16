@@ -83,13 +83,13 @@ impl ParsePacked {
                             let action = Action::new_set(Strategy::Given, cell, known);
                             match self.player.apply(&board, &action) {
                                 Change::None => (),
-                                Change::Valid(after, mut actions) => {
+                                Change::Valid(after, actions) => {
                                     board = *after;
-                                    unapplied.take_actions(&mut actions);
+                                    unapplied.take_actions(actions);
                                 }
                                 Change::Invalid(before, _, _, mut errors) => {
                                     if self.player.options.stop_on_error {
-                                        errors.take_actions(&mut unapplied);
+                                        errors.take_actions(unapplied);
                                         return (*before, errors, Some((cell, known)));
                                     }
                                 }
