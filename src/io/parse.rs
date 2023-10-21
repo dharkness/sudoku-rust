@@ -1,9 +1,9 @@
 use itertools::Itertools;
 
 use crate::layout::{Cell, Known, KnownSet};
-use crate::puzzle::{Action, Board, Change, Effects, Error, Options, Player, Strategy};
+use crate::puzzle::{Board, Change, Effects, Options, Player, Strategy};
 
-/// Provides helper methods for parsing puzzle strings into [`Board`]s.
+/// Provides helper methods for parsing puzzle strings into boards.
 pub struct Parse {}
 
 impl Parse {
@@ -34,7 +34,7 @@ impl Parse {
     }
 }
 
-/// Parses puzzle strings into [`Board`]s, optionally stopping on errors
+/// Parses puzzle strings into boards, optionally stopping on errors
 /// and/or automatically solving naked and hidden singles.
 #[derive(Default)]
 pub struct ParsePacked {
@@ -54,14 +54,14 @@ impl ParsePacked {
         ParsePacked { player }
     }
 
-    /// Builds a new [`Board`] using an input string to set some cells,
-    /// and returns it without any [`Action`]s or [`Error`]s that arise.
+    /// Builds a new board using an input string to set some cells,
+    /// and returns it without any actions or errors that arise.
     pub fn parse_simple(&self, input: &str) -> Board {
         self.parse(input).0
     }
 
-    /// Builds a new [`Board`] using an input string to set some cells,
-    /// and returns it along with any [`Action`]s and [`Error`]s that arise.
+    /// Builds a new board using an input string to set some cells,
+    /// and returns it along with any actions and errors that arise.
     ///
     /// - Use a digit (1 to 9) to set a cell's value.
     /// - Use whitespace, pipes, and underscores for readability.
@@ -79,32 +79,18 @@ impl ParsePacked {
                     let known = Known::from(char);
                     let current = board.value(cell);
                     if current != known.value() {
-                        if board.is_candidate(cell, known) {
-                            let action = Action::new_set(Strategy::Given, cell, known);
-                            match self.player.apply(&board, &action) {
-                                Change::None => (),
-                                Change::Valid(after, actions) => {
-                                    board = *after;
-                                    unapplied.take_actions(actions);
-                                }
-                                Change::Invalid(before, _, _, mut errors) => {
-                                    if self.player.options.stop_on_error {
-                                        errors.take_actions(unapplied);
-                                        return (*before, errors, Some((cell, known)));
-                                    }
+                        match self.player.set_given(&board, Strategy::Given, cell, known) {
+                            Change::None => (),
+                            Change::Valid(after, actions) => {
+                                board = *after;
+                                unapplied.take_actions(actions);
+                            }
+                            Change::Invalid(before, _, _, mut errors) => {
+                                if self.player.options.stop_on_error {
+                                    errors.take_actions(unapplied);
+                                    return (*before, errors, Some((cell, known)));
                                 }
                             }
-                        } else if self.player.options.stop_on_error {
-                            if let Some(current_known) = current.known() {
-                                unapplied.add_error(Error::AlreadySolved(
-                                    cell,
-                                    known,
-                                    current_known,
-                                ));
-                            } else {
-                                unapplied.add_error(Error::NotCandidate(cell, known));
-                            }
-                            return (board, unapplied, Some((cell, known)));
                         }
                     }
                 }
@@ -118,7 +104,7 @@ impl ParsePacked {
     }
 }
 
-/// Parses puzzle strings into [`Board`]s with the exact solved cells and candidates
+/// Parses puzzle strings into boards with the exact solved cells and candidates
 /// from the grid format.
 #[derive(Default)]
 pub struct ParseGrid {
@@ -136,14 +122,14 @@ impl ParseGrid {
         self
     }
 
-    /// Builds a new [`Board`] using an input string to set some cells,
-    /// and returns it without any [`Action`]s or [`Error`]s that arise.
+    /// Builds a new board using an input string to set some cells,
+    /// and returns it without any actions or errors that arise.
     pub fn parse_simple(&self, input: &str) -> Board {
         self.parse(input).0
     }
 
-    /// Builds a new [`Board`] using an input string to set some cells,
-    /// and returns it along with any [`Action`]s and [`Error`]s that arise.
+    /// Builds a new board using an input string to set some cells,
+    /// and returns it along with any actions and errors that arise.
     pub fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>) {
         let mut board = Board::new();
         let mut effects = Effects::new();
@@ -189,7 +175,7 @@ impl ParseGrid {
     }
 }
 
-/// Parses puzzle strings into [`Board`]s with the exact given/solved cells and candidates.
+/// Parses puzzle strings into boards with the exact given/solved cells and candidates.
 ///
 /// See https://www.sudokuwiki.org/Sudoku_String_Definitions for more information.
 #[derive(Default)]
@@ -208,14 +194,14 @@ impl ParseWiki {
         self
     }
 
-    /// Builds a new [`Board`] using an input string to set some cells,
-    /// and returns it without any [`Action`]s or [`Error`]s that arise.
+    /// Builds a new board using an input string to set some cells,
+    /// and returns it without any actions or errors that arise.
     pub fn parse_simple(&self, input: &str) -> Board {
         self.parse(input).0
     }
 
-    /// Builds a new [`Board`] using an input string to set some cells,
-    /// and returns it along with any [`Action`]s and [`Error`]s that arise.
+    /// Builds a new board using an input string to set some cells,
+    /// and returns it along with any actions and errors that arise.
     pub fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>) {
         let mut board = Board::new();
         let mut effects = Effects::new();
@@ -234,28 +220,25 @@ impl ParseWiki {
             let knowns = KnownSet::new(value >> 1);
 
             if let Some(solved) = knowns.as_single() {
-                let changed = if given {
+                if given {
                     board.set_given(cell, solved, &mut effects)
                 } else {
                     board.set_known(cell, solved, &mut effects)
                 };
-                if changed {
-                    if effects.has_errors() && self.stop_on_error {
-                        return (board, effects, Some((cell, solved)));
-                    }
-                    effects.clear_actions();
+                if effects.has_errors() && self.stop_on_error {
+                    return (board, effects, Some((cell, solved)));
                 }
+                effects.clear_actions();
             } else {
                 if given {
                     break;
                 }
                 for known in knowns.inverted() {
-                    if board.remove_candidate(cell, known, &mut effects) {
-                        if effects.has_errors() && self.stop_on_error {
-                            return (board, effects, Some((cell, known)));
-                        }
-                        effects.clear_actions();
+                    board.remove_candidate(cell, known, &mut effects);
+                    if effects.has_errors() && self.stop_on_error {
+                        return (board, effects, Some((cell, known)));
                     }
+                    effects.clear_actions();
                 }
             }
         }

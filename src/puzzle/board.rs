@@ -192,7 +192,15 @@ impl Board {
     /// Returns false with no actions or errors
     /// if the known is not a candidate for the cell.
     pub fn set_known(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> bool {
-        if self.values[cell.usize()] == known.value() {
+        if let Some(current) = self.value(cell).known() {
+            if current == known {
+                return true;
+            } else {
+                effects.add_error(Error::AlreadySolved(cell, known, current));
+                return false;
+            }
+        } else if !self.is_candidate(cell, known) {
+            effects.add_error(Error::NotCandidate(cell, known));
             return false;
         }
 

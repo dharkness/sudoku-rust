@@ -50,9 +50,8 @@ impl Player {
         let mut after = *board;
         let mut effects = Effects::new();
 
-        if !action.apply(&mut after, &mut effects) {
-            Change::None
-        } else if self.options.stop_on_error && effects.has_errors() {
+        action.apply(&mut after, &mut effects);
+        if self.options.stop_on_error && effects.has_errors() {
             Change::Invalid(Box::new(*board), Box::new(after), action.clone(), effects)
         } else {
             self.apply_all_changed(board, &after, &effects, true)
