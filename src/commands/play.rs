@@ -648,49 +648,62 @@ fn create_new_puzzle(changer: Changer) -> Option<Board> {
 
         let mut input = String::new();
         std::io::stdin().read_line(&mut input).unwrap();
-        let input = input
-            .trim()
-            .replace(' ', "")
-            .replace(MISSING, ".")
-            .to_uppercase();
+        let input = input.trim().replace(' ', "").replace(MISSING, ".");
         if input.is_empty() {
             println!();
             return None;
         }
-        if input == "E" {
+        if input.to_uppercase() == "E" {
             let board = Board::new();
 
             println!();
             print_candidates(&board);
             return Some(board);
         }
-        if input.len() > 81 {
-            println!(
-                concat!(
-                    "\n==> Expected at most 81 digits, got {}\n\n",
-                    "{}\n",
-                    "        |        |        |        |        |        |        |        |        |\n",
-                ),
-                input.len(),
-                input
-            );
-            continue;
+
+        if input.len() == 162 {
+            let parser = Parse::wiki();
+            let (board, effects, failure) = parser.parse(&input);
+
+            if let Some((cell, known)) = failure {
+                println!();
+                print_candidates(&board);
+                println!("\n==> Setting {} to {} will cause errors\n", cell, known);
+                effects.print_errors();
+            } else {
+                println!();
+                print_candidates(&board);
+            }
+
+            return Some(board);
         }
 
-        let parser = Parse::packed_with_player(changer);
-        let (board, effects, failure) = parser.parse(&input);
+        if input.len() <= 81 {
+            let parser = Parse::packed_with_player(changer);
+            let (board, effects, failure) = parser.parse(&input);
 
-        if let Some((cell, known)) = failure {
-            println!();
-            print_candidates(&board);
-            println!("\n==> Setting {} to {} will cause errors\n", cell, known);
-            effects.print_errors();
-        } else {
-            println!();
-            print_candidates(&board);
+            if let Some((cell, known)) = failure {
+                println!();
+                print_candidates(&board);
+                println!("\n==> Setting {} to {} will cause errors\n", cell, known);
+                effects.print_errors();
+            } else {
+                println!();
+                print_candidates(&board);
+            }
+
+            return Some(board);
         }
 
-        return Some(board);
+        println!(
+            concat!(
+            "\n==> Expected 81 or 162 digits, got {}\n\n",
+            "{}\n",
+            "        |        |        |        |        |        |        |        |        |\n",
+            ),
+            input.len(),
+            input
+        );
     }
 }
 
