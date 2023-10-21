@@ -14,42 +14,31 @@ use crate::symbols::EMPTY_SET;
 
 use super::{Bit, Cell};
 
-pub type Bits = u128;
+type Bits = u128;
 type Size = u8;
-type SizeAndBits = u128;
 
 /// A set of cells implemented using a bit field.
 #[derive(Clone, Copy, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub struct CellSet(SizeAndBits);
+pub struct CellSet(Bits);
 
 const ALL_CELLS: std::ops::Range<Size> = 0..Cell::COUNT;
-
-const BITS_MASK: Bits = (1 << Cell::COUNT) - 1;
-const SIZE_SHIFT: u32 = 128 - 32;
-const SIZE_BIT: Bits = 1 << SIZE_SHIFT;
-
-const FULL: SizeAndBits = pack(Bit::ALL, Cell::COUNT);
-
-const fn pack(bits: Bits, size: Size) -> SizeAndBits {
-    debug_assert!(bits <= BITS_MASK);
-    debug_assert!(size <= Cell::COUNT);
-    (((size as Bits) << SIZE_SHIFT) + bits) as SizeAndBits
-}
+const ALL_SET: Bits = (1 << Cell::COUNT) - 1;
 
 impl CellSet {
-    pub const fn empty() -> CellSet {
-        CellSet(0)
+    pub const fn empty() -> Self {
+        Self(0)
     }
 
-    pub const fn full() -> CellSet {
-        CellSet(FULL)
+    pub const fn full() -> Self {
+        Self(ALL_SET)
     }
 
-    pub const fn new(bits: Bits) -> CellSet {
-        CellSet(pack(bits, bits.count_ones() as Size))
+    const fn new(bits: Bits) -> Self {
+        debug_assert!(bits <= ALL_SET);
+        Self(bits)
     }
 
-    pub fn new_from_pattern(puzzle: &str) -> CellSet {
+    pub fn new_from_pattern(puzzle: &str) -> Self {
         let mut bits: Bits = 0;
         let mut c = 0;
 
@@ -64,7 +53,7 @@ impl CellSet {
         CellSet::new(bits)
     }
 
-    pub const fn of<const N: usize>(cells: &[Cell; N]) -> CellSet {
+    pub const fn of<const N: usize>(cells: &[Cell; N]) -> Self {
         let mut bits: Bits = 0;
         let mut i = 0;
 
@@ -80,16 +69,15 @@ impl CellSet {
     }
 
     pub const fn is_full(&self) -> bool {
-        self.0 == FULL
+        self.0 == ALL_SET
     }
 
-    // FACTOR If u128.count_ones() is fast, no need to track size.
     pub const fn size(&self) -> usize {
-        (self.0 >> SIZE_SHIFT) as usize
+        self.0.count_ones() as usize
     }
 
     pub const fn bits(&self) -> Bits {
-        self.0 & BITS_MASK
+        self.0
     }
 
     pub const fn has(&self, cell: Cell) -> bool {
@@ -142,34 +130,20 @@ impl CellSet {
         }
     }
 
-    pub const fn with(&self, cell: Cell) -> CellSet {
-        if self.has(cell) {
-            return *self;
-        }
-        let mut copy = *self;
-        copy.0 += cell.bit().bit() + SIZE_BIT;
-        copy
+    pub const fn with(&self, cell: Cell) -> Self {
+        Self::new(self.0 | cell.bit().bit())
     }
 
     pub fn add(&mut self, cell: Cell) {
-        if !self.has(cell) {
-            self.0 += cell.bit().bit() + SIZE_BIT
-        }
+        self.0 |= cell.bit().bit();
     }
 
-    pub const fn without(&self, cell: Cell) -> CellSet {
-        if !self.has(cell) {
-            return *self;
-        }
-        let mut copy = *self;
-        copy.0 -= cell.bit().bit() + SIZE_BIT;
-        copy
+    pub const fn without(&self, cell: Cell) -> Self {
+        Self::new(self.0 & !(cell.bit().bit()))
     }
 
     pub fn remove(&mut self, cell: Cell) {
-        if self.has(cell) {
-            self.0 -= cell.bit().bit() + SIZE_BIT
-        }
+        self.0 &= !(cell.bit().bit());
     }
 
     pub const fn first(&self) -> Option<Cell> {
@@ -190,11 +164,11 @@ impl CellSet {
         }
     }
 
-    pub const fn union(&self, set: Self) -> CellSet {
+    pub const fn union(&self, set: Self) -> Self {
         if self.0 == set.0 {
             *self
         } else {
-            CellSet::new((self.0 | set.0) & BITS_MASK)
+            Self::new(self.0 | set.0)
         }
     }
 
@@ -202,11 +176,11 @@ impl CellSet {
         *self = self.union(set)
     }
 
-    pub const fn intersect(&self, set: Self) -> CellSet {
+    pub const fn intersect(&self, set: Self) -> Self {
         if self.0 == set.0 {
             *self
         } else {
-            CellSet::new((self.0 & set.0) & BITS_MASK)
+            Self::new(self.0 & set.0)
         }
     }
 
@@ -214,11 +188,11 @@ impl CellSet {
         *self = self.intersect(set)
     }
 
-    pub const fn minus(&self, set: Self) -> CellSet {
+    pub const fn minus(&self, set: Self) -> Self {
         if self.0 == set.0 {
-            CellSet::empty()
+            Self::empty()
         } else {
-            CellSet::new((self.0 & !set.0) & BITS_MASK)
+            Self::new(self.0 & !set.0)
         }
     }
 
@@ -226,11 +200,11 @@ impl CellSet {
         *self = self.minus(set)
     }
 
-    pub const fn inverted(&self) -> CellSet {
+    pub const fn inverted(&self) -> Self {
         match self.0 {
             0 => CellSet::full(),
-            FULL => CellSet::empty(),
-            _ => CellSet::new(!self.0 & BITS_MASK),
+            ALL_SET => Self::empty(),
+            _ => Self::new(!self.0 & ALL_SET),
         }
     }
 
@@ -272,20 +246,24 @@ impl CellSet {
     }
 
     pub fn debug(&self) -> String {
-        format!("{:02}:{:081b}", self.size(), self.bits())
+        format!(
+            "{:02}:{:081b}",
+            self.size(),
+            self.bits().reverse_bits() >> (128 - 81)
+        )
     }
 }
 
 impl From<House> for CellSet {
-    fn from(house: House) -> CellSet {
+    fn from(house: House) -> Self {
         house.cells()
     }
 }
 
 impl From<&str> for CellSet {
-    fn from(labels: &str) -> CellSet {
+    fn from(labels: &str) -> Self {
         if labels.is_empty() {
-            CellSet::empty()
+            Self::empty()
         } else {
             labels.split(' ').map(Cell::from).union()
         }
@@ -342,7 +320,7 @@ where
 
 impl FromIterator<Cell> for CellSet {
     fn from_iter<I: IntoIterator<Item = Cell>>(iter: I) -> Self {
-        let mut set = CellSet::empty();
+        let mut set = Self::empty();
         for cell in iter {
             set += cell;
         }
@@ -352,7 +330,7 @@ impl FromIterator<Cell> for CellSet {
 
 impl FromIterator<CellSet> for CellSet {
     fn from_iter<I: IntoIterator<Item = CellSet>>(iter: I) -> Self {
-        let mut union = CellSet::empty();
+        let mut union = Self::empty();
         for set in iter {
             union |= set;
         }
@@ -399,7 +377,7 @@ impl Index<&str> for CellSet {
 impl Add<Bit> for CellSet {
     type Output = Self;
 
-    fn add(self, rhs: Bit) -> CellSet {
+    fn add(self, rhs: Bit) -> Self {
         self.with(rhs.cell())
     }
 }
@@ -407,7 +385,7 @@ impl Add<Bit> for CellSet {
 impl Add<Cell> for CellSet {
     type Output = Self;
 
-    fn add(self, rhs: Cell) -> CellSet {
+    fn add(self, rhs: Cell) -> Self {
         self.with(rhs)
     }
 }
@@ -415,7 +393,7 @@ impl Add<Cell> for CellSet {
 impl Add<&str> for CellSet {
     type Output = Self;
 
-    fn add(self, rhs: &str) -> CellSet {
+    fn add(self, rhs: &str) -> Self {
         self.with(Cell::from(rhs))
     }
 }
@@ -441,7 +419,7 @@ impl AddAssign<&str> for CellSet {
 impl Sub<Bit> for CellSet {
     type Output = Self;
 
-    fn sub(self, rhs: Bit) -> CellSet {
+    fn sub(self, rhs: Bit) -> Self {
         self.without(rhs.cell())
     }
 }
@@ -449,7 +427,7 @@ impl Sub<Bit> for CellSet {
 impl Sub<Cell> for CellSet {
     type Output = Self;
 
-    fn sub(self, rhs: Cell) -> CellSet {
+    fn sub(self, rhs: Cell) -> Self {
         self.without(rhs)
     }
 }
@@ -457,7 +435,7 @@ impl Sub<Cell> for CellSet {
 impl Sub<&str> for CellSet {
     type Output = Self;
 
-    fn sub(self, rhs: &str) -> CellSet {
+    fn sub(self, rhs: &str) -> Self {
         self.without(Cell::from(rhs))
     }
 }
@@ -491,7 +469,7 @@ impl Not for CellSet {
 impl Neg for CellSet {
     type Output = Self;
 
-    fn neg(self) -> CellSet {
+    fn neg(self) -> Self {
         self.inverted()
     }
 }
@@ -499,7 +477,7 @@ impl Neg for CellSet {
 impl BitOr for CellSet {
     type Output = Self;
 
-    fn bitor(self, rhs: Self) -> CellSet {
+    fn bitor(self, rhs: Self) -> Self {
         self.union(rhs)
     }
 }
@@ -513,7 +491,7 @@ impl BitOrAssign for CellSet {
 impl BitAnd for CellSet {
     type Output = Self;
 
-    fn bitand(self, rhs: Self) -> CellSet {
+    fn bitand(self, rhs: Self) -> Self {
         self.intersect(rhs)
     }
 }
@@ -527,7 +505,7 @@ impl BitAndAssign for CellSet {
 impl Sub for CellSet {
     type Output = Self;
 
-    fn sub(self, rhs: Self) -> CellSet {
+    fn sub(self, rhs: Self) -> Self {
         self.minus(rhs)
     }
 }

@@ -8,40 +8,31 @@ use crate::symbols::{EMPTY_SET, MISSING};
 
 use super::Known;
 
-type Size = u16;
 type Bits = u16;
-type SizeAndBits = u16;
+type Size = u8;
 
 /// A set of knowns implemented using a bit field.
 #[derive(Clone, Copy, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub struct KnownSet(SizeAndBits);
+pub struct KnownSet(Bits);
 
-const BITS_MASK: Bits = (1 << 9) - 1;
-const SIZE_SHIFT: u16 = 16 - 4;
-const SIZE_BIT: Bits = 1 << SIZE_SHIFT;
-
-const FULL: SizeAndBits = pack(BITS_MASK, 9);
-
-const fn pack(knowns: Bits, size: Size) -> SizeAndBits {
-    debug_assert!(knowns <= BITS_MASK);
-    debug_assert!(size <= 9);
-    ((size << SIZE_SHIFT) + knowns) as SizeAndBits
-}
+const ALL_KNOWNS: std::ops::Range<Size> = 0..Known::COUNT;
+const ALL_SET: Bits = (1 << Known::COUNT) - 1;
 
 impl KnownSet {
-    pub const fn empty() -> KnownSet {
-        KnownSet(0)
+    pub const fn empty() -> Self {
+        Self(0)
     }
 
-    pub const fn full() -> KnownSet {
-        KnownSet(FULL)
+    pub const fn full() -> Self {
+        Self(ALL_SET)
     }
 
-    pub const fn new(knowns: Bits) -> KnownSet {
-        KnownSet(pack(knowns, knowns.count_ones() as Size))
+    pub const fn new(bits: Bits) -> Self {
+        debug_assert!(bits <= ALL_SET);
+        Self(bits)
     }
 
-    pub const fn of(known: Known) -> KnownSet {
+    pub const fn of(known: Known) -> Self {
         KnownSet::new(known.bit())
     }
 
@@ -50,16 +41,15 @@ impl KnownSet {
     }
 
     pub const fn is_full(&self) -> bool {
-        self.0 == FULL
+        self.0 == ALL_SET
     }
 
-    // FACTOR If u16.count_ones() is fast, no need to track size.
     pub const fn size(&self) -> usize {
-        (self.0 >> SIZE_SHIFT) as usize
+        self.0.count_ones() as usize
     }
 
     pub const fn bits(&self) -> Bits {
-        self.0 & BITS_MASK
+        self.0
     }
 
     pub const fn has(&self, known: Known) -> bool {
@@ -112,34 +102,20 @@ impl KnownSet {
         }
     }
 
-    pub const fn with(&self, known: Known) -> KnownSet {
-        if self.has(known) {
-            return *self;
-        }
-        let mut copy = *self;
-        copy.0 += known.bit() + SIZE_BIT;
-        copy
+    pub const fn with(&self, known: Known) -> Self {
+        Self::new(self.0 | known.bit())
     }
 
     pub fn add(&mut self, known: Known) {
-        if !self.has(known) {
-            self.0 += known.bit() + SIZE_BIT
-        }
+        self.0 |= known.bit();
     }
 
-    pub const fn without(&self, known: Known) -> KnownSet {
-        if !self.has(known) {
-            return *self;
-        }
-        let mut copy = *self;
-        copy.0 -= known.bit() + SIZE_BIT;
-        copy
+    pub const fn without(&self, known: Known) -> Self {
+        Self::new(self.0 & !(known.bit()))
     }
 
     pub fn remove(&mut self, known: Known) {
-        if self.has(known) {
-            self.0 -= known.bit() + SIZE_BIT
-        }
+        self.0 &= !(known.bit());
     }
 
     pub const fn first(&self) -> Option<Known> {
@@ -160,11 +136,11 @@ impl KnownSet {
         }
     }
 
-    pub const fn union(&self, set: Self) -> KnownSet {
+    pub const fn union(&self, set: Self) -> Self {
         if self.0 == set.0 {
             *self
         } else {
-            KnownSet::new((self.0 | set.0) & BITS_MASK)
+            Self::new(self.0 | set.0)
         }
     }
 
@@ -172,11 +148,11 @@ impl KnownSet {
         *self = self.union(set)
     }
 
-    pub const fn intersect(&self, set: Self) -> KnownSet {
+    pub const fn intersect(&self, set: Self) -> Self {
         if self.0 == set.0 {
             *self
         } else {
-            KnownSet::new((self.0 & set.0) & BITS_MASK)
+            Self::new(self.0 & set.0)
         }
     }
 
@@ -184,11 +160,11 @@ impl KnownSet {
         *self = self.intersect(set)
     }
 
-    pub const fn minus(&self, set: Self) -> KnownSet {
+    pub const fn minus(&self, set: Self) -> Self {
         if self.0 == set.0 {
-            KnownSet::empty()
+            Self::empty()
         } else {
-            KnownSet::new((self.0 & !set.0) & BITS_MASK)
+            Self::new(self.0 & !set.0)
         }
     }
 
@@ -196,11 +172,11 @@ impl KnownSet {
         *self = self.minus(set)
     }
 
-    pub const fn inverted(&self) -> KnownSet {
+    pub const fn inverted(&self) -> Self {
         match self.0 {
             0 => KnownSet::full(),
-            FULL => KnownSet::empty(),
-            _ => KnownSet::new(!self.0 & BITS_MASK),
+            ALL_SET => Self::empty(),
+            _ => Self::new(!self.0 & ALL_SET),
         }
     }
 
@@ -213,12 +189,16 @@ impl KnownSet {
     }
 
     pub fn debug(&self) -> String {
-        format!("{:01}:{:09b}", self.size(), self.bits())
+        format!(
+            "{:01}:{:09b}",
+            self.size(),
+            self.bits().reverse_bits() >> (16 - 9)
+        )
     }
 }
 
 impl From<&str> for KnownSet {
-    fn from(labels: &str) -> KnownSet {
+    fn from(labels: &str) -> Self {
         labels
             .chars()
             .filter(|c| ('1'..='9').contains(c))
@@ -277,7 +257,7 @@ where
 
 impl FromIterator<Known> for KnownSet {
     fn from_iter<I: IntoIterator<Item = Known>>(iter: I) -> Self {
-        let mut set = KnownSet::empty();
+        let mut set = Self::empty();
         for known in iter {
             set += known;
         }
@@ -287,7 +267,7 @@ impl FromIterator<Known> for KnownSet {
 
 impl FromIterator<KnownSet> for KnownSet {
     fn from_iter<I: IntoIterator<Item = KnownSet>>(iter: I) -> Self {
-        let mut union = KnownSet::empty();
+        let mut union = Self::empty();
         for set in iter {
             union |= set;
         }
@@ -322,7 +302,7 @@ impl Index<&str> for KnownSet {
 impl Add<Known> for KnownSet {
     type Output = Self;
 
-    fn add(self, rhs: Known) -> KnownSet {
+    fn add(self, rhs: Known) -> Self {
         self.with(rhs)
     }
 }
@@ -330,7 +310,7 @@ impl Add<Known> for KnownSet {
 impl Add<&str> for KnownSet {
     type Output = Self;
 
-    fn add(self, rhs: &str) -> KnownSet {
+    fn add(self, rhs: &str) -> Self {
         self.with(Known::from(rhs))
     }
 }
@@ -350,7 +330,7 @@ impl AddAssign<&str> for KnownSet {
 impl Sub<Known> for KnownSet {
     type Output = Self;
 
-    fn sub(self, rhs: Known) -> KnownSet {
+    fn sub(self, rhs: Known) -> Self {
         self.without(rhs)
     }
 }
@@ -358,7 +338,7 @@ impl Sub<Known> for KnownSet {
 impl Sub<&str> for KnownSet {
     type Output = Self;
 
-    fn sub(self, rhs: &str) -> KnownSet {
+    fn sub(self, rhs: &str) -> Self {
         self.without(Known::from(rhs))
     }
 }
@@ -384,9 +364,9 @@ impl Not for KnownSet {
 }
 
 impl Neg for KnownSet {
-    type Output = KnownSet;
+    type Output = Self;
 
-    fn neg(self) -> KnownSet {
+    fn neg(self) -> Self {
         self.inverted()
     }
 }
@@ -394,7 +374,7 @@ impl Neg for KnownSet {
 impl BitOr for KnownSet {
     type Output = Self;
 
-    fn bitor(self, rhs: Self) -> KnownSet {
+    fn bitor(self, rhs: Self) -> Self {
         self.union(rhs)
     }
 }
@@ -408,7 +388,7 @@ impl BitOrAssign for KnownSet {
 impl BitAnd for KnownSet {
     type Output = Self;
 
-    fn bitand(self, rhs: Self) -> KnownSet {
+    fn bitand(self, rhs: Self) -> Self {
         self.intersect(rhs)
     }
 }
@@ -422,7 +402,7 @@ impl BitAndAssign for KnownSet {
 impl Sub for KnownSet {
     type Output = Self;
 
-    fn sub(self, rhs: Self) -> KnownSet {
+    fn sub(self, rhs: Self) -> Self {
         self.minus(rhs)
     }
 }

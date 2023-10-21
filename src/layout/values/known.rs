@@ -8,6 +8,8 @@ use super::{KnownSet, Value};
 pub struct Known(u8);
 
 impl Known {
+    pub const COUNT: u8 = 9;
+
     pub fn iter() -> KnownIter {
         KnownIter::new()
     }

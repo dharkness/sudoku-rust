@@ -8,11 +8,14 @@ use crate::symbols::{EMPTY_SET, MISSING};
 
 use super::Coord;
 
+type Bits = u16;
+type Size = u8;
+
 /// A set of coordinates in a [`House`] implemented using a bit field.
 #[derive(Clone, Copy, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub struct CoordSet(u16);
+pub struct CoordSet(Bits);
 
-const FULL: u16 = (1 << 9) - 1;
+const ALL_SET: Bits = (1 << Coord::COUNT) - 1;
 
 impl CoordSet {
     pub const fn empty() -> Self {
@@ -20,43 +23,44 @@ impl CoordSet {
     }
 
     pub const fn full() -> Self {
-        Self(FULL)
+        Self(ALL_SET)
+    }
+
+    pub const fn new(bits: Bits) -> Self {
+        debug_assert!(bits <= ALL_SET);
+        Self(bits)
     }
 
     pub const fn from_coord(coord: Coord) -> Self {
         Self(coord.bit())
     }
 
-    pub const fn from_bits(bits: u16) -> Self {
-        Self(bits & FULL)
-    }
-
     pub const fn from_labels(labels: &str) -> Self {
         let bytes = labels.as_bytes();
-        let mut bits: u16 = 0;
+        let mut bits: Bits = 0;
         let mut i = 0;
 
         while i < bytes.len() {
             let c = bytes[i] as char;
             debug_assert!('1' <= c && c <= '9');
-            bits += 1 << (c as u8 - b'1');
+            bits += 1 << (c as Size - b'1');
             i += 1;
         }
-        Self(bits)
+        Self::new(bits)
     }
 
     pub const fn from_coords(mut coords: i32) -> Self {
-        let mut bits: u16 = 0;
+        let mut bits: Bits = 0;
 
         while coords > 0 {
             let c = coords % 10;
             coords /= 10;
             bits += 1 << (c - 1);
         }
-        Self(bits)
+        Self::new(bits)
     }
 
-    pub const fn bits(&self) -> u16 {
+    pub const fn bits(&self) -> Bits {
         self.0
     }
 
@@ -65,7 +69,7 @@ impl CoordSet {
     }
 
     pub const fn is_full(&self) -> bool {
-        self.0 == FULL
+        self.0 == ALL_SET
     }
 
     pub const fn size(&self) -> usize {
@@ -123,32 +127,36 @@ impl CoordSet {
     }
 
     pub const fn with(&self, coord: Coord) -> Self {
-        if self.has(coord) {
-            return *self;
-        }
-        let mut copy = *self;
-        copy.0 += coord.bit();
-        copy
+        Self::new(self.0 | coord.bit())
     }
 
     pub fn add(&mut self, coord: Coord) {
-        if !self.has(coord) {
-            self.0 += coord.bit()
-        }
+        self.0 |= coord.bit();
     }
 
     pub const fn without(&self, coord: Coord) -> Self {
-        if !self.has(coord) {
-            return *self;
-        }
-        let mut copy = *self;
-        copy.0 -= coord.bit();
-        copy
+        Self::new(self.0 & !(coord.bit()))
     }
 
     pub fn remove(&mut self, coord: Coord) {
-        if self.has(coord) {
-            self.0 -= coord.bit()
+        self.0 &= !(coord.bit());
+    }
+
+    pub const fn first(&self) -> Option<Coord> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(Coord::new(self.bits().trailing_zeros() as Size))
+        }
+    }
+
+    pub fn pop(&mut self) -> Option<Coord> {
+        if self.is_empty() {
+            None
+        } else {
+            let cell = Coord::new(self.bits().trailing_zeros() as Size);
+            self.remove(cell);
+            Some(cell)
         }
     }
 
@@ -156,7 +164,7 @@ impl CoordSet {
         if self.0 == set.0 {
             *self
         } else {
-            Self(self.0 | set.0)
+            Self::new(self.0 | set.0)
         }
     }
 
@@ -168,7 +176,7 @@ impl CoordSet {
         if self.0 == set.0 {
             *self
         } else {
-            Self(self.0 & set.0)
+            Self::new(self.0 & set.0)
         }
     }
 
@@ -180,7 +188,7 @@ impl CoordSet {
         if self.0 == set.0 {
             Self::empty()
         } else {
-            Self(self.0 & !set.0)
+            Self::new(self.0 & !set.0)
         }
     }
 
@@ -191,8 +199,8 @@ impl CoordSet {
     pub const fn inverted(&self) -> Self {
         match self.0 {
             0 => Self::full(),
-            FULL => Self::empty(),
-            _ => Self(!self.0 & FULL),
+            ALL_SET => Self::empty(),
+            _ => Self::new(!self.0 & ALL_SET),
         }
     }
 
@@ -205,7 +213,11 @@ impl CoordSet {
     }
 
     pub fn debug(&self) -> String {
-        format!("{:01}:{:09b}", self.size(), self.0)
+        format!(
+            "{:01}:{:09b}",
+            self.size(),
+            self.bits().reverse_bits() >> (16 - 9)
+        )
     }
 }
 
@@ -466,7 +478,7 @@ macro_rules! coords {
 pub(crate) use coords;
 
 pub struct Iter {
-    bits: u16,
+    bits: Bits,
 }
 
 impl Iterator for Iter {
@@ -478,7 +490,7 @@ impl Iterator for Iter {
         } else {
             let bit = 1 << self.bits.trailing_zeros();
             self.bits &= !bit;
-            Some(Coord::from(bit.trailing_zeros() as u8))
+            Some(Coord::from(bit.trailing_zeros() as Size))
         }
     }
 }

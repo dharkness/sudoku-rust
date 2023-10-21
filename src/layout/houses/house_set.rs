@@ -35,18 +35,18 @@ impl HouseSet {
     pub const fn from_bits(shape: Shape, bits: u16) -> Self {
         HouseSet {
             shape,
-            coords: CoordSet::from_bits(bits),
+            coords: CoordSet::new(bits),
         }
     }
 
-    pub const fn from_labels(shape: Shape, labels: &str) -> HouseSet {
+    pub const fn from_labels(shape: Shape, labels: &str) -> Self {
         HouseSet {
             shape,
             coords: CoordSet::from_labels(labels),
         }
     }
 
-    pub const fn from_coords(shape: Shape, coords: i32) -> HouseSet {
+    pub const fn from_coords(shape: Shape, coords: i32) -> Self {
         HouseSet {
             shape,
             coords: CoordSet::from_coords(coords),
@@ -169,6 +169,23 @@ impl HouseSet {
 
     pub fn remove_coord(&mut self, coord: Coord) {
         self.coords -= coord;
+    }
+
+    pub const fn first(&self) -> Option<House> {
+        match self.coords.first() {
+            Some(coord) => Some(House::new(self.shape, coord)),
+            None => None,
+        }
+    }
+
+    pub fn pop(&mut self) -> Option<House> {
+        match self.coords.first() {
+            Some(coord) => {
+                self.remove_coord(coord);
+                Some(House::new(self.shape, coord))
+            }
+            None => None,
+        }
     }
 
     pub fn union(&self, set: Self) -> Self {

@@ -5,6 +5,8 @@ pub struct Coord(u8);
 
 /// Identifies a cell in a house.
 impl Coord {
+    pub const COUNT: u8 = 9;
+
     pub const fn new(coord: u8) -> Self {
         debug_assert!(coord < 9);
         Self(coord)
