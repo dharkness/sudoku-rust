@@ -88,7 +88,7 @@ fn check_houses(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::io::Parse;
+    use crate::io::{Parse, Parser};
     use crate::layout::cells::cell_set::cells;
     use crate::layout::values::known::known;
 

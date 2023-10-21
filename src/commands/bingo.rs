@@ -3,7 +3,7 @@ use std::time::Instant;
 
 use crate::io::{
     format_for_wiki, format_runtime, print_candidates, print_known_values, Cancelable, Parse,
-    SUDOKUWIKI_URL,
+    Parser, SUDOKUWIKI_URL,
 };
 use crate::puzzle::{Change, Changer, Options};
 use crate::solve::{find_brute_force, BruteForceResult};

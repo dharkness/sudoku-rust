@@ -7,7 +7,7 @@ use std::time::Instant;
 use crate::build::{Finder, Generator};
 use crate::io::{
     format_for_fancy_console, format_for_wiki, format_grid, format_packed, format_runtime,
-    print_candidate, print_candidates, print_givens, print_known_values, Cancelable, Parse,
+    print_candidate, print_candidates, print_givens, print_known_values, Cancelable, Parse, Parser,
     SUDOKUWIKI_URL,
 };
 use crate::layout::{Cell, Known};
@@ -661,25 +661,14 @@ fn create_new_puzzle(changer: Changer) -> Option<Board> {
             return Some(board);
         }
 
-        if input.len() == 162 {
-            let parser = Parse::wiki();
-            let (board, effects, failure) = parser.parse(&input);
-
-            if let Some((cell, known)) = failure {
-                println!();
-                print_candidates(&board);
-                println!("\n==> Setting {} to {} will cause errors\n", cell, known);
-                effects.print_errors();
-            } else {
-                println!();
-                print_candidates(&board);
-            }
-
-            return Some(board);
-        }
-
-        if input.len() <= 81 {
-            let parser = Parse::packed_with_player(changer);
+        let parser: Option<Box<dyn Parser>> = if input.len() == 162 {
+            Some(Box::new(Parse::wiki()))
+        } else if input.len() <= 81 {
+            Some(Box::new(Parse::packed_with_player(changer)))
+        } else {
+            None
+        };
+        if let Some(parser) = parser {
             let (board, effects, failure) = parser.parse(&input);
 
             if let Some((cell, known)) = failure {

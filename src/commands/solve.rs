@@ -6,7 +6,7 @@ use std::time::{Duration, Instant};
 
 use crate::io::{
     format_for_wiki, format_number, format_runtime, print_candidates, print_known_values,
-    Cancelable, ParsePacked, SUDOKUWIKI_URL,
+    Cancelable, Parse, ParsePacked, Parser, SUDOKUWIKI_URL,
 };
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Action, Board, Changer, Effects, Options, Strategy};
@@ -25,7 +25,7 @@ pub struct SolveArgs {
 /// Creates a new puzzle and prints it to stdout.
 pub fn solve_puzzles(args: SolveArgs, cancelable: &Cancelable) {
     let changer = Changer::new(Options::errors_and_peers());
-    let parser = ParsePacked::new_with_player(changer);
+    let parser = Parse::packed_with_player(changer);
     let solver = Solver::new(cancelable, args.check);
 
     match args.puzzles {

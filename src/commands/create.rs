@@ -4,7 +4,7 @@ use std::process::exit;
 use std::time::Instant;
 
 use crate::build::{Finder, Generator};
-use crate::io::{format_runtime, print_candidates, print_known_values, Cancelable, Parse};
+use crate::io::{format_runtime, print_candidates, print_known_values, Cancelable, Parse, Parser};
 use crate::puzzle::{Changer, Options};
 
 #[derive(Debug, Args)]

@@ -259,7 +259,7 @@ impl FormatWiki {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::io::Parse;
+    use crate::io::{Parse, Parser};
     use crate::puzzle::Options;
     use crate::testing::strip_leading_whitespace;
 

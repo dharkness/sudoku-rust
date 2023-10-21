@@ -1,7 +1,7 @@
 use std::fmt;
 
 use crate::io::format_for_fancy_console;
-use crate::layout::{Cell, CellSet, House, Known, KnownSet, Value};
+use crate::layout::{Cell, CellSet, House, HouseSet, Known, KnownSet, Value};
 use crate::solve::creates_deadly_rectangles;
 
 use super::{Effects, Error, PseudoCell, Strategy};
@@ -455,7 +455,7 @@ impl fmt::Display for Board {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::io::Parse;
+    use crate::io::{Parse, Parser};
     use crate::testing::strip_leading_whitespace;
     use itertools::Itertools;
 

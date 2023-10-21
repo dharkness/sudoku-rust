@@ -4,7 +4,7 @@ use std::io::{stdin, BufRead};
 use std::process::exit;
 use std::time::Instant;
 
-use crate::io::{format_number, format_runtime, print_candidates, Cancelable, Parse};
+use crate::io::{format_number, format_runtime, print_candidates, Cancelable, Parse, Parser};
 use crate::layout::CellSet;
 use crate::puzzle::{Changer, Options};
 use crate::solve::{Resolution, Solver};

@@ -3,6 +3,18 @@ use itertools::Itertools;
 use crate::layout::{Cell, Known, KnownSet};
 use crate::puzzle::{Board, Change, Changer, Effects, Options, Strategy};
 
+pub trait Parser {
+    /// Builds a new board using an input string to set some cells,
+    /// and returns it without any actions or errors that arise.
+    fn parse_simple(&self, input: &str) -> Board {
+        self.parse(input).0
+    }
+
+    /// Builds a new board using an input string to set some cells,
+    /// and returns it along with any actions and errors that arise.
+    fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>);
+}
+
 /// Provides helper methods for parsing puzzle strings into boards.
 pub struct Parse {}
 
@@ -53,20 +65,16 @@ impl ParsePacked {
     pub fn new_with_player(changer: Changer) -> ParsePacked {
         ParsePacked { changer }
     }
+}
 
-    /// Builds a new board using an input string to set some cells,
-    /// and returns it without any actions or errors that arise.
-    pub fn parse_simple(&self, input: &str) -> Board {
-        self.parse(input).0
-    }
-
+impl Parser for ParsePacked {
     /// Builds a new board using an input string to set some cells,
     /// and returns it along with any actions and errors that arise.
     ///
     /// - Use a digit (1 to 9) to set a cell's value.
     /// - Use whitespace, pipes, and underscores for readability.
     /// - Use any other character to leave a cell unsolved.
-    pub fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>) {
+    fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>) {
         let mut board = Board::new();
         let mut unapplied = Effects::new();
         let mut c = 0;
@@ -121,16 +129,12 @@ impl ParseGrid {
         self.stop_on_error = true;
         self
     }
+}
 
-    /// Builds a new board using an input string to set some cells,
-    /// and returns it without any actions or errors that arise.
-    pub fn parse_simple(&self, input: &str) -> Board {
-        self.parse(input).0
-    }
-
+impl Parser for ParseGrid {
     /// Builds a new board using an input string to set some cells,
     /// and returns it along with any actions and errors that arise.
-    pub fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>) {
+    fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>) {
         let mut board = Board::new();
         let mut effects = Effects::new();
 
@@ -193,16 +197,12 @@ impl ParseWiki {
         self.stop_on_error = true;
         self
     }
+}
 
-    /// Builds a new board using an input string to set some cells,
-    /// and returns it without any actions or errors that arise.
-    pub fn parse_simple(&self, input: &str) -> Board {
-        self.parse(input).0
-    }
-
+impl Parser for ParseWiki {
     /// Builds a new board using an input string to set some cells,
     /// and returns it along with any actions and errors that arise.
-    pub fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>) {
+    fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>) {
         let mut board = Board::new();
         let mut effects = Effects::new();
 

@@ -82,7 +82,7 @@ fn check_intersection(board: &Board, block: House, houses: HouseSet, effects: &m
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::io::Parse;
+    use crate::io::{Parse, Parser};
     use crate::layout::cells::cell_set::cells;
     use crate::layout::values::known::known;
 
