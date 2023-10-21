@@ -88,6 +88,10 @@ impl Action {
         knowns.iter().for_each(|known| self.erase(cell, known));
     }
 
+    pub fn affects_cell(&self, cell: Cell) -> bool {
+        self.erase.contains_key(&cell) || self.set.contains_key(&cell)
+    }
+
     pub fn erases(&self, cell: Cell, known: Known) -> bool {
         match self.erase.get(&cell) {
             Some(knowns) => knowns.has(known),
@@ -162,11 +166,7 @@ impl fmt::Display for Action {
                 } else {
                     f.write_str(", ")?;
                 }
-                if let Some(cell) = cells.as_single() {
-                    write!(f, "{} {} ", cell, REMOVE_CANDIDATE)?;
-                } else {
-                    write!(f, "{} {} ", cells, REMOVE_CANDIDATE)?;
-                }
+                write!(f, "{} {} ", cells, REMOVE_CANDIDATE)?;
                 for known in knowns.iter() {
                     f.write_char(known.label())?;
                 }

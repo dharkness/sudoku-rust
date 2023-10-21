@@ -91,13 +91,14 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
     loop {
         let board = boards.last().unwrap();
         if show_board {
-            print_candidates(board);
+            show_board = false;
             if board.is_fully_solved() {
+                print_known_values(board);
                 println!("\n==> Congratulations!\n");
             } else {
+                print_candidates(board);
                 println!();
             }
-            show_board = false;
         }
 
         print!(
@@ -213,6 +214,10 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                     } else {
                         println!("\n==> Invalid candidate \"{}\"\n", c);
                     }
+                } else if board.is_fully_solved() {
+                    println!();
+                    print_known_values(board);
+                    println!();
                 } else {
                     println!();
                     show_board = true
@@ -382,15 +387,41 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                     deductions = Some(found);
                 }
 
+                let mut affecting_cell = None;
+                if input.len() == 2 {
+                    affecting_cell = Some(Cell::from(input[1].to_uppercase()));
+                };
+
                 if let Some(ref found) = deductions {
-                    println!(
-                        "\n==> Found {}\n",
-                        pluralize(found.action_count(), "deduction")
-                    );
+                    if let Some(cell) = affecting_cell {
+                        let filtered = found.affecting_cell(cell);
+                        if filtered.is_empty() {
+                            println!("\n==> No deductions found affecting {}\n", cell);
+                            continue;
+                        }
+                        println!(
+                            "\n==> Found {} affecting {}\n",
+                            pluralize(filtered.action_count(), "deduction"),
+                            cell
+                        );
+                    } else {
+                        println!(
+                            "\n==> Found {}\n",
+                            pluralize(found.action_count(), "deduction")
+                        );
+                    }
                     for (i, action) in found.actions().iter().enumerate() {
-                        println!("{:>4} - {}", i + 1, action);
+                        if let Some(cell) = affecting_cell {
+                            if action.affects_cell(cell) {
+                                println!("{:>4} - {}", i + 1, action);
+                            }
+                        } else {
+                            println!("{:>4} - {}", i + 1, action);
+                        }
                     }
                     println!();
+                } else if let Some(cell) = affecting_cell {
+                    println!("\n==> No deductions found affecting {}\n", cell);
                 } else {
                     println!("\n==> No deductions found\n");
                 }

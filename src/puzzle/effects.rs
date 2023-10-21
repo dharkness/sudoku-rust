@@ -118,6 +118,16 @@ impl Effects {
         })
     }
 
+    pub fn affecting_cell(&self, cell: Cell) -> Self {
+        let mut effects = Self::new();
+        for action in self.actions.iter() {
+            if action.affects_cell(cell) {
+                effects.add_action(action.clone());
+            }
+        }
+        effects
+    }
+
     pub fn without_action(&self, index: usize) -> Self {
         let mut effects = self.clone();
         effects.actions.remove(index);
