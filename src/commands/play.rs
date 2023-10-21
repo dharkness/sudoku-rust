@@ -410,16 +410,21 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                             pluralize(found.action_count(), "deduction")
                         );
                     }
+                    let mut found_any = false;
                     for (i, action) in found.actions().iter().enumerate() {
                         if let Some(cell) = affecting_cell {
                             if action.affects_cell(cell) {
+                                found_any = true;
                                 println!("{:>4} - {}", i + 1, action);
                             }
                         } else {
+                            found_any = true;
                             println!("{:>4} - {}", i + 1, action);
                         }
                     }
-                    println!();
+                    if found_any {
+                        println!();
+                    }
                 } else if let Some(cell) = affecting_cell {
                     println!("\n==> No deductions found affecting {}\n", cell);
                 } else {
@@ -432,7 +437,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                         let n = input[1].parse::<usize>().unwrap_or(0);
                         if n < 1 || n > found.action_count() {
                             println!(
-                                "\n==> Enter a deduction number 1 - {}",
+                                "\n==> Enter a deduction number 1 - {}\n",
                                 found.action_count()
                             );
                             continue;
