@@ -6,7 +6,7 @@ use std::time::Instant;
 
 use crate::io::{format_number, format_runtime, print_candidates, Cancelable, Parse};
 use crate::layout::CellSet;
-use crate::puzzle::{Options, Player};
+use crate::puzzle::{Changer, Options};
 use crate::solve::{Resolution, Solver};
 
 #[derive(Debug, Args)]
@@ -21,8 +21,8 @@ pub struct FindArgs {
 
 /// Applies patterns from STDIN to see if they allow a puzzle to be solved.
 pub fn find_pattern(args: FindArgs, cancelable: &Cancelable) {
-    let player = Player::new(Options::errors_and_peers());
-    let parser = Parse::packed_with_player(player);
+    let changer = Changer::new(Options::errors_and_peers());
+    let parser = Parse::packed_with_player(changer);
     let (board, effects, failure) = parser.parse(&args.solution);
 
     if let Some((cell, known)) = failure {

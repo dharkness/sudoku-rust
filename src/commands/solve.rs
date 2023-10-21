@@ -9,7 +9,7 @@ use crate::io::{
     Cancelable, ParsePacked, SUDOKUWIKI_URL,
 };
 use crate::layout::{Cell, Known};
-use crate::puzzle::{Action, Board, Effects, Options, Player, Strategy};
+use crate::puzzle::{Action, Board, Changer, Effects, Options, Strategy};
 use crate::solve::{Difficulty, Reporter, Resolution, Solver};
 
 #[derive(Debug, Args)]
@@ -24,8 +24,8 @@ pub struct SolveArgs {
 
 /// Creates a new puzzle and prints it to stdout.
 pub fn solve_puzzles(args: SolveArgs, cancelable: &Cancelable) {
-    let player = Player::new(Options::errors_and_peers());
-    let parser = ParsePacked::new_with_player(player);
+    let changer = Changer::new(Options::errors_and_peers());
+    let parser = ParsePacked::new_with_player(changer);
     let solver = Solver::new(cancelable, args.check);
 
     match args.puzzles {

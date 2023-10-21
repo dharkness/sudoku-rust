@@ -1,5 +1,5 @@
 use crate::io::Cancelable;
-use crate::puzzle::{Action, Board, Change, Effects, Options, Player};
+use crate::puzzle::{Action, Board, Change, Changer, Effects, Options};
 use crate::solve::{find_brute_force, Difficulty, NON_PEER_TECHNIQUES};
 
 pub enum Resolution {
@@ -34,7 +34,7 @@ impl Resolution {
 /// Attempts to solve puzzles using the available strategy algorithms.
 pub struct Solver<'a> {
     /// Applies actions to the board to solve the puzzle.
-    player: Player,
+    changer: Changer,
 
     /// Allows canceling the solver.
     cancelable: &'a Cancelable,
@@ -47,7 +47,7 @@ pub struct Solver<'a> {
 impl Solver<'_> {
     pub fn new(cancelable: &'_ Cancelable, check: bool) -> Solver<'_> {
         Solver {
-            player: Player::new(Options::errors_and_peers()),
+            changer: Changer::new(Options::errors_and_peers()),
             cancelable,
             check,
         }
@@ -67,7 +67,7 @@ impl Solver<'_> {
                         return Resolution::Canceled(board, applied, difficulty);
                     }
 
-                    match self.player.apply(&board, action) {
+                    match self.changer.apply(&board, action) {
                         Change::None => (),
                         Change::Valid(after, actions) => {
                             applied.add_action(action.clone());

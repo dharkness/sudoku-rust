@@ -1,7 +1,7 @@
 use itertools::Itertools;
 
 use crate::layout::{Cell, Known, KnownSet};
-use crate::puzzle::{Board, Change, Effects, Options, Player, Strategy};
+use crate::puzzle::{Board, Change, Changer, Effects, Options, Strategy};
 
 /// Provides helper methods for parsing puzzle strings into boards.
 pub struct Parse {}
@@ -18,9 +18,9 @@ impl Parse {
         ParsePacked::new_with_options(options)
     }
 
-    /// Returns a new [`ParsePacked`] with the given player.
-    pub fn packed_with_player(player: Player) -> ParsePacked {
-        ParsePacked::new_with_player(player)
+    /// Returns a new [`ParsePacked`] with the given changer.
+    pub fn packed_with_player(changer: Changer) -> ParsePacked {
+        ParsePacked::new_with_player(changer)
     }
 
     /// Returns a new [`ParseGrid`] that ignores errors.
@@ -38,7 +38,7 @@ impl Parse {
 /// and/or automatically solving naked and hidden singles.
 #[derive(Default)]
 pub struct ParsePacked {
-    pub player: Player,
+    pub changer: Changer,
 }
 
 impl ParsePacked {
@@ -47,11 +47,11 @@ impl ParsePacked {
     }
 
     pub fn new_with_options(options: Options) -> Self {
-        ParsePacked::new_with_player(Player::new(options))
+        ParsePacked::new_with_player(Changer::new(options))
     }
 
-    pub fn new_with_player(player: Player) -> ParsePacked {
-        ParsePacked { player }
+    pub fn new_with_player(changer: Changer) -> ParsePacked {
+        ParsePacked { changer }
     }
 
     /// Builds a new board using an input string to set some cells,
@@ -79,14 +79,14 @@ impl ParsePacked {
                     let known = Known::from(char);
                     let current = board.value(cell);
                     if current != known.value() {
-                        match self.player.set_given(&board, Strategy::Given, cell, known) {
+                        match self.changer.set_given(&board, Strategy::Given, cell, known) {
                             Change::None => (),
                             Change::Valid(after, actions) => {
                                 board = *after;
                                 unapplied.take_actions(actions);
                             }
                             Change::Invalid(before, _, _, mut errors) => {
-                                if self.player.options.stop_on_error {
+                                if self.changer.options.stop_on_error {
                                     errors.take_actions(unapplied);
                                     return (*before, errors, Some((cell, known)));
                                 }

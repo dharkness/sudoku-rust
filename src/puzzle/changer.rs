@@ -15,11 +15,11 @@ pub enum Change {
 ///
 /// None of the methods modify the given board.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct Player {
+pub struct Changer {
     pub options: Options,
 }
 
-impl Player {
+impl Changer {
     pub const fn new(options: Options) -> Self {
         Self { options }
     }

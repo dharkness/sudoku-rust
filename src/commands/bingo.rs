@@ -5,7 +5,7 @@ use crate::io::{
     format_for_wiki, format_runtime, print_candidates, print_known_values, Cancelable, Parse,
     SUDOKUWIKI_URL,
 };
-use crate::puzzle::{Change, Options, Player};
+use crate::puzzle::{Change, Changer, Options};
 use crate::solve::{find_brute_force, BruteForceResult};
 
 #[derive(Debug, Args)]
@@ -28,8 +28,8 @@ pub struct BingoArgs {
 
 /// Creates a new puzzle and prints it to stdout.
 pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
-    let player = Player::new(Options::all());
-    let parser = Parse::packed_with_player(player);
+    let changer = Changer::new(Options::all());
+    let parser = Parse::packed_with_player(changer);
 
     let (mut board, effects, failure) = parser.parse(&args.puzzle);
     if !board.is_fully_solved() {
@@ -43,7 +43,7 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
         effects.print_errors();
         return;
     }
-    if let Change::Invalid(_, _, action, errors) = player.apply_all(&board, &effects) {
+    if let Change::Invalid(_, _, action, errors) = changer.apply_all(&board, &effects) {
         println!("\ninvalid puzzle");
         println!("\napplying {} will cause errors\n", action);
         errors.print_errors();
@@ -83,7 +83,7 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
         );
     }
     if let Some(solution) = solution {
-        match player.apply_all(&board, &solution) {
+        match changer.apply_all(&board, &solution) {
             Change::None => (),
             Change::Valid(after, _) => {
                 board = *after;
@@ -102,7 +102,7 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
             if i == 10 {
                 break;
             }
-            match player.apply_all(&board, solution) {
+            match changer.apply_all(&board, solution) {
                 Change::None => (),
                 Change::Valid(after, _) => {
                     println!("\nsolution {}\n", i + 1);

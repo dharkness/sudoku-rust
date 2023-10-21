@@ -32,7 +32,7 @@ pub fn find_brute_force(
         max_solutions = DEFAULT_MAXIMUM_SOLUTIONS;
     }
 
-    let player = Player::new(Options::all());
+    let changer = Changer::new(Options::all());
     let mut solutions: Vec<Effects> = Vec::new();
     let mut stack = Vec::with_capacity(81);
     stack.push(Entry::new(*board, Effects::new()));
@@ -74,7 +74,7 @@ pub fn find_brute_force(
             }
         }
 
-        match player.apply(board, &action) {
+        match changer.apply(board, &action) {
             Change::None => (),
             Change::Valid(after, _) => {
                 if log {

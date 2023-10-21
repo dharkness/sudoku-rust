@@ -5,7 +5,7 @@ use std::time::Instant;
 
 use crate::build::{Finder, Generator};
 use crate::io::{format_runtime, print_candidates, print_known_values, Cancelable, Parse};
-use crate::puzzle::{Options, Player};
+use crate::puzzle::{Changer, Options};
 
 #[derive(Debug, Args)]
 pub struct CreateArgs {
@@ -53,10 +53,10 @@ pub fn create_puzzle(args: CreateArgs, cancelable: &Cancelable) {
             board
         }
         None => {
-            let player = Player::new(Options::all());
+            let changer = Changer::new(Options::all());
             let mut generator = Generator::new(args.randomize, args.bar);
 
-            match generator.generate(&player, cancelable) {
+            match generator.generate(&changer, cancelable) {
                 Some(board) => {
                     if cancelable.is_canceled() {
                         print_candidates(&board);
