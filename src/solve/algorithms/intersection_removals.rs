@@ -49,7 +49,7 @@ fn check_intersection(board: &Board, block: House, houses: HouseSet, effects: &m
             let other_disjoint_candidates = board.all_candidates(other_disjoint);
 
             let candidate_cells = board.candidate_cells(known);
-            let segment_candidate_cells_count = (segment & candidate_cells).size();
+            let segment_candidate_cells_count = (segment & candidate_cells).len();
             if segment_candidate_cells_count < 2 {
                 return;
             }

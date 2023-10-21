@@ -159,7 +159,7 @@ impl fmt::Display for Action {
                     },
                 )
                 .iter()
-                .sorted_by(|(_, a), (_, b)| b.size().cmp(&a.size()))
+                .sorted_by(|(_, a), (_, b)| b.len().cmp(&a.len()))
             {
                 if first {
                     first = false;

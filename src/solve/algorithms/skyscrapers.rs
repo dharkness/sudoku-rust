@@ -20,7 +20,7 @@ fn check_houses(board: &Board, houses: HouseSet, cross: Shape, effects: &mut Eff
                 // degenerate X-Wing
                 return;
             }
-            if (board.candidate_cells(known) & f1.house(cross).cells()).size() == 2 {
+            if (board.candidate_cells(known) & f1.house(cross).cells()).len() == 2 {
                 // degenerate Singles Chain
                 return;
             }
@@ -38,7 +38,7 @@ fn check_houses(board: &Board, houses: HouseSet, cross: Shape, effects: &mut Eff
         houses
             .iter()
             .map(|house| board.house_candidate_cells(house, known))
-            .filter(|cells| cells.size() == 2)
+            .filter(|cells| cells.len() == 2)
             .combinations(2)
             .for_each(|pair| {
                 let (c11, c12) = pair[0].as_pair().unwrap();

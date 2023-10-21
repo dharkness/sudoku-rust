@@ -72,7 +72,7 @@ impl CoordSet {
         self.0 == ALL_SET
     }
 
-    pub const fn size(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.0.count_ones() as usize
     }
 
@@ -93,7 +93,7 @@ impl CoordSet {
     }
 
     pub const fn as_single(&self) -> Option<Coord> {
-        if self.size() != 1 {
+        if self.len() != 1 {
             None
         } else {
             Some(Coord::from_index(self.bits().trailing_zeros()))
@@ -101,7 +101,7 @@ impl CoordSet {
     }
 
     pub const fn as_pair(&self) -> Option<(Coord, Coord)> {
-        if self.size() != 2 {
+        if self.len() != 2 {
             None
         } else {
             let mut bits = self.bits();
@@ -113,7 +113,7 @@ impl CoordSet {
     }
 
     pub const fn as_triple(&self) -> Option<(Coord, Coord, Coord)> {
-        if self.size() != 3 {
+        if self.len() != 3 {
             None
         } else {
             let mut bits = self.bits();
@@ -215,7 +215,7 @@ impl CoordSet {
     pub fn debug(&self) -> String {
         format!(
             "{:01}:{:09b}",
-            self.size(),
+            self.len(),
             self.bits().reverse_bits() >> (16 - 9)
         )
     }
@@ -507,7 +507,7 @@ mod tests {
         let set = CoordSet::empty();
 
         assert!(set.is_empty());
-        assert_eq!(0, set.size());
+        assert_eq!(0, set.len());
         for i in 1..=9 {
             assert!(!set[coord!(i)]);
         }
@@ -518,7 +518,7 @@ mod tests {
         let set = CoordSet::full();
 
         assert!(!set.is_empty());
-        assert_eq!(9, set.size());
+        assert_eq!(9, set.len());
         for i in 1..=9 {
             assert!(set[coord!(i)]);
         }
@@ -529,7 +529,7 @@ mod tests {
         let set = CoordSet(0b101010101);
 
         assert!(!set.is_empty());
-        assert_eq!(5, set.size());
+        assert_eq!(5, set.len());
         for i in 1..=9 {
             assert_eq!(i % 2 == 1, set[coord!(i)]);
         }

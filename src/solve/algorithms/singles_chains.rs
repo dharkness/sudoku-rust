@@ -15,7 +15,7 @@ pub fn find_singles_chains(board: &Board) -> Option<Effects> {
 
             House::iter()
                 .map(|house| board.house_candidate_cells(house, known))
-                .filter(|cells| cells.size() == 2)
+                .filter(|cells| cells.len() == 2)
                 .for_each(|cells| {
                     // println!("house {}, cells {}", house, cells);
                     nodes |= cells;
@@ -48,7 +48,7 @@ pub fn find_singles_chains(board: &Board) -> Option<Effects> {
 
                 while !stack.is_empty() {
                     let pool = stack.last_mut().unwrap();
-                    if pool.is_empty() || chain.nodes.size() + 1 >= shortest {
+                    if pool.is_empty() || chain.nodes.len() + 1 >= shortest {
                         if !chain.nodes.is_empty() {
                             chain.pop();
                         }
@@ -69,7 +69,7 @@ pub fn find_singles_chains(board: &Board) -> Option<Effects> {
                             break;
                         }
 
-                        shortest = chain.nodes.size();
+                        shortest = chain.nodes.len();
                         chains.push(chain.clone());
                         (candidates & chain.sees()).iter().for_each(|cell| {
                             cell_chains.insert(cell, (chains.len() - 1, chain.len()));

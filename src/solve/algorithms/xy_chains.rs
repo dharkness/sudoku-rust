@@ -86,7 +86,7 @@ impl Forest {
 
         if sees.is_empty() {
             self.graphs.insert(cell, Graph::new(&node));
-        } else if sees.size() == 1 {
+        } else if sees.len() == 1 {
             let root = sees.pop().unwrap();
             self.graphs.get_mut(&root).unwrap().add_node(&node);
         } else {
@@ -344,7 +344,7 @@ impl Found {
         for chain in self.chains.iter().sorted_by(|left, right| {
             left.len
                 .cmp(&right.len)
-                .then(left.erases.size().cmp(&right.erases.size()))
+                .then(left.erases.len().cmp(&right.erases.len()))
         }) {
             effects.add_erase_cells(Strategy::XYChain, chain.erases, chain.start_known);
 

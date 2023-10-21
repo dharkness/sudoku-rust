@@ -341,7 +341,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                         println!("\n==> The puzzle needs at least 17 solved cells to verify\n");
                     }
                     BruteForceResult::UnsolvableCells(cells) => {
-                        println!("\n==> The puzzle cannot be solved with these {} empty cells\n\n    {}\n", cells.size(), cells);
+                        println!("\n==> The puzzle cannot be solved with these {} empty cells\n\n    {}\n", cells.len(), cells);
                     }
                     BruteForceResult::Canceled => {
                         println!(
@@ -510,7 +510,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
                         println!("\n==> The puzzle needs at least 17 solved cells to verify\n");
                     }
                     BruteForceResult::UnsolvableCells(cells) => {
-                        println!("\n==> The puzzle cannot be solved with these {} empty cells\n\n    {}\n", cells.size(), cells);
+                        println!("\n==> The puzzle cannot be solved with these {} empty cells\n\n    {}\n", cells.len(), cells);
                     }
                     BruteForceResult::Canceled => {
                         println!(

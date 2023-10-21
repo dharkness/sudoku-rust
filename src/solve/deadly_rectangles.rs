@@ -52,7 +52,7 @@ pub fn creates_deadly_rectangles(
     let solved = board.solved();
     let found: Vec<Rectangle> = Rectangle::iter()
         .filter(|r| r.cells.has(cell))
-        .filter(|r| (r.cells - solved).size() == 1)
+        .filter(|r| (r.cells - solved).len() == 1)
         .map(|r| (r, r.with_origin(cell)))
         .filter(|(_, r)| board.value(r.bottom_right) == value)
         .filter(|(_, r)| board.value(r.top_right) == board.value(r.bottom_left))

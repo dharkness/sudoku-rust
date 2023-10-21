@@ -5,7 +5,7 @@ pub fn find_bugs(board: &Board) -> Option<Effects> {
 
     let pairs = board.cells_with_n_candidates(2);
     let triples = board.cells_with_n_candidates(3);
-    if pairs.is_empty() || triples.size() != 1 {
+    if pairs.is_empty() || triples.len() != 1 {
         return None;
     }
 
@@ -21,7 +21,7 @@ pub fn find_bugs(board: &Board) -> Option<Effects> {
 
     for known in candidates {
         for house in triple.houses() {
-            if board.house_candidate_cells(house, known).size() == 2 {
+            if board.house_candidate_cells(house, known).len() == 2 {
                 // removing this candidate will not create a BUG
                 eliminated += known;
                 break;
@@ -29,7 +29,7 @@ pub fn find_bugs(board: &Board) -> Option<Effects> {
         }
     }
 
-    if eliminated.size() == 2 {
+    if eliminated.len() == 2 {
         let solution = (candidates - eliminated).as_single().unwrap();
         effects.add_set(Strategy::Bug, triple, solution);
     }

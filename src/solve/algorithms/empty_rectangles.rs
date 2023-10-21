@@ -36,7 +36,7 @@ pub fn find_empty_rectangles(board: &Board) -> Option<Effects> {
 
                                 let mut action =
                                     Action::new_erase(Strategy::EmptyRectangle, end, known);
-                                if ends.size() == 1 {
+                                if ends.len() == 1 {
                                     action.erase(start, known);
                                 }
                                 effects.add_action(action);
@@ -57,7 +57,7 @@ pub fn find_empty_rectangles(board: &Board) -> Option<Effects> {
 
 fn fit_row_column(board: &Board, block: House, known: Known) -> Option<(CellSet, House, House)> {
     let cells = board.house_candidate_cells(block, known);
-    if cells.size() < 3 {
+    if cells.len() < 3 {
         // possible degenerate singles chain if two and not a candidate if only one
         return None;
     }

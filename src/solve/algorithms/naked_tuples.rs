@@ -20,12 +20,12 @@ fn find_naked_tuples(board: &Board, size: usize, strategy: Strategy) -> Option<E
         house_cells
             .iter()
             .map(|cell| (cell, board.candidates(cell)))
-            .filter(|(_, candidates)| 2 <= candidates.size() && candidates.size() <= size)
+            .filter(|(_, candidates)| 2 <= candidates.len() && candidates.len() <= size)
             .combinations(size)
             .for_each(|candidates| {
                 let known_sets = candidates.iter().map(|(_, ks)| *ks).collect::<Vec<_>>();
                 let knowns = known_sets.iter().copied().union() as KnownSet;
-                if knowns.size() != size
+                if knowns.len() != size
                     || is_degenerate(&known_sets, size, 2)
                     || is_degenerate(&known_sets, size, 3)
                 {
@@ -59,7 +59,7 @@ pub fn is_degenerate(known_sets: &[KnownSet], size: usize, smaller_size: usize) 
             .iter()
             .combinations(smaller_size)
             .map(|sets| sets.into_iter().copied().union())
-            .any(|set| (set.size()) <= smaller_size)
+            .any(|set| (set.len()) <= smaller_size)
 }
 
 #[cfg(test)]

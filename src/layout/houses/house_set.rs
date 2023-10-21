@@ -65,8 +65,8 @@ impl HouseSet {
         self.coords.is_full()
     }
 
-    pub const fn size(&self) -> usize {
-        self.coords.size()
+    pub const fn len(&self) -> usize {
+        self.coords.len()
     }
 
     pub fn has(&self, house: House) -> bool {
@@ -579,7 +579,7 @@ mod tests {
         let set = HouseSet::empty(Shape::Row);
 
         assert!(set.is_empty());
-        assert_eq!(0, set.size());
+        assert_eq!(0, set.len());
         assert!(set.iter().collect::<Vec<House>>().is_empty());
         House::rows_iter().for_each(|house| assert!(!set.has(house)));
     }
@@ -589,7 +589,7 @@ mod tests {
         let set = HouseSet::full(Shape::Row);
 
         assert!(!set.is_empty());
-        assert_eq!(9, set.size());
+        assert_eq!(9, set.len());
         assert_eq!(9, set.iter().collect::<Vec<House>>().len());
         House::rows_iter().for_each(|house| assert!(set.has(house)));
     }

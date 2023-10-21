@@ -139,7 +139,7 @@ impl FormatGrid {
                         if board.is_known(cell) {
                             1
                         } else {
-                            board.candidates(cell).size()
+                            board.candidates(cell).len()
                         }
                     })
                     .max()

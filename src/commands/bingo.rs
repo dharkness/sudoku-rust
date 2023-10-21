@@ -78,7 +78,7 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
     if let Some(cells) = empty_cells {
         println!(
             "\nthe puzzle has {} empty cells\n\n=> {}",
-            cells.size(),
+            cells.len(),
             cells
         );
     }

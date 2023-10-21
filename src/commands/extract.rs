@@ -38,8 +38,8 @@ pub fn extract_patterns(args: ExtractArgs, cancelable: &Cancelable) {
     for puzzle in stdin.lock().lines().map_while(Result::ok) {
         let pattern = CellSet::new_from_pattern(&puzzle);
 
-        total_size += pattern.size();
-        *sizes.entry(pattern.size()).or_default() += 1;
+        total_size += pattern.len();
+        *sizes.entry(pattern.len()).or_default() += 1;
         *patterns.entry(pattern).or_default() += 1;
         count += 1;
         if cancelable.is_canceled() {

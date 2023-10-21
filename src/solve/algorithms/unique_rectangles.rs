@@ -17,7 +17,7 @@ pub fn find_unique_rectangles(board: &Board) -> Option<Effects> {
                 acc
             });
 
-    for (pair, cells) in bi_values.iter().filter(|(_, cells)| cells.size() >= 2) {
+    for (pair, cells) in bi_values.iter().filter(|(_, cells)| cells.len() >= 2) {
         let mut found_type_ones: HashSet<Rectangle> = HashSet::new();
 
         for corners in cells.iter().combinations(3).map(CellSet::from_iter) {
@@ -298,7 +298,7 @@ impl Candidate {
     }
 
     fn check_type_two(&self, board: &Board, effects: &mut Effects) {
-        if self.roof_left_extras.size() != 1 || self.roof_left_extras != self.roof_right_extras {
+        if self.roof_left_extras.len() != 1 || self.roof_left_extras != self.roof_right_extras {
             return;
         }
 
@@ -315,7 +315,7 @@ impl Candidate {
     }
 
     fn check_type_three(&self, board: &Board, effects: &mut Effects) {
-        if !(2..=4).contains(&self.roof_extras.size()) {
+        if !(2..=4).contains(&self.roof_extras.len()) {
             return;
         }
 
@@ -332,7 +332,7 @@ impl Candidate {
                 // find naked tuples
                 peer_knowns
                     .iter()
-                    .filter(|(_, knowns)| (2..=size).contains(&knowns.size()))
+                    .filter(|(_, knowns)| (2..=size).contains(&knowns.len()))
                     .combinations(size - 1)
                     .for_each(|peer_knowns| {
                         let known_sets: Vec<KnownSet> = peer_knowns
@@ -341,7 +341,7 @@ impl Candidate {
                             .chain([self.roof_extras])
                             .collect();
                         let knowns = known_sets.iter().copied().union() as KnownSet;
-                        if knowns.size() != size
+                        if knowns.len() != size
                             || naked_tuples::is_degenerate(&known_sets, size, 2)
                             || naked_tuples::is_degenerate(&known_sets, size, 3)
                         {
@@ -399,8 +399,8 @@ impl Candidate {
         ] {
             let house_left = self.floor_left.house(shape);
             let house_right = self.floor_right.house(shape);
-            if board.house_candidate_cells(house_left, pair_check).size() == 2
-                && board.house_candidate_cells(house_right, pair_check).size() == 2
+            if board.house_candidate_cells(house_left, pair_check).len() == 2
+                && board.house_candidate_cells(house_right, pair_check).len() == 2
             {
                 erase = Some(pair_erase);
             }

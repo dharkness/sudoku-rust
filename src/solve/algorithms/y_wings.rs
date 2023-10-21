@@ -9,7 +9,7 @@ pub fn find_y_wings(board: &Board) -> Option<Effects> {
     bi_values.iter().for_each(|cell| {
         let (k1, k2) = board.candidates(cell).as_pair().unwrap();
         let peers = cell.peers() & bi_values;
-        if peers.size() < 2 {
+        if peers.len() < 2 {
             return;
         }
 

@@ -69,7 +69,7 @@ impl Board {
 
     /// Returns the number of unknown cells in the puzzle.
     pub const fn unknown_count(&self) -> usize {
-        81 - self.knowns.size()
+        81 - self.knowns.len()
     }
 
     /// Returns the set of all unknown cells.
@@ -91,7 +91,7 @@ impl Board {
 
     /// Returns the number of known cells in the puzzle, including givens.
     pub const fn known_count(&self) -> usize {
-        self.knowns.size()
+        self.knowns.len()
     }
 
     /// Returns the set of all known cells, including givens.
@@ -125,7 +125,7 @@ impl Board {
 
     /// Returns the number of givens in the puzzle.
     pub const fn given_count(&self) -> usize {
-        self.givens.size()
+        self.givens.len()
     }
 
     /// Returns the set of all givens.
@@ -145,7 +145,7 @@ impl Board {
 
     /// Returns the number of solved cells in the puzzle, excluding givens.
     pub const fn solved_count(&self) -> usize {
-        self.knowns.size() - self.givens.size()
+        self.knowns.len() - self.givens.len()
     }
 
     /// Returns the set of all solved cells, excluding givens.
@@ -216,7 +216,7 @@ impl Board {
         self.candidate_cells_by_known[known.usize()] -= cell;
 
         let mut candidates = self.candidate_knowns_by_cell[cell.usize()];
-        self.cells_with_n_candidates[candidates.size()] -= cell;
+        self.cells_with_n_candidates[candidates.len()] -= cell;
         self.cells_with_n_candidates[0] += cell;
         candidates -= known;
         self.candidate_knowns_by_cell[cell.usize()] = KnownSet::empty();
@@ -309,7 +309,7 @@ impl Board {
             return false;
         }
 
-        let size = knowns.size();
+        let size = knowns.len();
         *knowns -= known;
         self.cells_with_n_candidates[size] -= cell;
         self.cells_with_n_candidates[size - 1] += cell;
@@ -347,7 +347,7 @@ impl Board {
             let candidates = self.house_candidate_cells(house, known);
             if candidates.is_empty() {
                 effects.add_error(Error::UnsolvableHouse(house, known));
-            } else if candidates.size() == 1 {
+            } else if candidates.len() == 1 {
                 let single = candidates.as_single().unwrap();
                 effects.add_set(Strategy::HiddenSingle, single, known);
             }
@@ -527,9 +527,9 @@ mod test {
             "A3 A7 A8 A9 B2 B5 B7 C8 D1 D4 D5 D9 E4 E6 F1 F5 F6 F9 G1 G2 G3 H1 H2 H3 H5 H8 J1 J2 J3 J7",
         );
 
-        assert_eq!(f.unknown_count(), 81 - solved.size());
+        assert_eq!(f.unknown_count(), 81 - solved.len());
         assert_eq!(f.unknowns(), CellSet::full() - solved);
-        assert_eq!(f.known_count(), solved.size());
+        assert_eq!(f.known_count(), solved.len());
         assert_eq!(f.knowns(), solved);
         assert_eq!(f.all_knowns(CellSet::full()), KnownSet::full());
 
@@ -537,7 +537,7 @@ mod test {
         assert_eq!(f.givens(), CellSet::empty());
 
         assert_eq!(f.is_fully_solved(), false);
-        assert_eq!(f.solved_count(), solved.size());
+        assert_eq!(f.solved_count(), solved.len());
         assert_eq!(f.solved(), solved);
 
         for cell in solved {

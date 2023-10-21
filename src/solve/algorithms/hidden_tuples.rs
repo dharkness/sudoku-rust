@@ -19,12 +19,12 @@ pub fn find_hidden_tuples(board: &Board, size: usize, strategy: Strategy) -> Opt
     House::iter().for_each(|house| {
         Known::iter()
             .map(|k| (k, house.cells() & board.candidate_cells(k)))
-            .filter(|(_, candidates)| 2 <= candidates.size() && candidates.size() <= size)
+            .filter(|(_, candidates)| 2 <= candidates.len() && candidates.len() <= size)
             .combinations(size)
             .for_each(|candidates| {
                 let cell_sets = candidates.iter().map(|(_, cs)| *cs).collect::<Vec<_>>();
                 let cells = cell_sets.iter().copied().union();
-                if cells.size() != size
+                if cells.len() != size
                     || is_degenerate(&cell_sets, size, 2)
                     || is_degenerate(&cell_sets, size, 3)
                 {
@@ -58,7 +58,7 @@ pub fn is_degenerate(cell_sets: &[CellSet], size: usize, smaller_size: usize) ->
             .iter()
             .combinations(smaller_size)
             .map(|sets| sets.into_iter().copied().union())
-            .any(|set| (set.size()) <= smaller_size)
+            .any(|set| (set.len()) <= smaller_size)
 }
 
 #[cfg(test)]

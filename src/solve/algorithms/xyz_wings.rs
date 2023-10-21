@@ -32,7 +32,7 @@ pub fn find_xyz_wings(board: &Board) -> Option<Effects> {
             .for_each(|pair| {
                 let (c1, c2) = pair.as_pair().expect("cell pair");
                 let candidates = cell.peers() & c1.peers() & c2.peers();
-                if candidates.size() != 2 {
+                if candidates.len() != 2 {
                     // degenerate naked triple
                     return;
                 }

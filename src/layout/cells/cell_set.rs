@@ -72,7 +72,7 @@ impl CellSet {
         self.0 == ALL_SET
     }
 
-    pub const fn size(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.0.count_ones() as usize
     }
 
@@ -97,7 +97,7 @@ impl CellSet {
     }
 
     pub const fn as_single(&self) -> Option<Cell> {
-        if self.size() != 1 {
+        if self.len() != 1 {
             None
         } else {
             Some(Cell::new(self.bits().trailing_zeros() as u8))
@@ -105,7 +105,7 @@ impl CellSet {
     }
 
     pub const fn as_pair(&self) -> Option<(Cell, Cell)> {
-        if self.size() != 2 {
+        if self.len() != 2 {
             None
         } else {
             let mut bits = self.bits();
@@ -117,7 +117,7 @@ impl CellSet {
     }
 
     pub const fn as_triple(&self) -> Option<(Cell, Cell, Cell)> {
-        if self.size() != 3 {
+        if self.len() != 3 {
             None
         } else {
             let mut bits = self.bits();
@@ -248,7 +248,7 @@ impl CellSet {
     pub fn debug(&self) -> String {
         format!(
             "{:02}:{:081b}",
-            self.size(),
+            self.len(),
             self.bits().reverse_bits() >> (128 - 81)
         )
     }
@@ -521,7 +521,7 @@ impl fmt::Display for CellSet {
         if self.is_empty() {
             write!(f, "{}", EMPTY_SET)
         } else {
-            let mut s = String::with_capacity(3 * self.size() + 2);
+            let mut s = String::with_capacity(3 * self.len() + 2);
             let mut first = true;
             for cell in self.iter() {
                 if first {
@@ -595,7 +595,7 @@ mod tests {
         let set = CellSet::empty();
 
         assert!(set.is_empty());
-        assert_eq!(0, set.size());
+        assert_eq!(0, set.len());
         for i in ALL_CELLS {
             assert!(!set[Cell::new(i)]);
         }
@@ -606,7 +606,7 @@ mod tests {
         let set = CellSet::full();
 
         assert!(!set.is_empty());
-        assert_eq!(Cell::COUNT, set.size() as u8);
+        assert_eq!(Cell::COUNT, set.len() as u8);
         for i in ALL_CELLS {
             assert!(set[Cell::new(i)]);
         }
@@ -619,7 +619,7 @@ mod tests {
         );
 
         assert!(!set.is_empty());
-        assert_eq!(41, set.size());
+        assert_eq!(41, set.len());
         for i in ALL_CELLS {
             assert_eq!(i % 2 == 0, set[Cell::new(i)]);
         }

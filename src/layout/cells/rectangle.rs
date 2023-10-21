@@ -105,14 +105,14 @@ impl TryFrom<CellSet> for Rectangle {
     type Error = ();
 
     fn try_from(cells: CellSet) -> Result<Rectangle, ()> {
-        if cells.size() < 2 || 4 < cells.size() {
+        if cells.len() < 2 || 4 < cells.len() {
             return Err(());
         }
 
         let rows = cells.rows();
         let columns = cells.columns();
 
-        if rows.size() != 2 || columns.size() != 2 {
+        if rows.len() != 2 || columns.len() != 2 {
             return Err(());
         }
 
