@@ -2,38 +2,73 @@
 
 use crate::layout::{Cell, House, Known};
 use crate::puzzle::Board;
-use crate::symbols::{MISSING, REMOVE_CANDIDATE};
+use crate::symbols::{CANDIDATE, MISSING};
 
-pub fn print_values(board: &Board) {
-    println!("  ¹²³⁴⁵⁶⁷⁸⁹");
-    House::rows_iter().for_each(|row| {
-        print!("{} ", row.console_label());
-        row.cells().iter().for_each(|cell| {
-            let value = board.value(cell);
-            print!("{}", value);
-        });
-        println!();
+pub fn print_givens(board: &Board) {
+    print_single_value_board(|cell| {
+        let value = board.value(cell);
+        if value.is_unknown() {
+            ' '
+        } else if board.is_given(cell) {
+            value.label()
+        } else {
+            MISSING
+        }
+    });
+}
+
+pub fn print_known_values(board: &Board) {
+    print_single_value_board(|cell| {
+        let value = board.value(cell);
+        if value.is_unknown() {
+            ' '
+        } else {
+            value.label()
+        }
     });
 }
 
 pub fn print_candidate(board: &Board, candidate: Known) {
-    println!("  ¹²³⁴⁵⁶⁷⁸⁹");
-    House::rows_iter().for_each(|row| {
-        print!("{} ", row.console_label());
-        row.cells().iter().for_each(|cell| {
-            if board.is_candidate(cell, candidate) {
-                print!("{}", candidate.highlight());
+    print_single_value_board(|cell| {
+        if board.is_candidate(cell, candidate) {
+            CANDIDATE
+        } else {
+            let value = board.value(cell);
+            if value.is_unknown() {
+                ' '
+            } else if value == candidate.value() {
+                value.label()
             } else {
-                let value = board.value(cell);
-                if value.is_unknown() || value == candidate.value() {
-                    print!("{}", value);
-                } else {
-                    print!("{}", REMOVE_CANDIDATE);
-                }
+                MISSING
+            }
+        }
+    });
+}
+
+pub fn print_single_value_board(get_char: impl Fn(Cell) -> char) {
+    println!("    ¹ ² ³   ⁴ ⁵ ⁶   ⁷ ⁸ ⁹");
+    println!("  ┍───────┬───────┬───────┐");
+    House::rows_iter().enumerate().for_each(|(r, row)| {
+        if r != 0 {
+            if r % 3 == 0 {
+                println!("  ├───────┼───────┼───────┤");
+            } else {
+                println!("  │       │       │       │");
+            }
+        }
+        print!("{}", row.console_label());
+        row.cells().iter().enumerate().for_each(|(c, cell)| {
+            let char = get_char(cell);
+            if c % 3 == 0 {
+                print!(" │ {}", char);
+            } else {
+                print!(" {}", char);
             }
         });
-        println!();
+        println!(" │ {}", row.console_label());
     });
+    println!("  └───────┴───────┴───────┘");
+    println!("    ₁ ₂ ₃   ₄ ₅ ₆   ₇ ₈ ₉");
 }
 
 pub fn print_candidates(board: &Board) {

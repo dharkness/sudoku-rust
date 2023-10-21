@@ -5,8 +5,8 @@ use std::io::BufRead;
 use std::time::{Duration, Instant};
 
 use crate::io::{
-    format_for_wiki, format_number, format_runtime, print_candidates, print_values, Cancelable,
-    ParsePacked, SUDOKUWIKI_URL,
+    format_for_wiki, format_number, format_runtime, print_candidates, print_known_values,
+    Cancelable, ParsePacked, SUDOKUWIKI_URL,
 };
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Action, Board, Effects, Options, Player, Strategy};
@@ -224,7 +224,7 @@ impl Reporter for DetailedReporter {
             format_runtime(runtime),
             solution.packed_string()
         );
-        print_values(solution);
+        print_known_values(solution);
         println!();
         self.print_counts(counts);
     }

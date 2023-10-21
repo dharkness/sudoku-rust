@@ -7,7 +7,8 @@ use std::time::Instant;
 use crate::build::{Finder, Generator};
 use crate::io::{
     format_for_fancy_console, format_for_wiki, format_grid, format_packed, format_runtime,
-    print_candidate, print_candidates, Cancelable, Parse, SUDOKUWIKI_URL,
+    print_candidate, print_candidates, print_givens, print_known_values, Cancelable, Parse,
+    SUDOKUWIKI_URL,
 };
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Board, Change, Effects, Options, Player, Strategy};
@@ -196,13 +197,21 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
 
             "P" => {
                 if input.len() >= 2 {
-                    let k = input[1].chars().next().unwrap();
-                    if ('1'..='9').contains(&k) {
+                    let c = input[1].to_uppercase().chars().next().unwrap();
+                    if c == 'G' {
                         println!();
-                        print_candidate(board, Known::from(k));
+                        print_givens(board);
+                        println!();
+                    } else if c == 'K' {
+                        println!();
+                        print_known_values(board);
+                        println!();
+                    } else if ('1'..='9').contains(&c) {
+                        println!();
+                        print_candidate(board, Known::from(c));
                         println!();
                     } else {
-                        println!("\n==> Invalid candidate \"{}\"\n", k);
+                        println!("\n==> Invalid candidate \"{}\"\n", c);
                     }
                 } else {
                     println!();
@@ -554,28 +563,28 @@ fn print_help() {
     println!(concat!(
         "\n==> Help\n",
         "\n",
-        "  O [option]        - view or toggle an option\n",
-        "  N                 - start or input a new puzzle\n",
-        "  C                 - create a new random puzzle\n",
+        "  O [option]          - view or toggle an option\n",
+        "  N                   - start or input a new puzzle\n",
+        "  C                   - create a new random puzzle\n",
         "\n",
-        "  P [digit]         - print the puzzle, optionally limited to a single candidate\n",
-        "  X [char]          - export the puzzle with optional character for unsolved cells\n",
-        "  W                 - print URL to play on SudokuWiki.org\n",
-        "  M                 - print the puzzle as a grid suitable for email\n",
+        "  P [G | K | digit]   - print the full puzzle, givens, knowns, or a single candidate\n",
+        "  X [char]            - export the puzzle with optional character for unsolved cells\n",
+        "  W                   - print URL to play on SudokuWiki.org\n",
+        "  M                   - print the puzzle as a grid suitable for email\n",
         "\n",
-        "  G <cell> <digit>  - set the given (clue) for a cell\n",
-        "  S <cell> <digit>  - solve a cell\n",
-        "  E <cell> <digits> - erase one or more candidates\n",
+        "  G <cell> <digit>    - set the given (clue) for a cell\n",
+        "  S <cell> <digit>    - solve a cell\n",
+        "  E <cell> <digits>   - erase one or more candidates\n",
         "\n",
-        "  V                 - verify puzzle is solvable\n",
-        "  F                 - find deductions\n",
-        "  A <num>           - apply a single or all deductions\n",
-        "  B                 - use Bowman's Bingo to solve the puzzle if possible\n",
-        "  R                 - reset candidates based on solved cells\n",
-        "  Z                 - undo last change\n",
+        "  V                   - verify puzzle is solvable\n",
+        "  F                   - find deductions\n",
+        "  A <num>             - apply a single or all deductions\n",
+        "  B                   - use Bowman's Bingo to solve the puzzle if possible\n",
+        "  R                   - reset candidates based on solved cells\n",
+        "  Z                   - undo last change\n",
         "\n",
-        "  H                 - this help message\n",
-        "  Q                 - quit\n",
+        "  H                   - this help message\n",
+        "  Q                   - quit\n",
         "\n",
         "      <option> - P, N or H\n",
         "      <cell>   - A1 to J9\n",

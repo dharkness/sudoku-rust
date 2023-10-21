@@ -4,7 +4,7 @@ use std::process::exit;
 use std::time::Instant;
 
 use crate::build::{Finder, Generator};
-use crate::io::{format_runtime, print_candidates, print_values, Cancelable, Parse};
+use crate::io::{format_runtime, print_candidates, print_known_values, Cancelable, Parse};
 use crate::puzzle::{Options, Player};
 
 #[derive(Debug, Args)]
@@ -79,7 +79,7 @@ pub fn create_puzzle(args: CreateArgs, cancelable: &Cancelable) {
         }
     };
 
-    print_values(&board);
+    print_known_values(&board);
     println!("\n==> Seeking a solvable starting puzzle...\n");
 
     let runtime = Instant::now();

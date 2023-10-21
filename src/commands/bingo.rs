@@ -2,7 +2,7 @@ use clap::Args;
 use std::time::Instant;
 
 use crate::io::{
-    format_for_wiki, format_runtime, print_candidates, print_values, Cancelable, Parse,
+    format_for_wiki, format_runtime, print_candidates, print_known_values, Cancelable, Parse,
     SUDOKUWIKI_URL,
 };
 use crate::puzzle::{Change, Options, Player};
@@ -106,7 +106,7 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
                 Change::None => (),
                 Change::Valid(after, _) => {
                     println!("\nsolution {}\n", i + 1);
-                    print_values(&after);
+                    print_known_values(&after);
                     println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&after));
                 }
                 Change::Invalid(before, _, action, errors) => {
@@ -122,7 +122,7 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
 
     if board.is_fully_solved() {
         println!();
-        print_values(&board);
+        print_known_values(&board);
         println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&board));
     }
 }
