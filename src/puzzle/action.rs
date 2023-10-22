@@ -166,18 +166,30 @@ impl fmt::Display for Action {
                 } else {
                     f.write_str(", ")?;
                 }
-                write!(f, "{} {} ", cells, REMOVE_CANDIDATE)?;
                 for known in knowns.iter() {
                     f.write_char(known.label())?;
                 }
+                write!(f, " {} {}", REMOVE_CANDIDATE, cells)?;
             }
-            for (cell, known) in self.set.iter().sorted() {
+            for (known, cells) in self
+                .set
+                .iter()
+                .fold(
+                    HashMap::new(),
+                    |mut map: HashMap<Known, CellSet>, (cell, known)| {
+                        *map.entry(*known).or_default() += *cell;
+                        map
+                    },
+                )
+                .iter()
+                .sorted_by(|(a, _), (b, _)| a.cmp(&b))
+            {
                 if first {
                     first = false;
                 } else {
                     f.write_str(", ")?;
                 }
-                write!(f, "{} {} {}", cell, SET_KNOWN, known)?;
+                write!(f, "{} {} {}", known, SET_KNOWN, cells)?;
             }
             Ok(())
         }
