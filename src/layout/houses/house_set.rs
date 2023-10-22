@@ -1,7 +1,7 @@
 use std::fmt;
 use std::iter::FusedIterator;
 use std::ops::{
-    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Neg, Not, Sub, SubAssign,
+    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Not, Sub, SubAssign,
 };
 
 use crate::layout::CellSet;
@@ -233,7 +233,7 @@ impl HouseSet {
         } else {
             Self {
                 shape: self.shape,
-                coords: self.coords & -set.coords,
+                coords: self.coords & !set.coords,
             }
         }
     }
@@ -245,7 +245,7 @@ impl HouseSet {
     pub fn inverted(&self) -> Self {
         Self {
             shape: self.shape,
-            coords: -self.coords,
+            coords: !self.coords,
         }
     }
 
@@ -445,17 +445,9 @@ impl SubAssign<Coord> for HouseSet {
 }
 
 impl Not for HouseSet {
-    type Output = bool;
-
-    fn not(self) -> bool {
-        self.is_empty()
-    }
-}
-
-impl Neg for HouseSet {
     type Output = Self;
 
-    fn neg(self) -> Self {
+    fn not(self) -> Self {
         self.inverted()
     }
 }

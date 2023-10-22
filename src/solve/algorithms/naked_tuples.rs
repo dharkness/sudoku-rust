@@ -79,8 +79,8 @@ mod tests {
 
         find_naked_pairs(&board).unwrap().apply_all(&mut board);
 
-        assert_eq!(-knowns, board.candidates(cell!("A1")));
-        assert_eq!(-knowns, board.candidates(cell!("A2")));
+        assert_eq!(!knowns, board.candidates(cell!("A1")));
+        assert_eq!(!knowns, board.candidates(cell!("A2")));
         assert_eq!(knowns, board.candidates(cell!("A5")));
         assert_eq!(knowns, board.candidates(cell!("B3")));
         assert_eq!(knowns, board.candidates(cell!("C2")));
@@ -96,7 +96,7 @@ mod tests {
 
         find_naked_triples(&board).unwrap().apply_all(&mut board);
 
-        assert_eq!(-knowns, board.candidates(cell!("A1")));
+        assert_eq!(!knowns, board.candidates(cell!("A1")));
         assert_eq!(knowns, board.candidates(cell!("A8")));
         assert_eq!(KnownSet::full(), board.candidates(cell!("B3")));
         assert_eq!(KnownSet::full(), board.candidates(cell!("C2")));
@@ -112,8 +112,8 @@ mod tests {
 
         find_naked_quads(&board).unwrap().apply_all(&mut board);
 
-        assert_eq!(-knowns, board.candidates(cell!("A1")));
-        assert_eq!(-knowns, board.candidates(cell!("A2")));
+        assert_eq!(!knowns, board.candidates(cell!("A1")));
+        assert_eq!(!knowns, board.candidates(cell!("A2")));
         assert_eq!(knowns, board.candidates(cell!("A9")));
         assert_eq!(KnownSet::full(), board.candidates(cell!("B3")));
         assert_eq!(KnownSet::full(), board.candidates(cell!("C2")));
