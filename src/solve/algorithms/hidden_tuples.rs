@@ -82,9 +82,9 @@ mod tests {
 
         assert_eq!(knowns, board.candidates(cell!("A3")));
         assert_eq!(knowns, board.candidates(cell!("A7")));
-        assert_eq!(-knowns, board.candidates(cell!("A2")));
-        assert_eq!(-knowns, board.candidates(cell!("A6")));
-        assert_eq!(-knowns, board.candidates(cell!("A9")));
+        assert_eq!(!knowns, board.candidates(cell!("A2")));
+        assert_eq!(!knowns, board.candidates(cell!("A6")));
+        assert_eq!(!knowns, board.candidates(cell!("A9")));
     }
 
     #[test]
@@ -101,9 +101,9 @@ mod tests {
         assert_eq!(knowns, board.candidates(cell!("A3")));
         assert_eq!(knowns, board.candidates(cell!("A5")));
         assert_eq!(knowns, board.candidates(cell!("A7")));
-        assert_eq!(-knowns, board.candidates(cell!("A2")));
-        assert_eq!(-knowns, board.candidates(cell!("A6")));
-        assert_eq!(-knowns, board.candidates(cell!("A9")));
+        assert_eq!(!knowns, board.candidates(cell!("A2")));
+        assert_eq!(!knowns, board.candidates(cell!("A6")));
+        assert_eq!(!knowns, board.candidates(cell!("A9")));
     }
 
     #[test]
@@ -121,8 +121,8 @@ mod tests {
         assert_eq!(knowns, board.candidates(cell!("A3")));
         assert_eq!(knowns, board.candidates(cell!("A5")));
         assert_eq!(knowns, board.candidates(cell!("A7")));
-        assert_eq!(-knowns, board.candidates(cell!("A2")));
-        assert_eq!(-knowns, board.candidates(cell!("A6")));
-        assert_eq!(-knowns, board.candidates(cell!("A9")));
+        assert_eq!(!knowns, board.candidates(cell!("A2")));
+        assert_eq!(!knowns, board.candidates(cell!("A6")));
+        assert_eq!(!knowns, board.candidates(cell!("A9")));
     }
 }

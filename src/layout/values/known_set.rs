@@ -1,7 +1,7 @@
 use std::fmt;
 use std::iter::FusedIterator;
 use std::ops::{
-    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Neg, Not, Sub, SubAssign,
+    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Not, Sub, SubAssign,
 };
 
 use crate::symbols::{EMPTY_SET, MISSING};
@@ -352,17 +352,9 @@ impl SubAssign<&str> for KnownSet {
 }
 
 impl Not for KnownSet {
-    type Output = bool;
-
-    fn not(self) -> bool {
-        self.is_empty()
-    }
-}
-
-impl Neg for KnownSet {
     type Output = Self;
 
-    fn neg(self) -> Self {
+    fn not(self) -> Self {
         self.inverted()
     }
 }
@@ -576,17 +568,11 @@ mod tests {
     }
 
     #[test]
-    fn not() {
-        assert!(!KnownSet::empty());
-        assert!(KnownSet::full());
-    }
+    fn not_returns_an_inverted_set() {
+        assert_eq!(KnownSet::full(), !KnownSet::empty());
+        assert_eq!(KnownSet::empty(), !KnownSet::full());
 
-    #[test]
-    fn neg_returns_an_inverted_set() {
-        assert_eq!(KnownSet::full(), -KnownSet::empty());
-        assert_eq!(KnownSet::empty(), -KnownSet::full());
-
-        assert_eq!(KnownSet::from("2 5 8 9"), -KnownSet::from("1 3 4 6 7"));
+        assert_eq!(KnownSet::from("2 5 8 9"), !KnownSet::from("1 3 4 6 7"));
     }
 
     #[test]

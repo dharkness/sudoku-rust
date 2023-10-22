@@ -1,7 +1,7 @@
 use std::fmt;
 
 use crate::io::format_for_fancy_console;
-use crate::layout::{Cell, CellSet, House, HouseSet, Known, KnownSet, Value};
+use crate::layout::{Cell, CellSet, House, Known, KnownSet, Value};
 use crate::solve::creates_deadly_rectangles;
 
 use super::{Effects, Error, PseudoCell, Strategy};
@@ -74,7 +74,7 @@ impl Board {
 
     /// Returns the set of all unknown cells.
     pub fn unknowns(&self) -> CellSet {
-        -self.knowns
+        !self.knowns
     }
 
     /// Returns an iterator of all unknown cells with their candidates.
@@ -155,7 +155,7 @@ impl Board {
 
     /// Returns true if every cell in the house has a digit.
     pub fn is_house_solved(&self, house: House) -> bool {
-        (-self.knowns & house.cells()).is_empty()
+        (!self.knowns & house.cells()).is_empty()
     }
 
     /// Returns the value of the cell, either a digit or unknown.

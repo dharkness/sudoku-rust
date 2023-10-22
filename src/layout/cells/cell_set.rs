@@ -6,7 +6,7 @@
 use std::fmt;
 use std::iter::FusedIterator;
 use std::ops::{
-    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Neg, Not, Sub, SubAssign,
+    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Not, Sub, SubAssign,
 };
 
 use crate::layout::{House, HouseSet, Shape};
@@ -455,17 +455,9 @@ impl SubAssign<&str> for CellSet {
 }
 
 impl Not for CellSet {
-    type Output = bool;
-
-    fn not(self) -> bool {
-        self.is_empty()
-    }
-}
-
-impl Neg for CellSet {
     type Output = Self;
 
-    fn neg(self) -> Self {
+    fn not(self) -> Self {
         self.inverted()
     }
 }
@@ -700,17 +692,11 @@ mod tests {
     }
 
     #[test]
-    fn not_returns_is_empty() {
-        assert_eq!(true, !CellSet::empty());
-        assert_eq!(false, !CellSet::full());
-    }
+    fn not_returns_an_inverted_set() {
+        assert_eq!(CellSet::full(), !CellSet::empty());
+        assert_eq!(CellSet::empty(), !CellSet::full());
 
-    #[test]
-    fn neg_returns_an_inverted_set() {
-        assert_eq!(CellSet::full(), -CellSet::empty());
-        assert_eq!(CellSet::empty(), -CellSet::full());
-
-        assert_eq!(CellSet::full() - "A5" - "C9" - "G2", -cells!("A5 C9 G2"));
+        assert_eq!(CellSet::full() - "A5" - "C9" - "G2", !cells!("A5 C9 G2"));
     }
 
     #[test]

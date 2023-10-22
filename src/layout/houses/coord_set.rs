@@ -1,7 +1,7 @@
 use std::fmt;
 use std::iter::FusedIterator;
 use std::ops::{
-    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Neg, Not, Sub, SubAssign,
+    Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Not, Sub, SubAssign,
 };
 
 use crate::symbols::{EMPTY_SET, MISSING};
@@ -380,17 +380,9 @@ impl SubAssign<char> for CoordSet {
 }
 
 impl Not for CoordSet {
-    type Output = bool;
-
-    fn not(self) -> bool {
-        self.is_empty()
-    }
-}
-
-impl Neg for CoordSet {
     type Output = Self;
 
-    fn neg(self) -> Self {
+    fn not(self) -> Self {
         self.inverted()
     }
 }
@@ -612,17 +604,11 @@ mod tests {
     }
 
     #[test]
-    fn not() {
-        assert!(!CoordSet::empty());
-        assert!(CoordSet::full());
-    }
+    fn not_returns_an_inverted_set() {
+        assert_eq!(CoordSet::full(), !CoordSet::empty());
+        assert_eq!(CoordSet::empty(), !CoordSet::full());
 
-    #[test]
-    fn neg_returns_an_inverted_set() {
-        assert_eq!(CoordSet::full(), -CoordSet::empty());
-        assert_eq!(CoordSet::empty(), -CoordSet::full());
-
-        assert_eq!(CoordSet::from("2 5 8 9"), -CoordSet::from("1 3 4 6 7"));
+        assert_eq!(CoordSet::from("2 5 8 9"), !CoordSet::from("1 3 4 6 7"));
     }
 
     #[test]
