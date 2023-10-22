@@ -258,7 +258,7 @@ impl CSVReporter {
             counts.get(&Strategy::BoxLineReduction).unwrap_or(&0),
 
             counts.get(&Strategy::XWing).unwrap_or(&0),
-            counts.get(&Strategy::SinglesChain).unwrap_or(&0),
+            counts.get(&Strategy::SimpleColoring).unwrap_or(&0),
             counts.get(&Strategy::YWing).unwrap_or(&0),
             counts.get(&Strategy::Swordfish).unwrap_or(&0),
             counts.get(&Strategy::XYZWing).unwrap_or(&0),

@@ -95,11 +95,15 @@ impl Effects {
     }
 
     pub fn add_erase_cells(&mut self, strategy: Strategy, cells: CellSet, known: Known) {
-        self.add_action(Action::new_erase_cells(strategy, cells, known));
+        if !cells.is_empty() {
+            self.add_action(Action::new_erase_cells(strategy, cells, known));
+        }
     }
 
     pub fn add_erase_knowns(&mut self, strategy: Strategy, cell: Cell, knowns: KnownSet) {
-        self.add_action(Action::new_erase_knowns(strategy, cell, knowns));
+        if !knowns.is_empty() {
+            self.add_action(Action::new_erase_knowns(strategy, cell, knowns));
+        }
     }
 
     pub fn erases(&self, cell: Cell, known: Known) -> bool {

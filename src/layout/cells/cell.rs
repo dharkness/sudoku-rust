@@ -102,6 +102,10 @@ impl Cell {
         PEERS[self.usize()].has(other)
     }
 
+    pub const fn sees_any(&self, others: CellSet) -> bool {
+        PEERS[self.usize()].has_any(others)
+    }
+
     pub const fn label(&self) -> &'static str {
         label_from_index(self.0)
     }

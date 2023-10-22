@@ -64,7 +64,7 @@ pub const TECHNIQUES: [Technique; 22] = [
     Technique::new(Difficulty::Basic, "intersection removal", algorithms::find_intersection_removals),
 
     Technique::new(Difficulty::Tough, "x-wing", algorithms::find_x_wings),
-    Technique::new(Difficulty::Tough, "singles chain", algorithms::find_singles_chains),
+    Technique::new(Difficulty::Tough, "singles chain", algorithms::find_simple_colorings),
     Technique::new(Difficulty::Tough, "y-wing", algorithms::find_y_wings),
     Technique::new(Difficulty::Tough, "swordfish", algorithms::find_swordfish),
     Technique::new(Difficulty::Tough, "xyz-wing", algorithms::find_xyz_wings),

@@ -193,12 +193,10 @@ impl Board {
     /// if the known is not a candidate for the cell.
     pub fn set_known(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> bool {
         if let Some(current) = self.value(cell).known() {
-            if current == known {
-                return true;
-            } else {
+            if current != known {
                 effects.add_error(Error::AlreadySolved(cell, known, current));
-                return false;
             }
+            return false;
         } else if !self.is_candidate(cell, known) {
             effects.add_error(Error::NotCandidate(cell, known));
             return false;
@@ -289,6 +287,37 @@ impl Board {
     /// Returns the set of cells in the house that have the candidate.
     pub fn house_candidate_cells(&self, house: House, known: Known) -> CellSet {
         house.cells() & self.candidate_cells(known)
+    }
+
+    /// Returns all houses that have N candidate cells.
+    pub fn houses_with_n_candidates(
+        &self,
+        n: usize,
+        known: Known,
+    ) -> (HouseSet, HouseSet, HouseSet) {
+        debug_assert!(n <= 9);
+        (
+            House::rows_iter()
+                .filter(|house| self.house_candidate_cells(*house, known).len() == n)
+                .collect(),
+            House::columns_iter()
+                .filter(|house| self.house_candidate_cells(*house, known).len() == n)
+                .collect(),
+            House::blocks_iter()
+                .filter(|house| self.house_candidate_cells(*house, known).len() == n)
+                .collect(),
+        )
+    }
+
+    /// Returns an iterator of unsolved houses with N candidate cells with their candidates.
+    pub fn house_candidates_with_n_candidate_cells(
+        &self,
+        n: usize,
+        known: Known,
+    ) -> impl Iterator<Item = (House, CellSet)> + '_ {
+        House::iter()
+            .map(move |house| (house, self.house_candidate_cells(house, known)))
+            .filter(move |(_, cells)| cells.len() == n)
     }
 
     /// Removes the candidate from the cell and returns true

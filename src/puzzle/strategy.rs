@@ -91,7 +91,7 @@ pub enum Strategy {
 
     Bug,                // (Cell, Cell, Cell)
     AvoidableRectangle, // (CellSet) - all unsolved cells
-    SinglesChain,       // (Known, Vec<Cell>)
+    SimpleColoring,     // (Known, blues CellSet, greens CellSet)
     Skyscraper,         // (Known, floor (Cell, Cell), ceiling (Cell, Cell))
     YWing,              // (Known, pivot Cell, arms (Cell, Cell))
     XYZWing,            // (Known, pivot Cell, arms (Cell, Cell))
@@ -127,7 +127,7 @@ impl Strategy {
             Self::Jellyfish => "Jellyfish",
             Self::Bug => "BUG",
             Self::AvoidableRectangle => "Avoidable Rectangle",
-            Self::SinglesChain => "Singles Chain",
+            Self::SimpleColoring => "Simple Coloring",
             Self::Skyscraper => "Skyscraper",
             Self::YWing => "Y-Wing",
             Self::XYZWing => "XYZ-Wing",

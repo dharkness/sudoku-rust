@@ -76,6 +76,10 @@ impl Action {
         self.set.insert(cell, known);
     }
 
+    pub fn set_cells(&mut self, cells: CellSet, known: Known) {
+        cells.iter().for_each(|cell| self.set(cell, known));
+    }
+
     pub fn erase(&mut self, cell: Cell, known: Known) {
         *self.erase.entry(cell).or_insert_with(KnownSet::empty) += known;
     }
@@ -182,7 +186,7 @@ impl fmt::Display for Action {
                     },
                 )
                 .iter()
-                .sorted_by(|(a, _), (b, _)| a.cmp(&b))
+                .sorted_by(|(a, _), (b, _)| a.cmp(b))
             {
                 if first {
                     first = false;
