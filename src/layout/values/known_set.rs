@@ -173,11 +173,7 @@ impl KnownSet {
     }
 
     pub const fn inverted(&self) -> Self {
-        match self.0 {
-            0 => KnownSet::full(),
-            ALL_SET => Self::empty(),
-            _ => Self::new(!self.0 & ALL_SET),
-        }
+        Self::new(!self.0 & ALL_SET)
     }
 
     pub fn invert(&mut self) {
