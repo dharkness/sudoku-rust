@@ -50,7 +50,7 @@ type TechniqueFunc = fn(&Board) -> Option<Effects>;
 
 /// All techniques implemented by this solver.
 #[rustfmt::skip]
-pub const TECHNIQUES: [Technique; 22] = [
+pub const TECHNIQUES: [Technique; 23] = [
     Technique::new(Difficulty::Trivial, "peer", algorithms::find_peers),
     Technique::new(Difficulty::Trivial, "naked single", algorithms::find_naked_singles),
     Technique::new(Difficulty::Trivial, "hidden single", algorithms::find_hidden_singles),
@@ -73,6 +73,7 @@ pub const TECHNIQUES: [Technique; 22] = [
     Technique::new(Difficulty::Diabolical, "skyscraper", algorithms::find_skyscrapers),
     Technique::new(Difficulty::Diabolical, "avoidable rectangle", algorithms::find_avoidable_rectangles),
     Technique::new(Difficulty::Diabolical, "xy-chain", algorithms::find_xy_chains),
+    Technique::new(Difficulty::Diabolical, "3d-medusa", algorithms::find_three_d_medusa),
     Technique::new(Difficulty::Diabolical, "unique rectangle", algorithms::find_unique_rectangles),
 
     // kills some unique rectangles, breaking the puzzle
@@ -83,19 +84,19 @@ pub const TECHNIQUES: [Technique; 22] = [
 
 /// All techniques except finding peers.
 #[rustfmt::skip]
-pub const NON_PEER_TECHNIQUES: [Technique; 21] = [
+pub const NON_PEER_TECHNIQUES: [Technique; 22] = [
     TECHNIQUES[1],  TECHNIQUES[2],  TECHNIQUES[3],  TECHNIQUES[4],  TECHNIQUES[5],
     TECHNIQUES[6],  TECHNIQUES[7],  TECHNIQUES[8],  TECHNIQUES[9],  TECHNIQUES[10],
     TECHNIQUES[11], TECHNIQUES[12], TECHNIQUES[13], TECHNIQUES[14], TECHNIQUES[15],
     TECHNIQUES[16], TECHNIQUES[17], TECHNIQUES[18], TECHNIQUES[19], TECHNIQUES[20],
-    TECHNIQUES[21],
+    TECHNIQUES[21], TECHNIQUES[22],
 ];
 
 /// All techniques that cannot be handled automatically by the [`Board`].
 #[rustfmt::skip]
-pub const MANUAL_TECHNIQUES: [Technique; 19] = [
+pub const MANUAL_TECHNIQUES: [Technique; 20] = [
     TECHNIQUES[3],  TECHNIQUES[4],  TECHNIQUES[5],  TECHNIQUES[6],  TECHNIQUES[7],
     TECHNIQUES[8],  TECHNIQUES[9],  TECHNIQUES[10], TECHNIQUES[11], TECHNIQUES[12],
     TECHNIQUES[13], TECHNIQUES[14], TECHNIQUES[15], TECHNIQUES[16], TECHNIQUES[17],
-    TECHNIQUES[18], TECHNIQUES[19], TECHNIQUES[20], TECHNIQUES[21],
+    TECHNIQUES[18], TECHNIQUES[19], TECHNIQUES[20], TECHNIQUES[21], TECHNIQUES[22],
 ];
