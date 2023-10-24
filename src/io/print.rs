@@ -49,8 +49,8 @@ pub fn print_single_value_board(get_char: impl Fn(Cell) -> char) {
     println!("    ¹ ² ³   ⁴ ⁵ ⁶   ⁷ ⁸ ⁹");
     println!("  ┍───────┬───────┬───────┐");
     House::rows_iter().enumerate().for_each(|(r, row)| {
-        if r != 0 {
-            if r % 3 == 0 {
+        if !row.is_top() {
+            if row.is_block_top() {
                 println!("  ├───────┼───────┼───────┤");
             } else {
                 println!("  │       │       │       │");
@@ -59,7 +59,7 @@ pub fn print_single_value_board(get_char: impl Fn(Cell) -> char) {
         print!("{}", row.console_label());
         row.cells().iter().enumerate().for_each(|(c, cell)| {
             let char = get_char(cell);
-            if c % 3 == 0 {
+            if cell.column().is_block_left() {
                 print!(" │ {}", char);
             } else {
                 print!(" {}", char);
@@ -72,12 +72,13 @@ pub fn print_single_value_board(get_char: impl Fn(Cell) -> char) {
 }
 
 pub fn print_candidates(board: &Board) {
-    println!("   ¹   ²   ³     ⁴   ⁵   ⁶     ⁷   ⁸   ⁹");
+    println!("     ¹   ²   ³     ⁴   ⁵   ⁶     ⁷   ⁸   ⁹");
+    println!("  ┍─────────────┬─────────────┬─────────────┐");
     House::rows_iter().for_each(|row| {
         let mut lines = [
-            String::from("  "),
-            format!("{} ", row.console_label()),
-            String::from("  "),
+            String::from("  │ "),
+            format!("{} │ ", row.console_label()),
+            String::from("  │ "),
         ];
         House::columns_iter().for_each(|column| {
             let cell = Cell::from_row_column(row, column);
@@ -102,22 +103,21 @@ pub fn print_candidates(board: &Board) {
                 }
             }
             if column.is_block_right() {
-                if !column.is_right() {
-                    lines.iter_mut().for_each(|line| line.push_str(" │ "));
-                }
+                lines.iter_mut().for_each(|line| line.push_str(" │ "));
             } else {
                 lines.iter_mut().for_each(|line| line.push(' '));
             }
         });
-        lines[1].push_str(&format!(" {}", row.console_label()));
+        lines[1].push_str(&format!("{}", row.console_label()));
         lines.iter().for_each(|line| println!("{}", line));
         if row.is_block_bottom() {
             if !row.is_bottom() {
-                println!("  ────────────┼─────────────┼────────────");
+                println!("  ├─────────────┼─────────────┼─────────────┤");
             }
         } else {
-            println!("              │             │");
+            println!("  │             │             │             │");
         }
     });
-    println!("   ₁   ₂   ₃     ₄   ₅   ₆     ₇   ₈   ₉");
+    println!("  └─────────────┴─────────────┴─────────────┘");
+    println!("     ₁   ₂   ₃     ₄   ₅   ₆     ₇   ₈   ₉");
 }
