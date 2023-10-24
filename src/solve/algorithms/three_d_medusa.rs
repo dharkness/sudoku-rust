@@ -7,6 +7,19 @@ use std::rc::{Rc, Weak};
 
 use super::*;
 
+/// Builds graphs of strong links between cells like Simple Coloring (Singles Chains)
+/// and connects them at bi-value cells to form larger graphs with more rules
+/// for solving graphs and eliminating candidates.
+///
+/// - Rule 1 - 093824560085600002206075008321769845000258300578040296850016723007082650002507180
+/// - Rule 2 - 300052000250300010004607523093200805570000030408035060005408300030506084840023056
+/// - Rule 3 - 290000830000020970000109402845761293600000547009045008903407000060030709050000384
+/// - Rule 4 - 100056003043090000800043002030560210950421037021030000317980005000310970000670301
+/// - Rule 5 - 923407015876050924500200030769020140432000059185004260098042071207030486000708092
+/// - Rule 6 - 986721345304956007007030960073065009690017003100390276000679030069143700731582694
+/// - Combo  - 908020076600007100170000020005400091391782005460005830040000050506000010219570304
+///
+/// https://www.sudokuwiki.org/3D_Medusa
 pub fn find_three_d_medusa(board: &Board) -> Option<Effects> {
     let mut effects = Effects::new();
     let mut forest = Forest::new();
@@ -28,6 +41,7 @@ pub fn find_three_d_medusa(board: &Board) -> Option<Effects> {
 
     // Simple Coloring
 
+    let mut type_fours: HashMap<Known, CellSet> = HashMap::new();
     for graph in forest.all_graphs.values() {
         // println!("\nlet's go!\n");
         let the_graph = graph.borrow();
@@ -37,24 +51,44 @@ pub fn find_three_d_medusa(board: &Board) -> Option<Effects> {
         let possibles = board.candidate_cells(the_graph.root.known);
 
         // rule 2 - two of one color in a house
+        // solve the graph for the other color
         if let Some(color) = coloring.has_same_color_nodes_in_one_house() {
             let known = the_graph.root.known;
             let mut action = Action::new(Strategy::SimpleColoring);
 
-            action.erase_cells(coloring.cells_of_color(color), known);
             action.set_cells(coloring.cells_of_color(color.other()), known);
             effects.add_action(action);
         }
 
         // rule 4 - candidate sees two nodes of opposite colors
-        let erase = possibles
+        *type_fours.entry(the_graph.root.known).or_default() |= possibles
             .iter()
             .filter(|c| coloring.both_colors_see_cell(*c))
             .union() as CellSet;
+    }
 
-        // Multi-Coloring
-        // TODO find graphs that contain cells to erase; those graphs can be solved as above
-        effects.add_erase_cells(Strategy::SimpleColoring, erase, the_graph.root.known);
+    // find candidates that can be removed by rule 4 that are part of a graph
+    // and solve the graph for the other color; then remove the rest normally
+    for (known, ref mut cells) in type_fours {
+        // Not technically multi-coloring because the other graphs colors aren't really involved.
+        // True multi-coloring involves all four colors to solve one of the graphs or eliminate candidates.
+        // Removing a single cell of a graph ends up solving it entirely due to the strong links.
+        for graph in forest.find(*cells, known) {
+            let borrowed = graph.borrow();
+            let coloring = borrowed.coloring();
+
+            if let Some(color) =
+                coloring.key_color(Key::new(borrowed.cells.iter().next().unwrap(), known))
+            {
+                let mut action = Action::new(Strategy::SimpleColoring);
+                action.set_cells(coloring.cells_of_color(color.other()), known);
+                effects.add_action(action);
+
+                *cells -= borrowed.cells;
+            }
+        }
+
+        effects.add_erase_cells(Strategy::SimpleColoring, *cells, known);
     }
 
     // 3D Medusa
@@ -65,12 +99,15 @@ pub fn find_three_d_medusa(board: &Board) -> Option<Effects> {
     }
 
     for graph in forest.all_graphs.values() {
-        // println!("\nlet's go!\n");
         let the_graph = graph.borrow();
         // the_graph.dump();
+        if the_graph.knowns.len() < 2 {
+            // already handled above by simple coloring
+            continue;
+        }
+
         let coloring = the_graph.coloring();
         // coloring.dump();
-        // let possibles = board.candidate_cells(the_graph.known);
 
         // if the_graph.root.known == Known::from("3") && the_graph.root.cell == Cell::from("H2") {
         //     println!("ready?");
@@ -79,17 +116,10 @@ pub fn find_three_d_medusa(board: &Board) -> Option<Effects> {
         //     println!();
         // }
 
-        let known_cell_colors = coloring.cell_colors_by_known();
-        if known_cell_colors.len() < 2 {
-            // already handled above by simple coloring
-            continue;
-        }
-
-        let mut erase_graph_color: Option<Color> = None;
-        let mut type_three = Action::new(Strategy::ThreeDMedusa);
-
+        let mut solve_graph_color: Option<Color> = None;
         let cell_key_colors = coloring.key_colors_by_cell();
-        for (cell, key_colors) in cell_key_colors {
+
+        'check: for (cell, key_colors) in cell_key_colors {
             let color_keys = key_colors.iter().fold(
                 HashMap::new(),
                 |mut acc: HashMap<Color, KnownSet>, KeyColor { key, color }| {
@@ -98,42 +128,37 @@ pub fn find_three_d_medusa(board: &Board) -> Option<Effects> {
                 },
             );
 
-            // stop checking once the graph is solved
-            if erase_graph_color.is_none() {
-                // rule 1 - two of one color in a cell
-                for (color, knowns) in &color_keys {
-                    if knowns.len() >= 2 {
-                        erase_graph_color = Some(*color);
-                        break;
-                    }
+            // rule 1 - two of one color in a cell
+            for (color, knowns) in &color_keys {
+                if knowns.len() >= 2 {
+                    solve_graph_color = Some(color.other());
+                    break 'check;
                 }
             }
         }
 
         // rule 3 - both colors in a cell
         // remove all other candidates in that cell
+        let known_cell_colors = coloring.cell_colors_by_known();
         known_cell_colors.iter().combinations(2).for_each(|pair| {
             let (k1, (blue1, green1)) = pair[0];
             let (k2, (blue2, green2)) = pair[1];
-
-            for cell in (*blue1 & *green2) | (*blue2 & *green1) {
-                type_three.erase_knowns(cell, board.candidates(cell) - *k1 - *k2);
-            }
-        });
-
-        if erase_graph_color.is_none() {
-            // rule 2 - two of one color in a house
-        }
-        if let Some(erase_color) = erase_graph_color {
             let mut action = Action::new(Strategy::ThreeDMedusa);
 
-            for Key { cell, known } in match erase_color {
-                Color::Blue => &coloring.blues,
-                Color::Green => &coloring.greens,
-            } {
-                action.erase(*cell, *known);
+            for cell in (*blue1 & *green2) | (*blue2 & *green1) {
+                action.erase_knowns(cell, board.candidates(cell) - *k1 - *k2);
             }
-            for Key { cell, known } in match erase_color.other() {
+
+            effects.add_action(action);
+        });
+
+        if solve_graph_color.is_none() {
+            // rule 2 - two of one color in a house
+        }
+        if let Some(color) = solve_graph_color {
+            let mut action = Action::new(Strategy::ThreeDMedusa);
+
+            for Key { cell, known } in match color {
                 Color::Blue => &coloring.blues,
                 Color::Green => &coloring.greens,
             } {
@@ -141,7 +166,6 @@ pub fn find_three_d_medusa(board: &Board) -> Option<Effects> {
             }
             effects.add_action(action);
         }
-        effects.add_action(type_three);
 
         // let (blues, greens, both) = coloring.cells_by_colors();
         // for cell in both {
@@ -176,6 +200,18 @@ impl Forest {
             all_graphs: HashMap::new(),
             key_graphs: HashMap::new(),
         }
+    }
+
+    /// Returns all graphs that contain any cell and the known.
+    fn find(&mut self, cells: CellSet, known: Known) -> Vec<Rc<RefCell<Graph>>> {
+        let mut graphs = Vec::new();
+        for graph in self.all_graphs.values() {
+            let borrowed = graph.borrow();
+            if borrowed.cells.has_any(cells) && borrowed.knowns.has(known) {
+                graphs.push(graph.clone());
+            }
+        }
+        graphs
     }
 
     /// Adds an edge to an existing or new graph, joining two graphs if necessary.
@@ -470,7 +506,7 @@ impl Node {
         coloring.add(self.key, color);
         let other_color = color.other();
         for node in &self.edges {
-            let upgraded = node.upgrade().expect("node was deallocated");
+            let upgraded = node.upgrade().expect("graph released node early");
             let borrowed = upgraded.borrow();
             if coloring.add_edge(borrowed.key, other_color) {
                 // println!(
@@ -520,7 +556,10 @@ impl fmt::Display for Node {
             write!(
                 f,
                 " {}",
-                edge.upgrade().expect("node was deallocated").borrow().key
+                edge.upgrade()
+                    .expect("graph released node early")
+                    .borrow()
+                    .key
             )?;
         }
         Ok(())
