@@ -21,12 +21,13 @@ use crate::io::create_signal;
 #[derive(Debug, Parser)]
 #[clap(
     name = "sudoku-rust",
-    version = "0.2.0",
+    version = "1.0.0",
     author = "David Harkness <dharkness@gmail.com>"
 )]
+#[command(propagate_version = true)]
 pub struct App {
     #[clap(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
 }
 
 #[derive(Debug, Subcommand)]
@@ -61,12 +62,16 @@ fn main() {
     let cancelable = create_signal();
 
     let app = App::parse();
-    match app.command {
-        Commands::Create(args) => create_puzzle(args, &cancelable),
-        Commands::Play(args) => start_player(args, &cancelable),
-        Commands::Solve(args) => solve_puzzles(args, &cancelable),
-        Commands::Bingo(args) => bingo(args, &cancelable),
-        Commands::Extract(args) => extract_patterns(args, &cancelable),
-        Commands::Find(args) => find_pattern(args, &cancelable),
+    if let Some(command) = app.command {
+        match command {
+            Commands::Create(args) => create_puzzle(args, &cancelable),
+            Commands::Play(args) => start_player(args, &cancelable),
+            Commands::Solve(args) => solve_puzzles(args, &cancelable),
+            Commands::Bingo(args) => bingo(args, &cancelable),
+            Commands::Extract(args) => extract_patterns(args, &cancelable),
+            Commands::Find(args) => find_pattern(args, &cancelable),
+        }
+    } else {
+        start_player(PlayArgs::new(), &cancelable);
     }
 }

@@ -49,6 +49,18 @@ pub struct PlayArgs {
 }
 
 impl PlayArgs {
+    pub fn new() -> Self {
+        Self {
+            help: None,
+            peers: false,
+            naked: false,
+            hidden: false,
+            singles: false,
+            intersection: false,
+            puzzle: None,
+        }
+    }
+
     pub fn options(&self) -> Options {
         Options {
             stop_on_error: true,
