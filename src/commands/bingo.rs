@@ -1,4 +1,5 @@
 use clap::Args;
+use std::ops::RangeInclusive;
 use std::time::Instant;
 
 use crate::io::{
@@ -19,7 +20,7 @@ pub struct BingoArgs {
     pause: u32,
 
     /// Maximum number of solutions to find before stopping
-    #[clap(short, long, default_value = "10")]
+    #[clap(short, long, default_value = "10", value_parser = max_solutions_in_range)]
     max: usize,
 
     /// Clues for a puzzle to solve using Bowman's Bingo
@@ -124,5 +125,23 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
         println!();
         print_known_values(&board);
         println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&board));
+    }
+}
+
+const MAX_SOLUTIONS_RANGE: RangeInclusive<usize> = 1..=1_000_000;
+
+fn max_solutions_in_range(s: &str) -> Result<u16, String> {
+    let port: usize = s
+        .replace(",", "")
+        .parse()
+        .map_err(|_| format!("`{}` must be an integer", s))?;
+    if MAX_SOLUTIONS_RANGE.contains(&port) {
+        Ok(port as u16)
+    } else {
+        Err(format!(
+            "must be in range {}-{}",
+            MAX_SOLUTIONS_RANGE.start(),
+            MAX_SOLUTIONS_RANGE.end()
+        ))
     }
 }
