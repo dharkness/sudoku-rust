@@ -59,19 +59,19 @@ enum Commands {
 
 /// Executes the specified subcommand.
 fn main() {
-    let cancelable = create_signal();
+    create_signal();
 
     let app = App::parse();
     if let Some(command) = app.command {
         match command {
-            Commands::Create(args) => create_puzzle(args, &cancelable),
-            Commands::Play(args) => start_player(args, &cancelable),
-            Commands::Solve(args) => solve_puzzles(args, &cancelable),
-            Commands::Bingo(args) => bingo(args, &cancelable),
-            Commands::Extract(args) => extract_patterns(args, &cancelable),
-            Commands::Find(args) => find_pattern(args, &cancelable),
+            Commands::Create(args) => create_puzzle(args),
+            Commands::Play(args) => start_player(args),
+            Commands::Solve(args) => solve_puzzles(args),
+            Commands::Bingo(args) => bingo(args),
+            Commands::Extract(args) => extract_patterns(args),
+            Commands::Find(args) => find_pattern(args),
         }
     } else {
-        start_player(PlayArgs::new(), &cancelable);
+        start_player(PlayArgs::new());
     }
 }

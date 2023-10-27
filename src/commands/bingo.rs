@@ -3,8 +3,8 @@ use std::ops::RangeInclusive;
 use std::time::Instant;
 
 use crate::io::{
-    format_for_wiki, format_runtime, print_candidates, print_known_values, Cancelable, Parse,
-    Parser, SUDOKUWIKI_URL,
+    format_for_wiki, format_runtime, print_candidates, print_known_values, Parse, Parser,
+    SUDOKUWIKI_URL,
 };
 use crate::puzzle::{Change, Changer, Options};
 use crate::solve::{find_brute_force, BruteForceResult};
@@ -28,7 +28,7 @@ pub struct BingoArgs {
 }
 
 /// Creates a new puzzle and prints it to stdout.
-pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
+pub fn bingo(args: BingoArgs) {
     let changer = Changer::new(Options::all());
     let parser = Parse::packed_with_player(changer);
 
@@ -53,7 +53,7 @@ pub fn bingo(args: BingoArgs, cancelable: &Cancelable) {
 
     let runtime = Instant::now();
     let (label, empty_cells, solution, solutions) =
-        match find_brute_force(&board, cancelable, args.log, args.pause, args.max) {
+        match find_brute_force(&board, args.log, args.pause, args.max) {
             BruteForceResult::AlreadySolved => ("already solved in".to_string(), None, None, None),
             BruteForceResult::TooFewKnowns => {
                 ("not enough givens in".to_string(), None, None, None)

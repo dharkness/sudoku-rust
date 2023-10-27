@@ -19,7 +19,8 @@ pub struct ExtractArgs {
 }
 
 /// Scans puzzles from STDIN to build a collection of starting patterns.
-pub fn extract_patterns(args: ExtractArgs, cancelable: &Cancelable) {
+pub fn extract_patterns(args: ExtractArgs) {
+    let cancelable = Cancelable::new();
     let stdin = std::io::stdin();
 
     if args.stream {

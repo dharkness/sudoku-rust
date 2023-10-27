@@ -8,6 +8,7 @@ use crate::solve::{find_brute_force, Resolution, Solver};
 
 /// Finds a solvable starting puzzle from a full solution.
 pub struct Finder {
+    cancelable: Cancelable,
     rng: ThreadRng,
     clues: usize,
     time: u64,
@@ -17,6 +18,7 @@ pub struct Finder {
 impl Finder {
     pub fn new(clues: usize, time: u64, bar: bool) -> Finder {
         Finder {
+            cancelable: Cancelable::new(),
             rng: rand::thread_rng(),
             clues,
             time,
@@ -24,8 +26,8 @@ impl Finder {
         }
     }
 
-    pub fn backtracking_find(&mut self, board: Board, cancelable: &Cancelable) -> (Board, Effects) {
-        let solver = Solver::new(cancelable, false);
+    pub fn backtracking_find(&mut self, board: Board) -> (Board, Effects) {
+        let solver = Solver::new(false);
         let runtime = std::time::Instant::now();
 
         let mut fewest_clues = 81;
@@ -42,7 +44,7 @@ impl Finder {
             if self.bar {
                 show_progress(82 - stack.len());
             }
-            if cancelable.is_canceled()
+            if self.cancelable.is_canceled()
                 || fewest_clues <= self.clues
                 || runtime.elapsed().as_secs() >= self.time
             {
@@ -61,7 +63,7 @@ impl Finder {
             match solver.solve(&next, &unapplied) {
                 Resolution::Canceled(..) => break,
                 Resolution::Solved(_, actions, _) => {
-                    if !find_brute_force(&board, cancelable, false, 0, 2).is_solved() {
+                    if !find_brute_force(&board, false, 0, 2).is_solved() {
                         continue;
                     }
                     if next.known_count() < fewest_clues {

@@ -72,7 +72,8 @@ impl PlayArgs {
     }
 }
 
-pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
+pub fn start_player(args: PlayArgs) {
+    let cancelable = Cancelable::new();
     let mut changer = Changer::new(args.options());
     let mut boards = vec![];
     let mut show_board = false;
@@ -192,10 +193,10 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
             "C" => {
                 println!();
                 let mut generator = Generator::new(false, true);
-                match generator.generate(&changer, cancelable) {
+                match generator.generate(&changer) {
                     Some(board) => {
                         let mut finder = Finder::new(22, 10, true);
-                        let (start, _) = finder.backtracking_find(board, cancelable);
+                        let (start, _) = finder.backtracking_find(board);
                         println!("\n==> Clues: {}\n", start);
                         deductions = None;
                         boards.push(start);
@@ -345,7 +346,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
 
             "V" => {
                 let runtime = Instant::now();
-                match find_brute_force(board, cancelable, false, 0, MAXIMUM_SOLUTIONS) {
+                match find_brute_force(board, false, 0, MAXIMUM_SOLUTIONS) {
                     BruteForceResult::AlreadySolved => {
                         println!("\n==> The puzzle is already solved\n");
                     }
@@ -519,7 +520,7 @@ pub fn start_player(args: PlayArgs, cancelable: &Cancelable) {
             }
             "B" => {
                 let runtime = Instant::now();
-                match find_brute_force(board, cancelable, false, 0, MAXIMUM_SOLUTIONS) {
+                match find_brute_force(board, false, 0, MAXIMUM_SOLUTIONS) {
                     BruteForceResult::AlreadySolved => {
                         println!("\n==> The puzzle is already solved\n");
                     }

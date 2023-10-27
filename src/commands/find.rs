@@ -20,7 +20,8 @@ pub struct FindArgs {
 }
 
 /// Applies patterns from STDIN to see if they allow a puzzle to be solved.
-pub fn find_pattern(args: FindArgs, cancelable: &Cancelable) {
+pub fn find_pattern(args: FindArgs) {
+    let cancelable = Cancelable::new();
     let changer = Changer::new(Options::errors_and_peers());
     let parser = Parse::packed_with_player(changer);
     let (board, effects, failure) = parser.parse(&args.solution);
@@ -38,7 +39,7 @@ pub fn find_pattern(args: FindArgs, cancelable: &Cancelable) {
     }
 
     let runtime = Instant::now();
-    let solver = Solver::new(cancelable, false);
+    let solver = Solver::new(false);
 
     let mut count = 0;
     let mut solved = 0;

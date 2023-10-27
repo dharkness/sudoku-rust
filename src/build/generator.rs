@@ -25,7 +25,8 @@ impl Generator {
     }
 
     /// Returns a complete solution or a partial solution if canceled.
-    pub fn generate(&mut self, changer: &Changer, cancelable: &Cancelable) -> Option<Board> {
+    pub fn generate(&mut self, changer: &Changer) -> Option<Board> {
+        let cancelable = Cancelable::new();
         let cells = self.all_cells();
         let mut stack = Vec::with_capacity(81);
         stack.push(Entry {

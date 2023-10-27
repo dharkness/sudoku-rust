@@ -11,7 +11,6 @@ const DEFAULT_MAXIMUM_SOLUTIONS: usize = 1_000;
 
 pub fn find_brute_force(
     board: &Board,
-    cancelable: &Cancelable,
     log: bool,
     pause: u32,
     mut max_solutions: usize,
@@ -32,6 +31,7 @@ pub fn find_brute_force(
         max_solutions = DEFAULT_MAXIMUM_SOLUTIONS;
     }
 
+    let cancelable = Cancelable::new();
     let changer = Changer::new(Options::all());
     let mut solutions: Vec<Effects> = Vec::new();
     let mut stack = Vec::with_capacity(81);

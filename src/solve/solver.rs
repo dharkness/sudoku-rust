@@ -32,23 +32,23 @@ impl Resolution {
 }
 
 /// Attempts to solve puzzles using the available strategy algorithms.
-pub struct Solver<'a> {
+pub struct Solver {
     /// Applies actions to the board to solve the puzzle.
     changer: Changer,
 
     /// Allows canceling the solver.
-    cancelable: &'a Cancelable,
+    cancelable: Cancelable,
 
     /// The check option for the solve command verifies that the puzzle is solvable
     /// after each action to detect when an algorithm gives faulty deductions.
     check: bool,
 }
 
-impl Solver<'_> {
-    pub fn new(cancelable: &'_ Cancelable, check: bool) -> Solver<'_> {
+impl Solver {
+    pub fn new(check: bool) -> Solver {
         Solver {
             changer: Changer::new(Options::errors_and_peers()),
-            cancelable,
+            cancelable: Cancelable::new(),
             check,
         }
     }
@@ -75,9 +75,7 @@ impl Solver<'_> {
                             next.take_actions(actions);
                         }
                         Change::Invalid(before, _, action, errors) => {
-                            if self.check
-                                && find_brute_force(start, self.cancelable, false, 0, 2).is_solved()
-                            {
+                            if self.check && find_brute_force(start, false, 0, 2).is_solved() {
                                 eprintln!(
                                     "error: solver caused errors in solvable puzzle: {}",
                                     start.packed_string()

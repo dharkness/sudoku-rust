@@ -23,10 +23,11 @@ pub struct SolveArgs {
 }
 
 /// Creates a new puzzle and prints it to stdout.
-pub fn solve_puzzles(args: SolveArgs, cancelable: &Cancelable) {
+pub fn solve_puzzles(args: SolveArgs) {
+    let cancelable = Cancelable::new();
     let changer = Changer::new(Options::errors_and_peers());
     let parser = Parse::packed_with_player(changer);
-    let solver = Solver::new(cancelable, args.check);
+    let solver = Solver::new(args.check);
 
     match args.puzzles {
         Some(puzzles) => {
@@ -72,14 +73,14 @@ pub fn solve_puzzles(args: SolveArgs, cancelable: &Cancelable) {
 
 struct ParserSolver<'a> {
     parser: &'a ParsePacked,
-    solver: &'a Solver<'a>,
+    solver: &'a Solver,
     reporter: &'a dyn Reporter,
 }
 
 impl ParserSolver<'_> {
     fn new<'a>(
         parser: &'a ParsePacked,
-        solver: &'a Solver<'a>,
+        solver: &'a Solver,
         reporter: &'a dyn Reporter,
     ) -> ParserSolver<'a> {
         ParserSolver {

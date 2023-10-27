@@ -32,7 +32,8 @@ pub struct CreateArgs {
 
 /// Creates a new puzzle and prints it to stdout,
 /// using the given solution and/or pattern if provided.
-pub fn create_puzzle(args: CreateArgs, cancelable: &Cancelable) {
+pub fn create_puzzle(args: CreateArgs) {
+    let cancelable = Cancelable::new();
     let board = match args.solution {
         Some(solution) => {
             let parser = Parse::packed_with_options(Options::all());
@@ -56,7 +57,7 @@ pub fn create_puzzle(args: CreateArgs, cancelable: &Cancelable) {
             let changer = Changer::new(Options::all());
             let mut generator = Generator::new(args.randomize, args.bar);
 
-            match generator.generate(&changer, cancelable) {
+            match generator.generate(&changer) {
                 Some(board) => {
                     if cancelable.is_canceled() {
                         print_candidates(&board);
@@ -84,7 +85,7 @@ pub fn create_puzzle(args: CreateArgs, cancelable: &Cancelable) {
 
     let runtime = Instant::now();
     let mut finder = Finder::new(args.clues.unwrap_or(22), args.time.unwrap_or(10), args.bar);
-    let (start, actions) = finder.backtracking_find(board, cancelable);
+    let (start, actions) = finder.backtracking_find(board);
 
     println!();
     print_candidates(&start);
