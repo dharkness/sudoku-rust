@@ -77,7 +77,7 @@ fn check_type_one(
     found_type_ones: &mut HashSet<Rectangle>,
     effects: &mut Effects,
 ) {
-    if found_type_ones.contains(&rectangle) {
+    if rectangle.block_count != 2 || found_type_ones.contains(&rectangle) {
         return;
     }
 
