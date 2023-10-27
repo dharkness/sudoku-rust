@@ -327,7 +327,7 @@ impl From<&str> for CellSet {
         if labels.is_empty() {
             Self::empty()
         } else {
-            labels.split(' ').map(Cell::from).union()
+            labels.split(' ').map(Cell::from_str).union()
         }
     }
 }
@@ -437,7 +437,7 @@ impl Index<&str> for CellSet {
 
     /// Returns true if the cell represented by `label` is a member of this set.
     fn index(&self, label: &str) -> &bool {
-        if self.has(Cell::from(label)) {
+        if self.has(Cell::from_str(label)) {
             &true
         } else {
             &false
@@ -468,7 +468,7 @@ impl Add<&str> for CellSet {
 
     /// Returns a copy of this set with `rhs` as a member.
     fn add(self, rhs: &str) -> Self {
-        self.with(Cell::from(rhs))
+        self.with(Cell::from_str(rhs))
     }
 }
 
@@ -489,7 +489,7 @@ impl AddAssign<Cell> for CellSet {
 impl AddAssign<&str> for CellSet {
     /// Adds `rhs` to this set.
     fn add_assign(&mut self, rhs: &str) {
-        self.add(Cell::from(rhs))
+        self.add(Cell::from_str(rhs))
     }
 }
 
@@ -516,7 +516,7 @@ impl Sub<&str> for CellSet {
 
     /// Returns a copy of this set without `rhs` as a member.
     fn sub(self, rhs: &str) -> Self {
-        self.without(Cell::from(rhs))
+        self.without(Cell::from_str(rhs))
     }
 }
 
@@ -537,7 +537,7 @@ impl SubAssign<Cell> for CellSet {
 impl SubAssign<&str> for CellSet {
     /// Removes `rhs` from this set.
     fn sub_assign(&mut self, rhs: &str) {
-        self.remove(Cell::from(rhs))
+        self.remove(Cell::from_str(rhs))
     }
 }
 

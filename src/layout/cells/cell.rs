@@ -3,7 +3,7 @@ use std::ops::{Add, Neg};
 
 use crate::layout::{Coord, House, Shape};
 
-use super::label::{index_from_label, label_from_index};
+use super::label::{index_from_label, label_from_index, try_index_from_label};
 use super::{Bit, CellSet};
 
 /// Specifies a single cell by its index from left to right and top to bottom.
@@ -28,6 +28,14 @@ impl Cell {
 
     pub const fn from_row_column(row: House, column: House) -> Self {
         Self::from_coords(row.coord(), column.coord())
+    }
+
+    pub fn from_str(label: &str) -> Self {
+        Self(index_from_label(label))
+    }
+
+    pub fn from_string(label: String) -> Self {
+        Self::from_str(label.as_str())
     }
 
     pub const fn index(&self) -> u8 {
@@ -132,15 +140,22 @@ impl From<usize> for Cell {
     }
 }
 
-impl From<&str> for Cell {
-    fn from(label: &str) -> Self {
-        Self(index_from_label(label.to_uppercase().as_str()))
+impl TryFrom<&str> for Cell {
+    type Error = String;
+
+    fn try_from(label: &str) -> Result<Self, Self::Error> {
+        match try_index_from_label(label) {
+            Ok(index) => Ok(Self(index)),
+            Err(message) => Err(message),
+        }
     }
 }
 
-impl From<String> for Cell {
-    fn from(label: String) -> Self {
-        Self(index_from_label(label.to_uppercase().as_str()))
+impl TryFrom<String> for Cell {
+    type Error = String;
+
+    fn try_from(label: String) -> Result<Self, Self::Error> {
+        Self::try_from(label.as_str())
     }
 }
 
@@ -204,7 +219,7 @@ impl ExactSizeIterator for CellIter {
 #[allow(unused_macros)]
 macro_rules! cell {
     ($l:expr) => {
-        Cell::from($l)
+        Cell::from_str($l)
     };
 }
 

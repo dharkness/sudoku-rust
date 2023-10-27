@@ -10,7 +10,7 @@ use crate::io::{
     print_candidate, print_candidates, print_givens, print_known_values, Cancelable, Parse, Parser,
     SUDOKUWIKI_URL,
 };
-use crate::layout::{Cell, Known};
+use crate::layout::{Cell, Known, KnownSet};
 use crate::puzzle::{Board, Change, Changer, Effects, Options, Strategy};
 use crate::solve::{find_brute_force, BruteForceResult, NON_PEER_TECHNIQUES};
 use crate::symbols::{MISSING, UNKNOWN_VALUE};
@@ -222,7 +222,7 @@ pub fn start_player(args: PlayArgs) {
                         println!();
                     } else if ('1'..='9').contains(&c) {
                         println!();
-                        print_candidate(board, Known::from(c));
+                        print_candidate(board, Known::from_char(c));
                         println!();
                     } else {
                         println!("\n==> Invalid candidate \"{}\"\n", c);
@@ -262,8 +262,20 @@ pub fn start_player(args: PlayArgs) {
                     println!("\n==> G <cell> <digit>\n");
                     continue;
                 }
-                let cell = Cell::from(input[1].to_uppercase());
-                let known = Known::from(input[2]);
+                let cell = match Cell::try_from(input[1]) {
+                    Ok(cell) => cell,
+                    Err(message) => {
+                        println!("\n==> {}\n", message);
+                        continue;
+                    }
+                };
+                let known = match Known::try_from(input[2]) {
+                    Ok(known) => known,
+                    Err(message) => {
+                        println!("\n==> {}\n", message);
+                        continue;
+                    }
+                };
                 match changer.set_given(board, Strategy::Given, cell, known) {
                     Change::None => {
                         println!("\n==> {} is not a candidate for {}\n", known, cell);
@@ -288,8 +300,20 @@ pub fn start_player(args: PlayArgs) {
                     println!("\n==> S <cell> <digit>\n");
                     continue;
                 }
-                let cell = Cell::from(input[1].to_uppercase());
-                let known = Known::from(input[2]);
+                let cell = match Cell::try_from(input[1]) {
+                    Ok(cell) => cell,
+                    Err(message) => {
+                        println!("\n==> {}\n", message);
+                        continue;
+                    }
+                };
+                let known = match Known::try_from(input[2]) {
+                    Ok(known) => known,
+                    Err(message) => {
+                        println!("\n==> {}\n", message);
+                        continue;
+                    }
+                };
                 match changer.set_known(board, Strategy::Solve, cell, known) {
                     Change::None => {
                         println!("\n==> {} is not a candidate for {}\n", known, cell);
@@ -314,14 +338,19 @@ pub fn start_player(args: PlayArgs) {
                     println!("\n==> E <cell> <digits>\n");
                     continue;
                 }
-                let cell = Cell::from(input[1]);
+                let cell = match Cell::try_from(input[1]) {
+                    Ok(cell) => cell,
+                    Err(message) => {
+                        println!("\n==> {}\n", message);
+                        continue;
+                    }
+                };
                 let mut clone = *board;
                 let mut changed = false;
-                for c in input[2].chars() {
-                    let known = Known::from(c);
+                for known in KnownSet::from(input[2]) {
                     match changer.remove_candidate(&clone, Strategy::Erase, cell, known) {
                         Change::None => {
-                            println!("\n==> {} is not a candidate for {}\n", known, cell);
+                            println!("\n==> {} is not a candidate for {}", known, cell);
                             continue;
                         }
                         Change::Valid(after, _) => {
@@ -402,7 +431,7 @@ pub fn start_player(args: PlayArgs) {
 
                 let mut affecting_cell = None;
                 if input.len() == 2 {
-                    affecting_cell = Some(Cell::from(input[1].to_uppercase()));
+                    affecting_cell = Some(Cell::from_str(input[1]));
                 };
 
                 if let Some(ref found) = deductions {

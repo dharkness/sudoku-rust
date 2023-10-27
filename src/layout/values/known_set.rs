@@ -197,8 +197,7 @@ impl From<&str> for KnownSet {
     fn from(labels: &str) -> Self {
         labels
             .chars()
-            .filter(|c| ('1'..='9').contains(c))
-            .map(Known::from)
+            .filter_map(|c| Known::try_from(c).ok())
             .union() as KnownSet
     }
 }
@@ -287,7 +286,7 @@ impl Index<&str> for KnownSet {
     type Output = bool;
 
     fn index(&self, known: &str) -> &bool {
-        if self.has(Known::from(known)) {
+        if self.has(Known::from_str(known)) {
             &true
         } else {
             &false
@@ -307,7 +306,7 @@ impl Add<&str> for KnownSet {
     type Output = Self;
 
     fn add(self, rhs: &str) -> Self {
-        self.with(Known::from(rhs))
+        self.with(Known::from_str(rhs))
     }
 }
 
@@ -319,7 +318,7 @@ impl AddAssign<Known> for KnownSet {
 
 impl AddAssign<&str> for KnownSet {
     fn add_assign(&mut self, rhs: &str) {
-        self.add(Known::from(rhs))
+        self.add(Known::from_str(rhs))
     }
 }
 
@@ -335,7 +334,7 @@ impl Sub<&str> for KnownSet {
     type Output = Self;
 
     fn sub(self, rhs: &str) -> Self {
-        self.without(Known::from(rhs))
+        self.without(Known::from_str(rhs))
     }
 }
 
@@ -347,7 +346,7 @@ impl SubAssign<Known> for KnownSet {
 
 impl SubAssign<&str> for KnownSet {
     fn sub_assign(&mut self, rhs: &str) {
-        self.remove(Known::from(rhs))
+        self.remove(Known::from_str(rhs))
     }
 }
 
@@ -469,7 +468,7 @@ mod tests {
         assert!(set.is_empty());
         assert_eq!(0, set.len());
         for i in 1..=9 {
-            assert!(!set[known!(i)]);
+            assert!(!set[Known::new(i)]);
         }
     }
 
@@ -480,7 +479,7 @@ mod tests {
         assert!(!set.is_empty());
         assert_eq!(9, set.len());
         for i in 1..=9 {
-            assert!(set[known!(i)]);
+            assert!(set[Known::new(i)]);
         }
     }
 
@@ -491,7 +490,7 @@ mod tests {
         assert!(!set.is_empty());
         assert_eq!(5, set.len());
         for i in 1..=9 {
-            assert_eq!(i % 2 == 1, set[known!(i)]);
+            assert_eq!(i % 2 == 1, set[Known::new(i)]);
         }
     }
 
@@ -537,7 +536,7 @@ mod tests {
     fn add_returns_the_same_set_when_the_known_is_present() {
         let set = knowns!("2 5 8 9");
 
-        let got = set + known!(5);
+        let got = set + known!("5");
         assert_eq!(set, got);
     }
 
@@ -545,16 +544,16 @@ mod tests {
     fn add_returns_a_new_set_when_the_known_is_not_present() {
         let set = knowns!("2 5 8 9");
 
-        let got = set + known!(6);
+        let got = set + known!("6");
         assert_ne!(set, got);
-        assert!(got[known!(6)]);
+        assert!(got[known!("6")]);
     }
 
     #[test]
     fn sub_returns_the_same_set_when_the_known_is_not_present() {
         let set = KnownSet::from("2 5 8 9");
 
-        let got = set - known!(6);
+        let got = set - known!("6");
         assert_eq!(set, got);
     }
 
@@ -562,9 +561,9 @@ mod tests {
     fn sub_returns_the_same_set_when_the_known_is_present() {
         let set = KnownSet::from("2 5 8 9");
 
-        let got = set - known!(5);
+        let got = set - known!("5");
         assert_ne!(set, got);
-        assert!(!got[known!(5)]);
+        assert!(!got[known!("5")]);
     }
 
     #[test]

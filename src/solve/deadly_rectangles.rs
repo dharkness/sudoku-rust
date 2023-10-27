@@ -92,14 +92,14 @@ mod tests {
             let mut board = Board::new();
             let mut effects = Effects::new();
 
-            board.set_known(tl, known!(1), &mut effects);
+            board.set_known(tl, known!("1"), &mut effects);
             if givens {
-                board.set_given(tr, known!(2), &mut effects);
+                board.set_given(tr, known!("2"), &mut effects);
             } else {
-                board.set_known(tr, known!(2), &mut effects);
+                board.set_known(tr, known!("2"), &mut effects);
             }
-            board.set_known(br, known!(1), &mut effects);
-            board.set_known(bl, known!(2), &mut effects);
+            board.set_known(br, known!("1"), &mut effects);
+            board.set_known(bl, known!("2"), &mut effects);
 
             let found = find_deadly_rectangles(&board);
             if givens {
@@ -126,7 +126,7 @@ mod tests {
     }
 
     fn test_creates(givens: bool) {
-        const KNOWNS: [Known; 4] = [known!(1), known!(2), known!(1), known!(2)];
+        const KNOWNS: [Known; 4] = [Known::new(1), Known::new(2), Known::new(1), Known::new(2)];
 
         fn test(givens: bool, rectangle: Rectangle) {
             let cells = [

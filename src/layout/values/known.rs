@@ -24,6 +24,24 @@ impl Known {
         Self(index as u8)
     }
 
+    pub fn from_char(label: char) -> Self {
+        match Self::try_from(label) {
+            Ok(known) => known,
+            Err(message) => panic!("{}", message),
+        }
+    }
+
+    pub fn from_str(label: &str) -> Self {
+        match Self::try_from(label) {
+            Ok(known) => known,
+            Err(message) => panic!("{}", message),
+        }
+    }
+
+    pub fn from_string(label: String) -> Self {
+        Self::from_str(label.as_str())
+    }
+
     pub const fn usize(&self) -> usize {
         self.0 as usize
     }
@@ -52,18 +70,27 @@ impl From<u8> for Known {
     }
 }
 
-impl From<char> for Known {
-    fn from(label: char) -> Self {
+impl TryFrom<char> for Known {
+    type Error = String;
+
+    fn try_from(label: char) -> Result<Self, Self::Error> {
         if !('1'..='9').contains(&label) {
-            panic!("Invalid known \"{}\"", label);
+            Err(format!("Invalid digit \"{}\"", label))
+        } else {
+            Ok(Known::new(label as u8 - b'0'))
         }
-        Known::new(label as u8 - b'0')
     }
 }
 
-impl From<&str> for Known {
-    fn from(label: &str) -> Self {
-        Known::from(label.chars().next().unwrap())
+impl TryFrom<&str> for Known {
+    type Error = String;
+
+    fn try_from(label: &str) -> Result<Self, Self::Error> {
+        if let Some(char) = label.chars().next() {
+            Known::try_from(char)
+        } else {
+            Err(format!("Invalid digit \"{}\"", label))
+        }
     }
 }
 
@@ -120,7 +147,7 @@ impl ExactSizeIterator for KnownIter {
 #[allow(unused_macros)]
 macro_rules! known {
     ($k:expr) => {
-        Known::new($k as u8)
+        Known::from_str($k)
     };
 }
 

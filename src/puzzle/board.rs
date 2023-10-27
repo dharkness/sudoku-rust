@@ -456,6 +456,8 @@ impl fmt::Display for Board {
 mod test {
     use super::*;
     use crate::io::{Parse, Parser};
+    use crate::layout::cells::cell::cell;
+    use crate::layout::values::known::known;
     use crate::testing::strip_leading_whitespace;
     use itertools::Itertools;
 
@@ -554,31 +556,31 @@ mod test {
     fn test_is_candidate() {
         let f = fixture();
 
-        assert_eq!(f.is_candidate(Cell::from("A1"), Known::from("4")), true);
-        assert_eq!(f.is_candidate(Cell::from("A1"), Known::from("8")), true);
-        assert_eq!(f.is_candidate(Cell::from("C3"), Known::from("4")), true);
-        assert_eq!(f.is_candidate(Cell::from("C3"), Known::from("5")), true);
-        assert_eq!(f.is_candidate(Cell::from("C3"), Known::from("6")), true);
-        assert_eq!(f.is_candidate(Cell::from("C3"), Known::from("8")), true);
+        assert_eq!(f.is_candidate(cell!("A1"), known!("4")), true);
+        assert_eq!(f.is_candidate(cell!("A1"), known!("8")), true);
+        assert_eq!(f.is_candidate(cell!("C3"), known!("4")), true);
+        assert_eq!(f.is_candidate(cell!("C3"), known!("5")), true);
+        assert_eq!(f.is_candidate(cell!("C3"), known!("6")), true);
+        assert_eq!(f.is_candidate(cell!("C3"), known!("8")), true);
 
-        assert_eq!(f.is_candidate(Cell::from("A1"), Known::from("1")), false);
-        assert_eq!(f.is_candidate(Cell::from("A1"), Known::from("2")), false);
-        assert_eq!(f.is_candidate(Cell::from("A1"), Known::from("3")), false);
-        assert_eq!(f.is_candidate(Cell::from("A1"), Known::from("5")), false);
-        assert_eq!(f.is_candidate(Cell::from("A1"), Known::from("6")), false);
-        assert_eq!(f.is_candidate(Cell::from("A1"), Known::from("7")), false);
-        assert_eq!(f.is_candidate(Cell::from("A1"), Known::from("9")), false);
+        assert_eq!(f.is_candidate(cell!("A1"), known!("1")), false);
+        assert_eq!(f.is_candidate(cell!("A1"), known!("2")), false);
+        assert_eq!(f.is_candidate(cell!("A1"), known!("3")), false);
+        assert_eq!(f.is_candidate(cell!("A1"), known!("5")), false);
+        assert_eq!(f.is_candidate(cell!("A1"), known!("6")), false);
+        assert_eq!(f.is_candidate(cell!("A1"), known!("7")), false);
+        assert_eq!(f.is_candidate(cell!("A1"), known!("9")), false);
 
-        assert_eq!(f.is_candidate(Cell::from("H1"), Known::from("5")), false);
+        assert_eq!(f.is_candidate(cell!("H1"), known!("5")), false);
     }
 
     #[test]
     fn test_candidates() {
         let f = fixture();
 
-        assert_eq!(f.candidates(Cell::from("A1")), KnownSet::from("4 8"));
-        assert_eq!(f.candidates(Cell::from("C3")), KnownSet::from("4 5 6 8"));
-        assert_eq!(f.candidates(Cell::from("D1")), KnownSet::empty());
+        assert_eq!(f.candidates(cell!("A1")), KnownSet::from("4 8"));
+        assert_eq!(f.candidates(cell!("C3")), KnownSet::from("4 5 6 8"));
+        assert_eq!(f.candidates(cell!("D1")), KnownSet::empty());
     }
 
     #[test]
@@ -649,17 +651,17 @@ mod test {
         assert_eq!(
             f.cell_candidates_with_n_candidates(5).collect_vec(),
             vec![
-                (Cell::from("B4"), KnownSet::from("2 4 6 7 9")),
-                (Cell::from("C5"), KnownSet::from("1 2 6 7 8")),
-                (Cell::from("C6"), KnownSet::from("1 2 5 6 8")),
-                (Cell::from("E9"), KnownSet::from("2 5 7 8 9")),
-                (Cell::from("F3"), KnownSet::from("1 4 5 6 8")),
-                (Cell::from("J6"), KnownSet::from("3 5 6 8 9")),
+                (cell!("B4"), KnownSet::from("2 4 6 7 9")),
+                (cell!("C5"), KnownSet::from("1 2 6 7 8")),
+                (cell!("C6"), KnownSet::from("1 2 5 6 8")),
+                (cell!("E9"), KnownSet::from("2 5 7 8 9")),
+                (cell!("F3"), KnownSet::from("1 4 5 6 8")),
+                (cell!("J6"), KnownSet::from("3 5 6 8 9")),
             ]
         );
         assert_eq!(
             f.cell_candidates_with_n_candidates(6).collect_vec(),
-            vec![(Cell::from("C4"), KnownSet::from("1 2 4 5 6 7"))]
+            vec![(cell!("C4"), KnownSet::from("1 2 4 5 6 7"))]
         );
         assert_eq!(
             f.cell_candidates_with_n_candidates(7)
@@ -674,7 +676,7 @@ mod test {
         let f = fixture();
 
         assert_eq!(
-            f.candidate_cells(Known::from("1")),
+            f.candidate_cells(known!("1")),
             CellSet::from("A4 A5 A6 C4 C5 C6 C7 E3 E5 F3 F4 G4 G5 G6 G7 G8 H4 H6 H7")
         );
     }
@@ -684,7 +686,7 @@ mod test {
         let f = fixture();
 
         assert_eq!(
-            f.house_candidate_cells(House::from("R3"), Known::from("1")),
+            f.house_candidate_cells(House::from("R3"), known!("1")),
             CellSet::from("C4 C5 C6 C7")
         );
     }

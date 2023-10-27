@@ -103,14 +103,14 @@ mod tests {
         );
 
         let found = find_intersection_removals(&board).unwrap_or(Effects::new());
-        assert_eq!(cells!("B8 B9"), found.erases_from_cells(known!(1)));
-        assert_eq!(cells!(""), found.erases_from_cells(known!(2)));
-        assert_eq!(cells!("D5 E5 F5"), found.erases_from_cells(known!(3)));
-        assert_eq!(cells!("D5 E5 F5"), found.erases_from_cells(known!(4)));
-        assert_eq!(cells!("B9 C9"), found.erases_from_cells(known!(5)));
-        assert_eq!(cells!(""), found.erases_from_cells(known!(6)));
-        assert_eq!(cells!(""), found.erases_from_cells(known!(7)));
-        assert_eq!(cells!("A5 B5 C5"), found.erases_from_cells(known!(8)));
-        assert_eq!(cells!("D1 E1 F1"), found.erases_from_cells(known!(9)));
+        assert_eq!(cells!("B8 B9"), found.erases_from_cells(known!("1")));
+        assert_eq!(cells!(""), found.erases_from_cells(known!("2")));
+        assert_eq!(cells!("D5 E5 F5"), found.erases_from_cells(known!("3")));
+        assert_eq!(cells!("D5 E5 F5"), found.erases_from_cells(known!("4")));
+        assert_eq!(cells!("B9 C9"), found.erases_from_cells(known!("5")));
+        assert_eq!(cells!(""), found.erases_from_cells(known!("6")));
+        assert_eq!(cells!(""), found.erases_from_cells(known!("7")));
+        assert_eq!(cells!("A5 B5 C5"), found.erases_from_cells(known!("8")));
+        assert_eq!(cells!("D1 E1 F1"), found.erases_from_cells(known!("9")));
     }
 }

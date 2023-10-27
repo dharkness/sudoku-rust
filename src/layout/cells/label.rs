@@ -3,21 +3,30 @@ use super::Cell;
 // FACTOR Move all to index?
 
 pub fn index_from_label(label: &str) -> u8 {
-    if label.len() != 2 {
-        panic!("Invalid cell: \"{}\"", label);
+    match try_index_from_label(label) {
+        Ok(index) => index,
+        Err(message) => panic!("{}", message),
     }
-    let mut chars = label.chars();
+}
+
+pub fn try_index_from_label(label: &str) -> Result<u8, String> {
+    let upper = label.to_uppercase();
+    if upper.len() != 2 {
+        return Err(format!("Invalid cell: \"{}\"", label));
+    }
+
+    let mut chars = upper.chars();
     let row = chars.next().unwrap() as u8 - b'A';
     let col = chars.next().unwrap() as u8 - b'1';
 
     // row H is 9 and ok, becomes 8 below
     if row > 9 || col >= 9 {
-        panic!("Invalid cell: \"{}\"", label);
+        return Err(format!("Invalid cell: \"{}\"", label));
     }
     if row == 9 {
-        8 * 9 + col
+        Ok(8 * 9 + col)
     } else {
-        row * 9 + col
+        Ok(row * 9 + col)
     }
 }
 

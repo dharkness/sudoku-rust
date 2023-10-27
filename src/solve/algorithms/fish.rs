@@ -111,7 +111,7 @@ mod tests {
         let found = find_x_wings(&board).unwrap_or(Effects::new());
         assert_eq!(
             cells!("A4 E4 H4 J4 D8 E8 H8 J8"),
-            found.erases_from_cells(known!(7))
+            found.erases_from_cells(known!("7"))
         );
     }
 
@@ -134,7 +134,7 @@ mod tests {
         let found = find_swordfish(&board).unwrap_or(Effects::new());
         assert_eq!(
             cells!("B2 B8 C2 C6 C8 C9 D6"),
-            found.erases_from_cells(known!(8))
+            found.erases_from_cells(known!("8"))
         );
     }
 
@@ -157,7 +157,7 @@ mod tests {
         let found = find_jellyfish(&board).unwrap_or(Effects::new());
         assert_eq!(
             cells!("B1 B5 B8 C8 C9 G1 G8 H1 H5 H9"),
-            found.erases_from_cells(known!(2))
+            found.erases_from_cells(known!("2"))
         );
     }
 }
