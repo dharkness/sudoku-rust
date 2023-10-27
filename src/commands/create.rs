@@ -81,7 +81,10 @@ pub fn create_puzzle(args: CreateArgs) {
     };
 
     print_known_values(&board);
-    println!("\n==> Seeking a solvable starting puzzle...\n");
+    println!(
+        "\n==> Seeking a starting puzzle for {} ...",
+        board.packed_string()
+    );
 
     let runtime = Instant::now();
     let mut finder = Finder::new(args.clues.unwrap_or(22), args.time.unwrap_or(10), args.bar);
