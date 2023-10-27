@@ -300,11 +300,10 @@ impl Reporter for CSVReporter {
         counts: &HashMap<Strategy, i32>,
     ) {
         println!(
-            "           {:>10} {} {} {:?} {}",
+            "           {:>10} {} {} {}",
             format_runtime(runtime),
             self.format_counts(counts),
             start.packed_string(),
-            action.strategy(),
             action
         );
     }
