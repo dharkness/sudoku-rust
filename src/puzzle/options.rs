@@ -1,6 +1,6 @@
 use crate::puzzle::Strategy;
 
-/// Available options for working with a [`Board`].
+/// Available options for working with a [`Board`][`super::Board`].
 ///
 /// The mutators return a copy of the options with the given option set
 /// without affecting the original, and they can be chained for convenience.

@@ -11,7 +11,7 @@ use super::Coord;
 type Bits = u16;
 type Size = u8;
 
-/// A set of coordinates in a [`House`] implemented using a bit field.
+/// A set of coordinates in a [`House`][`super::House`] implemented using a bit field.
 #[derive(Clone, Copy, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct CoordSet(Bits);
 
@@ -487,8 +487,9 @@ impl FusedIterator for Iter {}
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::layout::houses::coord::coord;
+
+    use super::*;
 
     #[test]
     fn empty_returns_an_empty_set() {

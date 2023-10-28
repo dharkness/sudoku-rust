@@ -1,4 +1,6 @@
 //! Provides functions for printing the state of a puzzle to the console.
+//!
+//! See <https://www.w3.org/TR/xml-entity-names/025.html>
 
 use crate::layout::{Cell, House, Known};
 use crate::puzzle::Board;

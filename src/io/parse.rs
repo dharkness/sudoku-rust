@@ -20,7 +20,7 @@ pub struct Parse {}
 
 impl Parse {
     /// Returns a new [`ParsePacked`] that ignores errors
-    /// and won't solve hidden/naked single automatically.
+    /// and won't perform any optional automatic actions.
     pub fn packed() -> ParsePacked {
         ParsePacked::new()
     }
@@ -181,7 +181,7 @@ impl Parser for ParseGrid {
 
 /// Parses puzzle strings into boards with the exact given/solved cells and candidates.
 ///
-/// See https://www.sudokuwiki.org/Sudoku_String_Definitions for more information.
+/// See <https://www.sudokuwiki.org/Sudoku_String_Definitions> for more information.
 #[derive(Default)]
 pub struct ParseWiki {
     stop_on_error: bool,
@@ -266,9 +266,10 @@ fn trim_grid_whitespace(input: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::io::format::{format_for_console, format_grid};
     use crate::io::format_for_wiki;
+
+    use super::*;
 
     #[test]
     fn test_parse_packed() {

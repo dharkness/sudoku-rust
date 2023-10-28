@@ -2,6 +2,12 @@
 
 use clap::{Parser, Subcommand};
 
+use crate::commands::{
+    bingo, create_puzzle, extract_patterns, find_pattern, solve_puzzles, start_player, BingoArgs,
+    CreateArgs, ExtractArgs, FindArgs, PlayArgs, SolveArgs,
+};
+use crate::io::create_signal;
+
 mod build;
 mod commands;
 mod io;
@@ -11,12 +17,6 @@ mod solve;
 mod symbols;
 mod testing;
 
-use crate::commands::{
-    bingo, create_puzzle, extract_patterns, find_pattern, solve_puzzles, start_player, BingoArgs,
-    CreateArgs, ExtractArgs, FindArgs, PlayArgs, SolveArgs,
-};
-use crate::io::create_signal;
-
 /// A command-line sudoku player, generator and solver written in Rust
 #[derive(Debug, Parser)]
 #[clap(
@@ -25,7 +25,7 @@ use crate::io::create_signal;
     author = "David Harkness <dharkness@gmail.com>"
 )]
 #[command(propagate_version = true)]
-pub struct App {
+struct App {
     #[clap(subcommand)]
     command: Option<Commands>,
 }

@@ -203,7 +203,7 @@ impl FormatGrid {
 /// Produces a single-line packed string of the [`Board`]'s cells for SudokuWiki
 /// detailing givens, solved cells, and unsolved candidates.
 ///
-/// See https://www.sudokuwiki.org/Sudoku_String_Definitions for more information.
+/// See <https://www.sudokuwiki.org/Sudoku_String_Definitions> for more information.
 #[derive(Default)]
 pub struct FormatWiki {
     pub spaces: bool,
@@ -258,10 +258,11 @@ impl FormatWiki {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::io::{Parse, Parser};
     use crate::puzzle::Options;
     use crate::testing::strip_leading_whitespace;
+
+    use super::*;
 
     #[test]
     fn test_format_for_console() {
