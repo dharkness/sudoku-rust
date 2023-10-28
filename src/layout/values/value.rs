@@ -13,7 +13,7 @@ impl Value {
     pub const UNKNOWN: u8 = 0;
 
     pub const fn unknown() -> Self {
-        Self(0)
+        Self(Self::UNKNOWN)
     }
 
     pub const fn new(value: u8) -> Self {
@@ -22,11 +22,11 @@ impl Value {
     }
 
     pub const fn is_unknown(&self) -> bool {
-        self.0 == 0
+        self.0 == Self::UNKNOWN
     }
 
     pub const fn is_known(&self) -> bool {
-        self.0 != 0
+        self.0 != Self::UNKNOWN
     }
 
     pub const fn known(&self) -> Option<Known> {
@@ -42,7 +42,7 @@ impl Value {
     }
 
     pub const fn label(&self) -> char {
-        if self.0 == 0 {
+        if self.is_unknown() {
             MISSING
         } else {
             (b'0' + self.0) as char
