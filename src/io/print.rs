@@ -4,7 +4,7 @@
 
 use crate::layout::{Cell, House, Known};
 use crate::puzzle::Board;
-use crate::symbols::{CANDIDATE, MISSING};
+use crate::symbols::{CANDIDATE, GIVEN, MISSING};
 
 pub fn print_givens(board: &Board) {
     print_single_value_board(|cell| {
@@ -40,6 +40,8 @@ pub fn print_candidate(board: &Board, candidate: Known) {
                 ' '
             } else if value == candidate.value() {
                 value.label()
+            } else if board.is_given(cell) {
+                GIVEN
             } else {
                 MISSING
             }
