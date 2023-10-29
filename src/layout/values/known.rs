@@ -63,13 +63,6 @@ impl Known {
     }
 }
 
-impl From<u8> for Known {
-    fn from(index: u8) -> Self {
-        assert!(index < 9);
-        Known::new(index + 1)
-    }
-}
-
 impl TryFrom<char> for Known {
     type Error = String;
 

@@ -311,18 +311,6 @@ impl Index<Coord> for CoordSet {
     }
 }
 
-impl Index<char> for CoordSet {
-    type Output = bool;
-
-    fn index(&self, coord: char) -> &bool {
-        if self.has(Coord::from(coord)) {
-            &true
-        } else {
-            &false
-        }
-    }
-}
-
 impl Add<Coord> for CoordSet {
     type Output = Self;
 
@@ -331,23 +319,9 @@ impl Add<Coord> for CoordSet {
     }
 }
 
-impl Add<char> for CoordSet {
-    type Output = Self;
-
-    fn add(self, rhs: char) -> Self {
-        self.with(Coord::from(rhs))
-    }
-}
-
 impl AddAssign<Coord> for CoordSet {
     fn add_assign(&mut self, rhs: Coord) {
         self.add(rhs)
-    }
-}
-
-impl AddAssign<char> for CoordSet {
-    fn add_assign(&mut self, rhs: char) {
-        self.add(Coord::from(rhs))
     }
 }
 
@@ -359,23 +333,9 @@ impl Sub<Coord> for CoordSet {
     }
 }
 
-impl Sub<char> for CoordSet {
-    type Output = Self;
-
-    fn sub(self, rhs: char) -> Self {
-        self.without(Coord::from(rhs))
-    }
-}
-
 impl SubAssign<Coord> for CoordSet {
     fn sub_assign(&mut self, rhs: Coord) {
         self.remove(rhs)
-    }
-}
-
-impl SubAssign<char> for CoordSet {
-    fn sub_assign(&mut self, rhs: char) {
-        self.remove(Coord::from(rhs))
     }
 }
 
@@ -654,10 +614,10 @@ mod tests {
 
         assert_eq!(EMPTY_SET, set.to_string());
 
-        set += '4';
-        set += '2';
-        set += '6';
-        set += '9';
+        set += coord!(4);
+        set += coord!(2);
+        set += coord!(6);
+        set += coord!(9);
 
         assert_eq!("(·2·4·6··9)", set.to_string());
     }

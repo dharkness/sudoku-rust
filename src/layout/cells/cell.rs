@@ -126,20 +126,6 @@ impl Cell {
     }
 }
 
-impl From<i32> for Cell {
-    fn from(index: i32) -> Self {
-        debug_assert!(index >= 0 && index < Cell::COUNT as i32);
-        Cell::new(index as u8)
-    }
-}
-
-impl From<usize> for Cell {
-    fn from(index: usize) -> Self {
-        debug_assert!(index < Cell::COUNT as usize);
-        Cell::new(index as u8)
-    }
-}
-
 impl TryFrom<&str> for Cell {
     type Error = String;
 
@@ -156,12 +142,6 @@ impl TryFrom<String> for Cell {
 
     fn try_from(label: String) -> Result<Self, Self::Error> {
         Self::try_from(label.as_str())
-    }
-}
-
-impl From<Bit> for Cell {
-    fn from(bit: Bit) -> Self {
-        bit.cell()
     }
 }
 

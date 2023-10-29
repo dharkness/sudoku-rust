@@ -128,6 +128,16 @@ impl Effects {
         effects
     }
 
+    pub fn affecting_known(&self, known: Known) -> Self {
+        let mut effects = Self::new();
+        for action in self.actions.iter() {
+            if action.affects_known(known) {
+                effects.add_action(action.clone());
+            }
+        }
+        effects
+    }
+
     pub fn without_action(&self, index: usize) -> Self {
         let mut effects = self.clone();
         effects.actions.remove(index);

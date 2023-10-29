@@ -1,8 +1,9 @@
 //! Provides a text-based interface for creating and playing Sudoku puzzles.
 
-use clap::Args;
 use std::io::{stdout, Write};
 use std::time::Instant;
+
+use clap::Args;
 
 use crate::build::{Finder, Generator};
 use crate::io::{
@@ -430,8 +431,27 @@ pub fn start_player(args: PlayArgs) {
                 }
 
                 let mut affecting_cell = None;
+                let mut affecting_known = None;
                 if input.len() == 2 {
-                    affecting_cell = Some(Cell::from_str(input[1]));
+                    match input[1].len() {
+                        1 => {
+                            if let Ok(known) = Known::try_from(input[1]) {
+                                affecting_known = Some(known);
+                            } else {
+                                println!("\n==> Invalid digit: {}\n", input[1]);
+                                continue;
+                            }
+                        }
+                        2 => {
+                            if let Ok(cell) = Cell::try_from(input[1]) {
+                                affecting_cell = Some(cell);
+                            } else {
+                                println!("\n==> Invalid cell: {}\n", input[1]);
+                                continue;
+                            }
+                        }
+                        _ => (),
+                    }
                 };
 
                 if let Some(ref found) = deductions {
@@ -446,16 +466,33 @@ pub fn start_player(args: PlayArgs) {
                             pluralize(filtered.action_count(), "deduction"),
                             cell
                         );
+                    } else if let Some(known) = affecting_known {
+                        let filtered = found.affecting_known(known);
+                        if filtered.is_empty() {
+                            println!("\n==> No deductions found affecting {}\n", known);
+                            continue;
+                        }
+                        println!(
+                            "\n==> Found {} affecting {}\n",
+                            pluralize(filtered.action_count(), "deduction"),
+                            known
+                        );
                     } else {
                         println!(
                             "\n==> Found {}\n",
                             pluralize(found.action_count(), "deduction")
                         );
                     }
+
                     let mut found_any = false;
                     for (i, action) in found.actions().iter().enumerate() {
                         if let Some(cell) = affecting_cell {
                             if action.affects_cell(cell) {
+                                found_any = true;
+                                println!("{:>4} - {}", i + 1, action);
+                            }
+                        } else if let Some(known) = affecting_known {
+                            if action.affects_known(known) {
                                 found_any = true;
                                 println!("{:>4} - {}", i + 1, action);
                             }
@@ -654,8 +691,8 @@ fn print_help() {
         "  S <cell> <digit>    - solve a cell\n",
         "  E <cell> <digits>   - erase one or more candidates\n",
         "\n",
-        "  V                   - verify puzzle is solvable\n",
-        "  F                   - find deductions\n",
+        "  V                   - verify that puzzle is solvable\n",
+        "  F [cell or digit]   - find deductions\n",
         "  A <num>             - apply a single or all deductions\n",
         "  B                   - use Bowman's Bingo to solve the puzzle if possible\n",
         "  R                   - reset candidates based on solved cells\n",

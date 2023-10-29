@@ -432,28 +432,6 @@ impl Index<Cell> for CellSet {
     }
 }
 
-impl Index<&str> for CellSet {
-    type Output = bool;
-
-    /// Returns true if the cell represented by `label` is a member of this set.
-    fn index(&self, label: &str) -> &bool {
-        if self.has(Cell::from_str(label)) {
-            &true
-        } else {
-            &false
-        }
-    }
-}
-
-impl Add<Bit> for CellSet {
-    type Output = Self;
-
-    /// Returns a copy of this set with `rhs` as a member.
-    fn add(self, rhs: Bit) -> Self {
-        self.with(rhs.cell())
-    }
-}
-
 impl Add<Cell> for CellSet {
     type Output = Self;
 
@@ -463,42 +441,10 @@ impl Add<Cell> for CellSet {
     }
 }
 
-impl Add<&str> for CellSet {
-    type Output = Self;
-
-    /// Returns a copy of this set with `rhs` as a member.
-    fn add(self, rhs: &str) -> Self {
-        self.with(Cell::from_str(rhs))
-    }
-}
-
-impl AddAssign<Bit> for CellSet {
-    /// Adds `rhs` to this set.
-    fn add_assign(&mut self, rhs: Bit) {
-        self.add(rhs.cell())
-    }
-}
-
 impl AddAssign<Cell> for CellSet {
     /// Adds `rhs` to this set.
     fn add_assign(&mut self, rhs: Cell) {
         self.add(rhs)
-    }
-}
-
-impl AddAssign<&str> for CellSet {
-    /// Adds `rhs` to this set.
-    fn add_assign(&mut self, rhs: &str) {
-        self.add(Cell::from_str(rhs))
-    }
-}
-
-impl Sub<Bit> for CellSet {
-    type Output = Self;
-
-    /// Returns a copy of this set without `rhs` as a member.
-    fn sub(self, rhs: Bit) -> Self {
-        self.without(rhs.cell())
     }
 }
 
@@ -511,33 +457,10 @@ impl Sub<Cell> for CellSet {
     }
 }
 
-impl Sub<&str> for CellSet {
-    type Output = Self;
-
-    /// Returns a copy of this set without `rhs` as a member.
-    fn sub(self, rhs: &str) -> Self {
-        self.without(Cell::from_str(rhs))
-    }
-}
-
-impl SubAssign<Bit> for CellSet {
-    /// Removes `rhs` from this set.
-    fn sub_assign(&mut self, rhs: Bit) {
-        self.remove(rhs.cell())
-    }
-}
-
 impl SubAssign<Cell> for CellSet {
     /// Removes `rhs` from this set.
     fn sub_assign(&mut self, rhs: Cell) {
         self.remove(rhs)
-    }
-}
-
-impl SubAssign<&str> for CellSet {
-    /// Removes `rhs` from this set.
-    fn sub_assign(&mut self, rhs: &str) {
-        self.remove(Cell::from_str(rhs))
     }
 }
 
@@ -673,9 +596,10 @@ impl FusedIterator for BitIter {}
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::layout::cells::cell::cell;
     use crate::layout::houses::house_set::houses;
+
+    use super::*;
 
     #[test]
     fn empty() {
@@ -970,8 +894,8 @@ mod tests {
 
     #[test]
     fn index_bit() {
-        assert_eq!(true, cells!("A1 A2 A3")[Cell::from(0b10)]);
-        assert_eq!(false, cells!("A1 A2 A3")[Cell::from(0b1000)]);
+        assert_eq!(true, cells!("A1 A2 A3")[Cell::new(0b10)]);
+        assert_eq!(false, cells!("A1 A2 A3")[Cell::new(0b1000)]);
     }
 
     #[test]
@@ -982,15 +906,15 @@ mod tests {
 
     #[test]
     fn index_label() {
-        assert_eq!(true, cells!("A1 A2 A3")["A2"]);
-        assert_eq!(false, cells!("A1 A2 A3")["C2"]);
+        assert_eq!(true, cells!("A1 A2 A3")[cell!("A2")]);
+        assert_eq!(false, cells!("A1 A2 A3")[cell!("C2")]);
     }
 
     #[test]
     fn add_returns_the_same_set_when_the_cell_is_present() {
         let set = cells!("B3 A7 H5");
 
-        let got = set + "A7";
+        let got = set + cell!("A7");
         assert_eq!(set, got);
     }
 
@@ -998,7 +922,7 @@ mod tests {
     fn add_returns_a_new_set_when_the_cell_is_not_present() {
         let set = cells!("B3 A7 H5");
 
-        let got = set + "G3";
+        let got = set + cell!("G3");
         assert_eq!(cells!("B3 A7 G3 H5"), got);
     }
 
@@ -1006,7 +930,7 @@ mod tests {
     fn sub_returns_the_same_set_when_the_cell_is_not_present() {
         let set = cells!("B3 A7 H5");
 
-        let got = set - "G3";
+        let got = set - cell!("G3");
         assert_eq!(set, got);
     }
 
@@ -1014,7 +938,7 @@ mod tests {
     fn sub_returns_the_same_set_when_the_cell_is_present() {
         let set = cells!("B3 A7 H5");
 
-        let got = set - "A7";
+        let got = set - cell!("A7");
         assert_eq!(cells!("B3 H5"), got);
     }
 
@@ -1023,7 +947,10 @@ mod tests {
         assert_eq!(CellSet::full(), !CellSet::empty());
         assert_eq!(CellSet::empty(), !CellSet::full());
 
-        assert_eq!(CellSet::full() - "A5" - "C9" - "G2", !cells!("A5 C9 G2"));
+        assert_eq!(
+            CellSet::full() - cell!("A5") - cell!("C9") - cell!("G2"),
+            !cells!("A5 C9 G2")
+        );
     }
 
     #[test]

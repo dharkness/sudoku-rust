@@ -282,18 +282,6 @@ impl Index<Known> for KnownSet {
     }
 }
 
-impl Index<&str> for KnownSet {
-    type Output = bool;
-
-    fn index(&self, known: &str) -> &bool {
-        if self.has(Known::from_str(known)) {
-            &true
-        } else {
-            &false
-        }
-    }
-}
-
 impl Add<Known> for KnownSet {
     type Output = Self;
 
@@ -302,23 +290,9 @@ impl Add<Known> for KnownSet {
     }
 }
 
-impl Add<&str> for KnownSet {
-    type Output = Self;
-
-    fn add(self, rhs: &str) -> Self {
-        self.with(Known::from_str(rhs))
-    }
-}
-
 impl AddAssign<Known> for KnownSet {
     fn add_assign(&mut self, rhs: Known) {
         self.add(rhs)
-    }
-}
-
-impl AddAssign<&str> for KnownSet {
-    fn add_assign(&mut self, rhs: &str) {
-        self.add(Known::from_str(rhs))
     }
 }
 
@@ -330,23 +304,9 @@ impl Sub<Known> for KnownSet {
     }
 }
 
-impl Sub<&str> for KnownSet {
-    type Output = Self;
-
-    fn sub(self, rhs: &str) -> Self {
-        self.without(Known::from_str(rhs))
-    }
-}
-
 impl SubAssign<Known> for KnownSet {
     fn sub_assign(&mut self, rhs: Known) {
         self.remove(rhs)
-    }
-}
-
-impl SubAssign<&str> for KnownSet {
-    fn sub_assign(&mut self, rhs: &str) {
-        self.remove(Known::from_str(rhs))
     }
 }
 
@@ -449,7 +409,7 @@ impl Iterator for Iter {
         } else {
             let bit = 1 << self.bits.trailing_zeros();
             self.bits &= !bit;
-            Some(Known::from(bit.trailing_zeros() as u8))
+            Some(Known::from_index(bit.trailing_zeros()))
         }
     }
 }
@@ -458,8 +418,9 @@ impl FusedIterator for Iter {}
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::layout::values::known::known;
+
+    use super::*;
 
     #[test]
     fn empty_returns_an_empty_set() {
@@ -616,10 +577,10 @@ mod tests {
 
         assert_eq!(EMPTY_SET, set.to_string());
 
-        set += "4";
-        set += "2";
-        set += "6";
-        set += "9";
+        set += known!("4");
+        set += known!("2");
+        set += known!("6");
+        set += known!("9");
 
         assert_eq!("(·2·4·6··9)", set.to_string());
     }

@@ -1,7 +1,8 @@
-use itertools::Itertools;
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Write;
+
+use itertools::Itertools;
 
 use crate::layout::{Cell, CellSet, Known, KnownSet};
 use crate::symbols::{EMPTY_SET, REMOVE_CANDIDATE, SET_KNOWN};
@@ -90,6 +91,10 @@ impl Action {
 
     pub fn affects_cell(&self, cell: Cell) -> bool {
         self.erase.contains_key(&cell) || self.set.contains_key(&cell)
+    }
+
+    pub fn affects_known(&self, known: Known) -> bool {
+        self.erase.values().any(|ks| ks.has(known)) || self.set.values().any(|k| *k == known)
     }
 
     pub fn erases(&self, cell: Cell, known: Known) -> bool {
