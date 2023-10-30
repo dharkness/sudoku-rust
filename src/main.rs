@@ -32,13 +32,13 @@ struct App {
 
 #[derive(Debug, Subcommand)]
 enum Commands {
-    /// Generate a new complete puzzle
-    #[clap(alias = "c")]
-    Create(CreateArgs),
-
     /// Start the interactive player
     #[clap(alias = "p")]
     Play(PlayArgs),
+
+    /// Generate a new complete puzzle
+    #[clap(alias = "c")]
+    Create(CreateArgs),
 
     /// Solve a puzzle or all puzzles from STDIN
     #[clap(alias = "s")]
@@ -64,8 +64,8 @@ fn main() {
     let app = App::parse();
     if let Some(command) = app.command {
         match command {
-            Commands::Create(args) => create_puzzle(args),
             Commands::Play(args) => start_player(args),
+            Commands::Create(args) => create_puzzle(args),
             Commands::Solve(args) => solve_puzzles(args),
             Commands::Bingo(args) => bingo(args),
             Commands::Extract(args) => extract_patterns(args),
