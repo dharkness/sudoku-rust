@@ -296,5 +296,25 @@ Options:
 ```
 
 
+## Exploring the Code
+
+The code is organized into several modules, each with a specific purpose.
+
+- `build` - Generate complete puzzles and starting positions
+- `commands` - All of the command-line subcommands
+- `io` - Puzzle parsers and formatters
+- `layout` - The data structures that make up a puzzle board
+- `puzzle` - The puzzle board itself and methods for manipulating it
+- `solve` - The solver and strategies for solving puzzles
+
+These are some of the more interesting files with the gory details:
+
+- [`layout`](src/layout.rs) - Describes all the board pieces and their relationships
+- [`cell_set.rs`](src/layout/cells/cell_set.rs) - The heart of the board and solvers
+- [`puzzle`](src/puzzle.rs) - Explains the supporting cast for the puzzle board
+- [`board.rs`](src/puzzle/board.rs) - The board itself and its methods
+- [`algorithms`](src/solve/algorithms) - Where the real fun happens
+
+
 [sudokuwiki]: https://www.sudokuwiki.org/
 [example]: https://www.sudokuwiki.org/sudoku.htm?bd=3681m6n4n8nc0e280h09kim6mkuguk11a0a6340g243kbo03g141ac82210hl2t8t8c805d886118e6ieoeocoaog141g8o8jg05ro8o03b88242c209lglk21pgd60h05118103m048g848g14aea7k7g7kcu9ode
