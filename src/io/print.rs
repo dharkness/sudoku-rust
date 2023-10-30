@@ -4,7 +4,19 @@
 
 use crate::layout::{Cell, House, Known};
 use crate::puzzle::Board;
-use crate::symbols::{CANDIDATE, GIVEN, MISSING};
+use crate::symbols::{GIVEN, MISSING};
+
+// Unicode line characters: https://www.w3.org/TR/xml-entity-names/025.html
+//
+// thin:   ┌ ─ ┐ └ ┘ ├ ┤ ┬ ┴ ┼
+//
+// think:  ┏ ━ ┓ ┗ ┛ ┣ ┫ ┳ ┻ ╋
+// combo:  ┠ ┨ ┯ ┷ ┿ ╂
+//
+// double: ╔ ═ ╗ ╚ ╝ ╠ ╣ ╦ ╩ ╬
+// combo:  ╟ ╢ ╧ ╤ ╪ ╫
+//
+// dashed: ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ╌ ╍ ╎ ╏
 
 pub fn print_givens(board: &Board) {
     print_single_value_board(|cell| {
@@ -33,31 +45,29 @@ pub fn print_known_values(board: &Board) {
 pub fn print_candidate(board: &Board, candidate: Known) {
     print_single_value_board(|cell| {
         if board.is_candidate(cell, candidate) {
-            CANDIDATE
+            GIVEN
         } else {
             let value = board.value(cell);
             if value.is_unknown() {
                 ' '
             } else if value == candidate.value() {
                 value.label()
-            } else if board.is_given(cell) {
-                GIVEN
             } else {
-                MISSING
+                ' '
             }
         }
     });
 }
 
 pub fn print_single_value_board(get_char: impl Fn(Cell) -> char) {
-    println!("    ¹ ² ³   ⁴ ⁵ ⁶   ⁷ ⁸ ⁹");
+    println!("    1 2 3   4 5 6   7 8 9");
     println!("  ┍───────┬───────┬───────┐");
     House::rows_iter().for_each(|row| {
         if !row.is_top() {
             if row.is_block_top() {
                 println!("  ├───────┼───────┼───────┤");
             } else {
-                println!("  │       │       │       │");
+                // println!("  │       │       │       │");
             }
         }
         print!("{}", row.console_label());
@@ -72,12 +82,40 @@ pub fn print_single_value_board(get_char: impl Fn(Cell) -> char) {
         println!(" │ {}", row.console_label());
     });
     println!("  └───────┴───────┴───────┘");
-    println!("    ₁ ₂ ₃   ₄ ₅ ₆   ₇ ₈ ₉");
+    println!("    1 2 3   4 5 6   7 8 9");
+}
+
+pub fn print_single_value_board_thick(get_char: impl Fn(Cell) -> char) {
+    println!("    1 2 3   4 5 6   7 8 9");
+    println!("  ┏━━━━━━━┯━━━━━━━┯━━━━━━━┓");
+    House::rows_iter().for_each(|row| {
+        if !row.is_top() {
+            if row.is_block_top() {
+                println!("  ┠───────┼───────┼───────┨");
+            } else {
+                // println!("  ┃       │       │       ┃");
+            }
+        }
+        print!("{}", row.console_label());
+        row.cells().iter().for_each(|cell| {
+            let char = get_char(cell);
+            if cell.column().is_left() {
+                print!(" ┃ {}", char);
+            } else if cell.column().is_block_left() {
+                print!(" │ {}", char);
+            } else {
+                print!(" {}", char);
+            }
+        });
+        println!(" ┃ {}", row.console_label());
+    });
+    println!("  ┗━━━━━━━┷━━━━━━━┷━━━━━━━┛");
+    println!("    1 2 3   4 5 6   7 8 9");
 }
 
 pub fn print_candidates(board: &Board) {
-    println!("     ¹   ²   ³     ⁴   ⁵   ⁶     ⁷   ⁸   ⁹");
-    println!("  ┍─────────────┬─────────────┬─────────────┐");
+    println!("     1    2    3     4    5    6     7    8    9");
+    println!("  ┍───────────────┬───────────────┬───────────────┐");
     House::rows_iter().for_each(|row| {
         let mut lines = [
             String::from("  │ "),
@@ -109,19 +147,19 @@ pub fn print_candidates(board: &Board) {
             if column.is_block_right() {
                 lines.iter_mut().for_each(|line| line.push_str(" │ "));
             } else {
-                lines.iter_mut().for_each(|line| line.push(' '));
+                lines.iter_mut().for_each(|line| line.push_str("  "));
             }
         });
         lines[1].push_str(&format!("{}", row.console_label()));
         lines.iter().for_each(|line| println!("{}", line));
         if row.is_block_bottom() {
             if !row.is_bottom() {
-                println!("  ├─────────────┼─────────────┼─────────────┤");
+                println!("  ├───────────────┼───────────────┼───────────────┤");
             }
         } else {
-            println!("  │             │             │             │");
+            println!("  │               │               │               │");
         }
     });
-    println!("  └─────────────┴─────────────┴─────────────┘");
-    println!("     ₁   ₂   ₃     ₄   ₅   ₆     ₇   ₈   ₉");
+    println!("  └───────────────┴───────────────┴───────────────┘");
+    println!("     1    2    3     4    5    6     7    8    9");
 }
