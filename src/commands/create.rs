@@ -1,7 +1,8 @@
-use clap::Args;
-use itertools::Itertools;
 use std::process::exit;
 use std::time::Instant;
+
+use clap::Args;
+use itertools::Itertools;
 
 use crate::build::{Finder, Generator};
 use crate::io::{format_runtime, print_candidates, print_known_values, Cancelable, Parse, Parser};
@@ -9,7 +10,7 @@ use crate::puzzle::{Changer, Options};
 
 #[derive(Debug, Args)]
 pub struct CreateArgs {
-    /// Randomize the cells before generating
+    /// Randomize the cells before generating (can take much longer)
     #[clap(short, long)]
     randomize: bool,
 

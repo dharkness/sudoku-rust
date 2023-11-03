@@ -29,7 +29,7 @@ pub struct FindArgs {
 }
 
 /// Applies patterns from STDIN and reports each one that solves the puzzle.
-pub fn find_pattern(args: FindArgs) {
+pub fn find_solutions(args: FindArgs) {
     let runtime = Instant::now();
     let board = parse_puzzle_or_exit(args.solution);
     let num_workers = determine_worker_count(args.threads);

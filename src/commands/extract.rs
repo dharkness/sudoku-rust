@@ -1,18 +1,15 @@
+use std::collections::HashMap;
+use std::io::{BufRead, IsTerminal};
+use std::time::Instant;
+
 use clap::Args;
 use itertools::Itertools;
-use std::collections::HashMap;
-use std::io::BufRead;
-use std::time::Instant;
 
 use crate::io::{format_number, format_runtime, Cancelable};
 use crate::layout::CellSet;
 
 #[derive(Debug, Args)]
 pub struct ExtractArgs {
-    /// Stream the patterns to STDOUT without counts
-    #[clap(short, long)]
-    stream: bool,
-
     /// Print total counts only
     #[clap(short, long)]
     total: bool,
@@ -23,7 +20,7 @@ pub fn extract_patterns(args: ExtractArgs) {
     let cancelable = Cancelable::new();
     let stdin = std::io::stdin();
 
-    if args.stream {
+    if !std::io::stdout().is_terminal() {
         for puzzle in stdin.lock().lines().map_while(Result::ok) {
             println!("{}", CellSet::new_from_pattern(&puzzle).pattern_string());
         }
