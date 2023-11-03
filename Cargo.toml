@@ -1,8 +1,8 @@
 [package]
 name = "sudoku-rust"
-version = "0.2.0"
+version = "1.0.0"
 description = "A command-line sudoku player, generator and solver written in Rust."
-authors = ["David Harkness"]
+authors = ["David Harkness <dharkness@gmail.com>"]
 repository = "https://github.com/dharkness/sudoku-rust"
 readme = "README.md"
 keywords = ["sudoku", "game", "solver", "generator", "cli"]

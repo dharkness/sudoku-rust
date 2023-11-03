@@ -2,6 +2,23 @@
 
 Sudoku puzzle generator, solver and player console-based application built in Rust.
 
+<!-- TOC -->
+* [Sudoku Rust](#sudoku-rust)
+  * [Goals](#goals)
+  * [Running Locally](#running-locally)
+    * [Docker](#docker)
+    * [Rust](#rust)
+  * [Interactive Player](#interactive-player)
+    * [Getting Started](#getting-started)
+    * [The Rules of Sudoku](#the-rules-of-sudoku)
+    * [Reading the Board](#reading-the-board)
+    * [Printing the Board](#printing-the-board)
+    * [Playing the Puzzle](#playing-the-puzzle)
+    * [Using the Solver](#using-the-solver)
+  * [Puzzle Tools](#puzzle-tools)
+  * [Exploring the Code](#exploring-the-code)
+<!-- TOC -->
+
 
 ## Goals
 
@@ -18,22 +35,40 @@ Having accomplished those tasks and more, I have added some stretch goals.
 - [ ] Serve the React webapp directly from the Rust application
 
 
-## Running it Yourself
+## Running Locally
 
-Running the console application is easy.
+After cloning the repository locally, you have two ways to run the application.
 
-1. Install Rust
-2. Clone the repository
-3. Build the application
-4. Run it
+```bash
+git clone git@github.com:dharkness/sudoku-rust.git
+cd sudoku-rust
+```
+
+### Docker
+
+If you don't want to install Rust, you can build and run the `Dockerfile`
+to use the interactive player. Make sure to add `-it` when running it
+to get an interactive terminal.
+
+```bash
+docker build -t sudoku-rust .
+docker run -it sudoku-rust
+```
+
+### Rust
+
+If you want to use the puzzle tools, you'll need to install Rust
+and build the application yourself. 
 
 I recommend using [rustup](https://rustup.rs/) to install Rust
 as it's one command and makes keeping up-to-date a breeze.
 
+1. Install Rust
+2. Build the application
+3. Run it
+
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-git clone git@github.com:dharkness/sudoku-rust.git
-cd sudoku-rust
 bin/build.sh
 ./sudoku-rust
 ```
@@ -245,13 +280,13 @@ or `Q` to quit the program.
 
 The application has several commands to help you create, solve and analyze
 your own puzzles or those from other sites or collections. You can view
-them all with
+them all with the `help` command.
 
 ```bash
 ./sudoku-rust help
 ```
 
-which will present this menu:
+You'll be presented with a brief description of each command.
 
 ```
 A command-line sudoku player, generator and solver written in Rust
