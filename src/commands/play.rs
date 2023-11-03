@@ -25,23 +25,19 @@ pub struct PlayArgs {
     #[clap(long, action = clap::ArgAction::HelpLong)]
     help: Option<bool>,
 
-    /// Do not automatically remove peer candidates
-    #[clap(short, long)]
-    peers: bool,
-
-    /// Do not automatically solve naked singles
+    /// Automatically solve naked singles
     #[clap(short, long)]
     naked: bool,
 
-    /// Do not automatically solve hidden singles
+    /// Automatically solve hidden singles
     #[clap(short, long)]
     hidden: bool,
 
-    /// Do not automatically solve naked or hidden singles
+    /// Automatically solve naked or hidden singles (same as --naked --hidden)
     #[clap(short, long)]
     singles: bool,
 
-    /// Do not automatically solve intersection removals
+    /// Automatically solve intersection removals
     #[clap(short, long)]
     intersection: bool,
 
@@ -53,7 +49,6 @@ impl PlayArgs {
     pub fn new() -> Self {
         Self {
             help: None,
-            peers: false,
             naked: false,
             hidden: false,
             singles: false,
@@ -65,10 +60,10 @@ impl PlayArgs {
     pub fn options(&self) -> Options {
         Options {
             stop_on_error: true,
-            remove_peers: !self.peers,
-            solve_naked_singles: !self.naked && !self.singles,
-            solve_hidden_singles: !self.hidden && !self.singles,
-            solve_intersection_removals: !self.intersection,
+            remove_peers: true,
+            solve_naked_singles: self.naked || self.singles,
+            solve_hidden_singles: self.hidden || self.singles,
+            solve_intersection_removals: self.intersection,
         }
     }
 }
@@ -134,9 +129,9 @@ pub fn start_player(args: PlayArgs) {
                 if input.len() >= 2 {
                     for c in input[1].to_uppercase().chars() {
                         match c {
-                            'P' => {
-                                changer.options.remove_peers = !changer.options.remove_peers;
-                            }
+                            // 'P' => {
+                            //     changer.options.remove_peers = !changer.options.remove_peers;
+                            // }
                             'N' => {
                                 changer.options.solve_naked_singles =
                                     !changer.options.solve_naked_singles;
@@ -157,16 +152,16 @@ pub fn start_player(args: PlayArgs) {
                     concat!(
                         "\n==> Options\n",
                         "\n",
-                        "  P - {} peer candidates\n",
+                        // "  P - {} peer candidates\n",
                         "  N - {} naked singles\n",
                         "  H - {} hidden singles\n",
                         "  I - {} intersection removals\n",
                     ),
-                    if changer.options.remove_peers {
-                        "removing"
-                    } else {
-                        "not removing"
-                    },
+                    // if changer.options.remove_peers {
+                    //     "removing"
+                    // } else {
+                    //     "not removing"
+                    // },
                     if changer.options.solve_naked_singles {
                         "solving"
                     } else {
