@@ -8,8 +8,8 @@ use clap::Args;
 use crate::build::{Finder, Generator};
 use crate::io::{
     format_for_fancy_console, format_for_wiki, format_grid, format_packed, format_runtime,
-    print_candidate, print_candidates, print_givens, print_known_values, Cancelable, Parse, Parser,
-    SUDOKUWIKI_URL,
+    print_all_and_single_candidates, print_candidate, print_candidates, print_givens,
+    print_known_values, Cancelable, Parse, Parser, SUDOKUWIKI_URL,
 };
 use crate::layout::{Cell, CellSet, Known, KnownSet};
 use crate::puzzle::{Board, ChangeResult, Changer, Effects, Options, Strategy};
@@ -105,7 +105,7 @@ pub fn start_player(args: PlayArgs) {
                 print_known_values(board);
                 println!("\n==> Congratulations!\n");
             } else {
-                print_candidates(board);
+                print_all_and_single_candidates(board);
                 println!();
             }
         }

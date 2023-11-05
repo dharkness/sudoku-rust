@@ -57,7 +57,10 @@ pub use cancelable::{create_signal, Cancelable};
 pub use format::{format_for_fancy_console, format_for_wiki, format_grid, format_packed, Format};
 pub use numbers::{format_number, format_runtime};
 pub use parse::{Parse, ParsePacked, Parser};
-pub use print::{print_candidate, print_candidates, print_givens, print_known_values};
+pub use print::{
+    print_all_and_single_candidates, print_candidate, print_candidates, print_givens,
+    print_known_values,
+};
 pub use progress::show_progress;
 
 mod cancelable;

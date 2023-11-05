@@ -19,7 +19,13 @@ use crate::symbols::{GIVEN, MISSING};
 // dashed: ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ╌ ╍ ╎ ╏
 
 pub fn print_givens(board: &Board) {
-    print_single_value_board(|cell| {
+    for line in add_single_value_labels(write_givens(board)) {
+        println!("{}", line);
+    }
+}
+
+pub fn write_givens(board: &Board) -> Vec<String> {
+    write_single_value(|cell| {
         let value = board.value(cell);
         if value.is_unknown() {
             ' '
@@ -28,22 +34,34 @@ pub fn print_givens(board: &Board) {
         } else {
             MISSING
         }
-    });
+    })
 }
 
 pub fn print_known_values(board: &Board) {
-    print_single_value_board(|cell| {
+    for line in add_single_value_labels(write_known_values(board)) {
+        println!("{}", line);
+    }
+}
+
+pub fn write_known_values(board: &Board) -> Vec<String> {
+    write_single_value(|cell| {
         let value = board.value(cell);
         if value.is_unknown() {
             ' '
         } else {
             value.label()
         }
-    });
+    })
 }
 
 pub fn print_candidate(board: &Board, candidate: Known) {
-    print_single_value_board(|cell| {
+    for line in add_single_value_labels(write_candidate(board, candidate)) {
+        println!("{}", line);
+    }
+}
+
+pub fn write_candidate(board: &Board, candidate: Known) -> Vec<String> {
+    write_single_value(|cell| {
         if board.is_candidate(cell, candidate) {
             GIVEN
         } else {
@@ -56,72 +74,92 @@ pub fn print_candidate(board: &Board, candidate: Known) {
                 ' '
             }
         }
-    });
+    })
 }
 
-pub fn print_single_value_board(get_char: impl Fn(Cell) -> char) {
-    println!("    1 2 3   4 5 6   7 8 9");
-    println!("  ┍───────┬───────┬───────┐");
+pub fn add_single_value_labels(grid: Vec<String>) -> Vec<String> {
+    let mut lines = Vec::new();
+    let mut iter = grid.into_iter();
+
+    lines.push("    1 2 3   4 5 6   7 8 9    ".to_owned());
+    lines.push(format!("  {}  ", iter.next().unwrap()));
+    for row in House::rows_iter() {
+        lines.push(format!(
+            "{} {} {}",
+            row.console_label(),
+            iter.next().unwrap(),
+            row.console_label()
+        ));
+        if row.is_block_bottom() {
+            lines.push(format!("  {}  ", iter.next().unwrap()));
+        }
+    }
+    lines.push("    1 2 3   4 5 6   7 8 9    ".to_owned());
+
+    lines
+}
+
+pub fn write_single_value(get_char: impl Fn(Cell) -> char) -> Vec<String> {
+    let mut lines = Vec::new();
+
+    lines.push("┍───────┬───────┬───────┐".to_owned());
     House::rows_iter().for_each(|row| {
         if !row.is_top() {
             if row.is_block_top() {
-                println!("  ├───────┼───────┼───────┤");
+                lines.push("├───────┼───────┼───────┤".to_owned());
             } else {
-                // println!("  │       │       │       │");
+                // lines.push("│       │       │       │");
             }
         }
-        print!("{}", row.console_label());
+        let mut line = String::from('│');
         row.cells().iter().for_each(|cell| {
-            let char = get_char(cell);
-            if cell.column().is_block_left() {
-                print!(" │ {}", char);
-            } else {
-                print!(" {}", char);
+            line.push(' ');
+            line.push(get_char(cell));
+            if cell.column().is_block_right() {
+                line.push_str(" │");
             }
         });
-        println!(" │ {}", row.console_label());
+        lines.push(line);
     });
-    println!("  └───────┴───────┴───────┘");
-    println!("    1 2 3   4 5 6   7 8 9");
-}
+    lines.push("└───────┴───────┴───────┘".to_owned());
 
-pub fn print_single_value_board_thick(get_char: impl Fn(Cell) -> char) {
-    println!("    1 2 3   4 5 6   7 8 9");
-    println!("  ┏━━━━━━━┯━━━━━━━┯━━━━━━━┓");
-    House::rows_iter().for_each(|row| {
-        if !row.is_top() {
-            if row.is_block_top() {
-                println!("  ┠───────┼───────┼───────┨");
-            } else {
-                // println!("  ┃       │       │       ┃");
-            }
-        }
-        print!("{}", row.console_label());
-        row.cells().iter().for_each(|cell| {
-            let char = get_char(cell);
-            if cell.column().is_left() {
-                print!(" ┃ {}", char);
-            } else if cell.column().is_block_left() {
-                print!(" │ {}", char);
-            } else {
-                print!(" {}", char);
-            }
-        });
-        println!(" ┃ {}", row.console_label());
-    });
-    println!("  ┗━━━━━━━┷━━━━━━━┷━━━━━━━┛");
-    println!("    1 2 3   4 5 6   7 8 9");
+    lines
 }
 
 pub fn print_candidates(board: &Board) {
-    println!("     1    2    3     4    5    6     7    8    9");
-    println!("  ┍───────────────┬───────────────┬───────────────┐");
+    for line in write_candidates_with_labels(board) {
+        println!("{}", line);
+    }
+}
+
+pub fn write_candidates_with_labels(board: &Board) -> Vec<String> {
+    let mut lines = Vec::new();
+    let mut grid = write_candidates(board).into_iter();
+
+    lines.push("     1    2    3     4    5    6     7    8    9     ".to_owned());
+    lines.push(format!("  {}  ", grid.next().unwrap()));
+    for row in House::rows_iter() {
+        lines.push(format!("  {}  ", grid.next().unwrap()));
+        lines.push(format!(
+            "{} {} {}",
+            row.console_label(),
+            grid.next().unwrap(),
+            row.console_label()
+        ));
+        lines.push(format!("  {}  ", grid.next().unwrap()));
+        lines.push(format!("  {}  ", grid.next().unwrap()));
+    }
+    lines.push("     1    2    3     4    5    6     7    8    9     ".to_owned());
+
+    lines
+}
+
+pub fn write_candidates(board: &Board) -> Vec<String> {
+    let mut lines = Vec::new();
+
+    lines.push("┍───────────────┬───────────────┬───────────────┐".to_owned());
     House::rows_iter().for_each(|row| {
-        let mut lines = [
-            String::from("  │ "),
-            format!("{} │ ", row.console_label()),
-            String::from("  │ "),
-        ];
+        let mut cell_lines = [String::from("│ "), String::from("│ "), String::from("│ ")];
         House::columns_iter().for_each(|column| {
             let cell = Cell::from_row_column(row, column);
             let value = board.value(cell);
@@ -130,36 +168,62 @@ pub fn print_candidates(board: &Board) {
                 for k in Known::iter() {
                     let line = k.usize() / 3;
                     if candidates[k] {
-                        lines[line].push(k.label());
+                        cell_lines[line].push(k.label());
                     } else {
-                        lines[line].push(MISSING);
+                        cell_lines[line].push(MISSING);
                     }
                 }
             } else {
-                lines[0].push_str("   ");
-                lines[1].push_str(&format!(" {} ", value));
+                cell_lines[0].push_str("   ");
+                cell_lines[1].push_str(&format!(" {} ", value));
                 if board.is_given(cell) {
-                    lines[2].push_str(&format!(" {} ", MISSING));
+                    cell_lines[2].push_str(&format!(" {} ", MISSING));
                 } else {
-                    lines[2].push_str("   ");
+                    cell_lines[2].push_str("   ");
                 }
             }
-            if column.is_block_right() {
-                lines.iter_mut().for_each(|line| line.push_str(" │ "));
+            if column.is_right() {
+                cell_lines.iter_mut().for_each(|line| line.push_str(" │"));
+            } else if column.is_block_right() {
+                cell_lines.iter_mut().for_each(|line| line.push_str(" │ "));
             } else {
-                lines.iter_mut().for_each(|line| line.push_str("  "));
+                cell_lines.iter_mut().for_each(|line| line.push_str("  "));
             }
         });
-        lines[1].push_str(&format!("{}", row.console_label()));
-        lines.iter().for_each(|line| println!("{}", line));
+        cell_lines.into_iter().for_each(|line| lines.push(line));
         if row.is_block_bottom() {
             if !row.is_bottom() {
-                println!("  ├───────────────┼───────────────┼───────────────┤");
+                lines.push("├───────────────┼───────────────┼───────────────┤".to_owned());
             }
         } else {
-            println!("  │               │               │               │");
+            lines.push("│               │               │               │".to_owned());
         }
     });
-    println!("  └───────────────┴───────────────┴───────────────┘");
-    println!("     1    2    3     4    5    6     7    8    9");
+    lines.push("└───────────────┴───────────────┴───────────────┘".to_owned());
+
+    lines
+}
+
+pub fn print_all_and_single_candidates(board: &Board) {
+    let mut columns = [Vec::new(), Vec::new(), Vec::new()];
+
+    for (i, grid) in Known::iter().map(|k| write_candidate(board, k)).enumerate() {
+        columns[i % 3].extend(grid);
+    }
+
+    let mut columns_iter = columns.into_iter();
+    let mut column_iters = [
+        columns_iter.next().unwrap().into_iter(),
+        columns_iter.next().unwrap().into_iter(),
+        columns_iter.next().unwrap().into_iter(),
+    ];
+    for line in write_candidates_with_labels(board) {
+        println!(
+            "{}    {} {} {}",
+            line,
+            column_iters[0].next().unwrap(),
+            column_iters[1].next().unwrap(),
+            column_iters[2].next().unwrap()
+        );
+    }
 }
