@@ -98,8 +98,8 @@ pub fn create_puzzle(args: CreateArgs) {
     println!(
         "\n==> Created puzzle with {} clues in {} µs\n\n    {}\n",
         start.known_count(),
-        start.packed_string(),
-        format_runtime(runtime.elapsed())
+        format_runtime(runtime.elapsed()),
+        start.packed_string()
     );
 
     let counts = actions.action_counts();
