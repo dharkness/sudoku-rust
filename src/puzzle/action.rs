@@ -10,7 +10,7 @@ use crate::symbols::{EMPTY_SET, REMOVE_CANDIDATE, SET_KNOWN};
 use super::{Board, Change, Effects, Strategy};
 
 /// One or more changes to the board derived using a specific strategy.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Action {
     strategy: Strategy,
     set: HashMap<Cell, Known>,      // [CellSet; 9], [Value; 81]
