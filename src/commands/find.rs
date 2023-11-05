@@ -2,8 +2,7 @@ use std::io::{stdin, BufRead};
 use std::process::exit;
 use std::sync::mpsc::{channel, Receiver};
 use std::sync::{Arc, Mutex};
-use std::thread;
-use std::thread::available_parallelism;
+use std::thread::{available_parallelism, spawn};
 use std::time::Instant;
 
 use clap::Args;
@@ -34,13 +33,6 @@ pub fn find_solutions(args: FindArgs) {
     let board = parse_puzzle_or_exit(args.solution);
     let num_workers = determine_worker_count(args.threads);
 
-    let mut count = 0;
-    let mut solved = 0;
-    let mut easiest = None;
-    let mut easiest_counts = 10000;
-    let mut hardest = None;
-    let mut hardest_counts = 0;
-
     // Create channels for sending and receiving strings
     let (pattern_tx, pattern_rx) = channel();
     let (result_tx, result_rx) = channel();
@@ -48,60 +40,75 @@ pub fn find_solutions(args: FindArgs) {
     // Each worker thread will receive patterns from the shared pattern_rx channel
     let pattern_rx: Arc<Mutex<Receiver<String>>> = Arc::new(Mutex::new(pattern_rx));
 
-    // Create five worker threads
-    let mut workers = Vec::with_capacity(5);
+    // Create worker threads
+    let mut workers = Vec::with_capacity(num_workers);
     for id in 1..=num_workers {
         let pattern_rx = pattern_rx.clone();
         let result_tx = result_tx.clone();
-        let handle = thread::Builder::new()
-            .name(format!("Worker {}", id))
-            .spawn(move || {
-                let cancelable = Cancelable::new();
-                let solver = Solver::new(false);
+        workers.push(spawn(move || {
+            let cancelable = Cancelable::new();
+            let solver = Solver::new(false);
+            let runtime = Instant::now();
+            let mut count = 0;
 
-                while let Ok(pattern) = pattern_rx.lock().unwrap().recv() {
-                    if cancelable.is_canceled() {
-                        break;
+            loop {
+                let pattern = pattern_rx.lock().unwrap().recv();
+                if pattern.is_err() || cancelable.is_canceled() {
+                    break;
+                }
+                let pattern = pattern.unwrap().to_owned();
+
+                let (start, effects) = board.with_givens(CellSet::new_from_pattern(&pattern));
+                match solver.solve(&start, &effects) {
+                    Resolution::Canceled(..) => break,
+                    Resolution::Solved(_, actions, difficulty) => {
+                        result_tx
+                            .send(PatternResult::Success(pattern, start, actions, difficulty))
+                            .unwrap();
                     }
-
-                    let (start, effects) = board.with_givens(CellSet::new_from_pattern(&pattern));
-                    match solver.solve(&start, &effects) {
-                        Resolution::Canceled(..) => break,
-                        Resolution::Solved(_, actions, difficulty) => {
-                            result_tx
-                                .send(PatternResult::Success(pattern, start, actions, difficulty))
-                                .unwrap();
-                        }
-                        _ => result_tx
+                    _ => {
+                        result_tx
                             .send(PatternResult::Failure(pattern, start))
-                            .unwrap(),
+                            .unwrap();
                     }
                 }
-            })
-            .unwrap();
 
-        workers.push(handle);
+                count += 1;
+            }
+
+            println!(
+                "{} processed {} patterns in {} µs - {} p/s",
+                id,
+                format_number(count),
+                format_runtime(runtime.elapsed()),
+                format_number((count as f64 / runtime.elapsed().as_secs_f64()) as u128)
+            );
+        }));
     }
 
     // Drop the original channel sender
     drop(result_tx);
 
     // Spawn a thread for reading strings from stdin
-    thread::Builder::new()
-        .name("Reader".to_owned())
-        .spawn(move || {
-            let cancelable = Cancelable::new();
-            for line in stdin().lock().lines().map_while(Result::ok) {
-                if cancelable.is_canceled() {
-                    break;
-                }
-                pattern_tx.send(line).unwrap();
+    spawn(move || {
+        let cancelable = Cancelable::new();
+        for line in stdin().lock().lines().map_while(Result::ok) {
+            if cancelable.is_canceled() {
+                break;
             }
+            pattern_tx.send(line).unwrap();
+        }
 
-            // Close the channel so the workers will stop
-            drop(pattern_tx);
-        })
-        .unwrap();
+        // Close the channel so the workers will stop
+        drop(pattern_tx);
+    });
+
+    let mut count = 0;
+    let mut solved = 0;
+    let mut easiest = None;
+    let mut easiest_counts = 10000;
+    let mut hardest = None;
+    let mut hardest_counts = 0;
 
     // Read results from worker threads and print to stdout
     let cancelable = Cancelable::new();
