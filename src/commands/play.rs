@@ -11,7 +11,7 @@ use crate::io::{
     print_candidate, print_candidates, print_givens, print_known_values, Cancelable, Parse, Parser,
     SUDOKUWIKI_URL,
 };
-use crate::layout::{Cell, Known, KnownSet};
+use crate::layout::{Cell, CellSet, Known, KnownSet};
 use crate::puzzle::{Board, ChangeResult, Changer, Effects, Options, Strategy};
 use crate::solve::{find_brute_force, BruteForceResult, NON_PEER_TECHNIQUES};
 use crate::symbols::{MISSING, UNKNOWN_VALUE};
@@ -255,16 +255,10 @@ pub fn start_player(args: PlayArgs) {
 
             "G" => {
                 if input.len() != 3 {
-                    println!("\n==> G <cell> <digit>\n");
+                    println!("\n==> G <cells> <digit>\n");
                     continue;
                 }
-                let cell = match Cell::try_from(input[1]) {
-                    Ok(cell) => cell,
-                    Err(message) => {
-                        println!("\n==> {}\n", message);
-                        continue;
-                    }
-                };
+                let cells = CellSet::from(input[1]);
                 let known = match Known::try_from(input[2]) {
                     Ok(known) => known,
                     Err(message) => {
@@ -272,70 +266,38 @@ pub fn start_player(args: PlayArgs) {
                         continue;
                     }
                 };
-                match changer.set_given(board, Strategy::Given, cell, known) {
-                    ChangeResult::None => {
-                        println!("\n==> {} is not a candidate for {}\n", known, cell);
-                        continue;
+                let mut changed = false;
+                let mut clone = *board;
+                for cell in cells {
+                    match changer.set_given(&clone, Strategy::Given, cell, known) {
+                        ChangeResult::None => {
+                            println!("\n==> {} is not a candidate for {}\n", known, cell);
+                        }
+                        ChangeResult::Valid(after, _) => {
+                            clone = *after;
+                            changed = true;
+                        }
+                        ChangeResult::Invalid(_, _, _, errors) => {
+                            println!("\n==> Invalid move\n");
+                            errors.print_errors();
+                        }
                     }
-                    ChangeResult::Valid(after, _) => {
-                        deductions = None;
-                        boards.push(*after);
-                        println!();
-                        show_board = true;
-                    }
-                    ChangeResult::Invalid(_, _, _, errors) => {
-                        println!("\n==> Invalid move\n");
-                        errors.print_errors();
-                        println!();
-                        continue;
-                    }
+                }
+                if changed {
+                    deductions = None;
+                    boards.push(clone);
+                    println!();
+                    show_board = true;
                 }
             }
             "S" => {
                 if input.len() != 3 {
-                    println!("\n==> S <cell> <digit>\n");
+                    println!("\n==> S <cells> <digit>\n");
                     continue;
                 }
-                let cell = match Cell::try_from(input[1]) {
-                    Ok(cell) => cell,
-                    Err(message) => {
-                        println!("\n==> {}\n", message);
-                        continue;
-                    }
-                };
+                let cells = CellSet::from(input[1]);
                 let known = match Known::try_from(input[2]) {
                     Ok(known) => known,
-                    Err(message) => {
-                        println!("\n==> {}\n", message);
-                        continue;
-                    }
-                };
-                match changer.set_known(board, Strategy::Solve, cell, known) {
-                    ChangeResult::None => {
-                        println!("\n==> {} is not a candidate for {}\n", known, cell);
-                        continue;
-                    }
-                    ChangeResult::Valid(after, _) => {
-                        deductions = None;
-                        boards.push(*after);
-                        println!();
-                        show_board = true;
-                    }
-                    ChangeResult::Invalid(_, _, _, errors) => {
-                        println!("\n==> Invalid move\n");
-                        errors.print_errors();
-                        println!();
-                        continue;
-                    }
-                }
-            }
-            "E" => {
-                if input.len() != 3 {
-                    println!("\n==> E <cell> <digits>\n");
-                    continue;
-                }
-                let cell = match Cell::try_from(input[1]) {
-                    Ok(cell) => cell,
                     Err(message) => {
                         println!("\n==> {}\n", message);
                         continue;
@@ -343,11 +305,10 @@ pub fn start_player(args: PlayArgs) {
                 };
                 let mut clone = *board;
                 let mut changed = false;
-                for known in KnownSet::from(input[2]) {
-                    match changer.remove_candidate(&clone, Strategy::Erase, cell, known) {
+                for cell in cells {
+                    match changer.set_known(&clone, Strategy::Solve, cell, known) {
                         ChangeResult::None => {
-                            println!("\n==> {} is not a candidate for {}", known, cell);
-                            continue;
+                            println!("\n==> {} is not a candidate for {}\n", known, cell);
                         }
                         ChangeResult::Valid(after, _) => {
                             clone = *after;
@@ -357,7 +318,39 @@ pub fn start_player(args: PlayArgs) {
                             println!("\n==> Invalid move\n");
                             errors.print_errors();
                             println!();
-                            continue;
+                        }
+                    }
+                }
+                if changed {
+                    deductions = None;
+                    boards.push(clone);
+                    println!();
+                    show_board = true;
+                }
+            }
+            "E" => {
+                if input.len() != 3 {
+                    println!("\n==> E <cells> <digits>\n");
+                    continue;
+                }
+                let cells = CellSet::from(input[1]);
+                let mut clone = *board;
+                let mut changed = false;
+                for cell in cells {
+                    for known in KnownSet::from(input[2]) {
+                        match changer.remove_candidate(&clone, Strategy::Erase, cell, known) {
+                            ChangeResult::None => {
+                                println!("\n==> {} is not a candidate for {}", known, cell);
+                            }
+                            ChangeResult::Valid(after, _) => {
+                                clone = *after;
+                                changed = true;
+                            }
+                            ChangeResult::Invalid(_, _, _, errors) => {
+                                println!("\n==> Invalid move\n");
+                                errors.print_errors();
+                                println!();
+                            }
                         }
                     }
                 }
@@ -682,9 +675,9 @@ fn print_help() {
         "  W                   - print URL to play on SudokuWiki.org\n",
         "  M                   - print the puzzle as a grid suitable for email\n",
         "\n",
-        "  G <cell> <digit>    - set the given (clue) for a cell\n",
-        "  S <cell> <digit>    - solve a cell\n",
-        "  E <cell> <digits>   - erase one or more candidates\n",
+        "  G <cells> <digit>   - set the given (clue) for a cell\n",
+        "  S <cells> <digit>   - solve a cell\n",
+        "  E <cells> <digits>  - erase one or more candidates\n",
         "\n",
         "  V                   - verify that puzzle is solvable\n",
         "  F [cell or digit]   - find deductions\n",

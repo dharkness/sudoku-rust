@@ -69,6 +69,21 @@ impl CellSet {
         CellSet::new(bits)
     }
 
+    /// Returns a set containing the cells in `labels`.
+    fn from_str(labels: &str) -> Self {
+        if labels.is_empty() {
+            Self::empty()
+        } else {
+            labels
+                .replace(' ', "")
+                .chars()
+                .collect::<Vec<char>>()
+                .chunks(2)
+                .map(|c| Cell::from_string(c.iter().collect::<String>()))
+                .union()
+        }
+    }
+
     /// Returns true if this set is empty.
     pub const fn is_empty(&self) -> bool {
         self.0 == 0
@@ -324,11 +339,7 @@ impl From<House> for CellSet {
 impl From<&str> for CellSet {
     /// Returns a set containing the cells in `labels` after splitting on space.
     fn from(labels: &str) -> Self {
-        if labels.is_empty() {
-            Self::empty()
-        } else {
-            labels.split(' ').map(Cell::from_str).union()
-        }
+        Self::from_str(labels)
     }
 }
 
