@@ -8,8 +8,8 @@ use clap::Args;
 use crate::build::{Finder, Generator};
 use crate::io::{
     format_for_fancy_console, format_for_wiki, format_grid, format_packed, format_runtime,
-    print_all_and_single_candidates, print_candidate, print_candidates, print_givens,
-    print_known_values, Cancelable, Parse, Parser, SUDOKUWIKI_URL,
+    print_all_and_single_candidates, print_candidate, print_givens, print_known_values, Cancelable,
+    Parse, Parser, SUDOKUWIKI_URL,
 };
 use crate::layout::{Cell, CellSet, Known, KnownSet};
 use crate::puzzle::{Board, ChangeResult, Changer, Effects, Options, Strategy};
@@ -83,7 +83,7 @@ pub fn start_player(args: PlayArgs) {
             boards.push(board);
             if let Some((cell, known)) = failure {
                 println!();
-                print_candidates(&board);
+                print_all_and_single_candidates(&board);
                 println!("\n==> Setting {} to {} will cause errors\n", cell, known);
                 effects.print_errors();
                 println!();
@@ -597,25 +597,14 @@ pub fn start_player(args: PlayArgs) {
                             format_runtime(runtime.elapsed())
                         );
                     }
-                    BruteForceResult::Solved(actions) => {
+                    BruteForceResult::Solved(solution) => {
                         println!(
                             "\n==> The puzzle was solved - took {} µs",
                             format_runtime(runtime.elapsed())
                         );
-                        match changer.apply_all(board, &actions) {
-                            ChangeResult::None => (),
-                            ChangeResult::Valid(after, _) => {
-                                boards.push(*after);
-                                println!();
-                                show_board = true;
-                            }
-                            ChangeResult::Invalid(_, _, _, errors) => {
-                                println!("\n==> Solution caused errors\n");
-                                errors.print_errors();
-                                println!();
-                                continue;
-                            }
-                        }
+                        boards.push(*solution);
+                        println!();
+                        show_board = true;
                     }
                     BruteForceResult::MultipleSolutions(solutions) => {
                         println!(
@@ -721,11 +710,8 @@ fn create_new_puzzle(changer: Changer) -> Option<Board> {
             return None;
         }
         if input.to_uppercase() == "E" {
-            let board = Board::new();
-
-            println!();
-            print_candidates(&board);
-            return Some(board);
+            println!("\n==> Starting an empty puzzle\n");
+            return Some(Board::new());
         }
 
         let parser: Option<Box<dyn Parser>> = if input.len() == 162 {
@@ -740,12 +726,12 @@ fn create_new_puzzle(changer: Changer) -> Option<Board> {
 
             if let Some((cell, known)) = failure {
                 println!();
-                print_candidates(&board);
+                print_all_and_single_candidates(&board);
                 println!("\n==> Setting {} to {} will cause errors\n", cell, known);
                 effects.print_errors();
             } else {
                 println!();
-                print_candidates(&board);
+                print_all_and_single_candidates(&board);
             }
 
             return Some(board);

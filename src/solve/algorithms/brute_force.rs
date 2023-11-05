@@ -1,7 +1,7 @@
 use std::thread::sleep;
 use std::time::Duration;
 
-use crate::io::{print_candidates, Cancelable};
+use crate::io::{print_all_and_single_candidates, Cancelable};
 
 use super::*;
 
@@ -33,10 +33,10 @@ pub fn find_brute_force(
     }
 
     let cancelable = Cancelable::new();
-    let changer = Changer::new(Options::all());
-    let mut solutions: Vec<Effects> = Vec::new();
+    let changer = Changer::new(Options::errors_and_peers());
+    let mut solutions = Vec::new();
     let mut stack = Vec::with_capacity(81);
-    stack.push(Entry::new(*board, Effects::new()));
+    stack.push(Entry::new(*board));
 
     while !stack.is_empty() {
         if cancelable.is_canceled() {
@@ -50,7 +50,6 @@ pub fn find_brute_force(
             board,
             cell,
             candidates,
-            actions,
         } = stack.last_mut().unwrap();
 
         if candidates.is_empty() {
@@ -62,7 +61,7 @@ pub fn find_brute_force(
         }
 
         if log {
-            print_candidates(board);
+            print_all_and_single_candidates(board);
             println!("\ncell {} candidates {}\n", cell, candidates);
         };
 
@@ -79,14 +78,11 @@ pub fn find_brute_force(
             ChangeResult::None => (),
             ChangeResult::Valid(after, _) => {
                 if log {
-                    print_candidates(&after);
+                    print_all_and_single_candidates(&after);
                 }
 
-                let mut actions = actions.clone();
-                actions.add_action(action);
-
                 if after.is_fully_solved() {
-                    solutions.push(actions);
+                    solutions.push(*after);
                     if log {
                         println!("found solution {}\n", solutions.len());
                     }
@@ -101,7 +97,7 @@ pub fn find_brute_force(
                     }
                 }
 
-                stack.push(Entry::new(*after, actions));
+                stack.push(Entry::new(*after));
             }
             ChangeResult::Invalid(_, _, _, errors) => {
                 if log {
@@ -114,7 +110,7 @@ pub fn find_brute_force(
 
     match solutions.len() {
         0 => BruteForceResult::Unsolvable,
-        1 => BruteForceResult::Solved(solutions.pop().unwrap()),
+        1 => BruteForceResult::Solved(Box::new(solutions[0])),
         _ => BruteForceResult::MultipleSolutions(solutions),
     }
 }
@@ -125,8 +121,8 @@ pub enum BruteForceResult {
     UnsolvableCells(CellSet),
     Canceled,
     Unsolvable,
-    Solved(Effects),
-    MultipleSolutions(Vec<Effects>),
+    Solved(Box<Board>),
+    MultipleSolutions(Vec<Board>),
 }
 
 impl BruteForceResult {
@@ -139,11 +135,10 @@ struct Entry {
     board: Board,
     cell: Cell,
     candidates: KnownSet,
-    actions: Effects,
 }
 
 impl Entry {
-    pub fn new(board: Board, actions: Effects) -> Self {
+    pub fn new(board: Board) -> Self {
         let cell = board.unknowns().first().unwrap();
         let candidates = board.candidates(cell);
 
@@ -151,7 +146,6 @@ impl Entry {
             board,
             cell,
             candidates,
-            actions,
         }
     }
 }

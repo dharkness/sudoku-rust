@@ -1,12 +1,13 @@
-use clap::Args;
-use itertools::Itertools;
 use std::collections::HashMap;
 use std::io::BufRead;
 use std::time::{Duration, Instant};
 
+use clap::Args;
+use itertools::Itertools;
+
 use crate::io::{
-    format_for_wiki, format_number, format_runtime, print_candidates, print_known_values,
-    Cancelable, Parse, ParsePacked, Parser, SUDOKUWIKI_URL,
+    format_for_wiki, format_number, format_runtime, print_all_and_single_candidates,
+    print_known_values, Cancelable, Parse, ParsePacked, Parser, SUDOKUWIKI_URL,
 };
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Action, Board, Changer, Effects, Options, Strategy};
@@ -163,7 +164,7 @@ impl Reporter for DetailedReporter {
         runtime: Duration,
     ) {
         println!("invalid in {} µs\n", format_runtime(runtime));
-        print_candidates(partial);
+        print_all_and_single_candidates(partial);
         println!("\nsetting {} to {} will cause errors\n", cell, known);
         errors.print_errors();
     }
@@ -184,7 +185,7 @@ impl Reporter for DetailedReporter {
             SUDOKUWIKI_URL,
             format_for_wiki(stopped)
         );
-        print_candidates(stopped);
+        print_all_and_single_candidates(stopped);
         println!("\ncaused by {:?} - {}\n", action.strategy(), action);
         errors.print_errors();
         println!();
@@ -205,7 +206,7 @@ impl Reporter for DetailedReporter {
             SUDOKUWIKI_URL,
             format_for_wiki(stopped)
         );
-        print_candidates(stopped);
+        print_all_and_single_candidates(stopped);
         println!();
         self.print_counts(counts);
     }

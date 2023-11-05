@@ -5,7 +5,9 @@ use clap::Args;
 use itertools::Itertools;
 
 use crate::build::{Finder, Generator};
-use crate::io::{format_runtime, print_candidates, print_known_values, Cancelable, Parse, Parser};
+use crate::io::{
+    format_runtime, print_all_and_single_candidates, print_known_values, Cancelable, Parse, Parser,
+};
 use crate::puzzle::{Changer, Options};
 
 #[derive(Debug, Args)]
@@ -41,13 +43,13 @@ pub fn create_puzzle(args: CreateArgs) {
             let (board, effects, failure) = parser.parse(&solution);
 
             if let Some((cell, known)) = failure {
-                print_candidates(&board);
+                print_all_and_single_candidates(&board);
                 eprintln!("\n==> Setting {} to {} will cause errors\n", cell, known);
                 effects.print_errors();
                 exit(1);
             }
             if !board.is_fully_solved() {
-                print_candidates(&board);
+                print_all_and_single_candidates(&board);
                 eprintln!("\n==> You must provide a complete solution");
                 exit(1);
             }
@@ -61,12 +63,12 @@ pub fn create_puzzle(args: CreateArgs) {
             match generator.generate(&changer) {
                 Some(board) => {
                     if cancelable.is_canceled() {
-                        print_candidates(&board);
+                        print_all_and_single_candidates(&board);
                         println!("\n==> Puzzle generation canceled");
                         exit(1);
                     }
                     if !board.is_fully_solved() {
-                        print_candidates(&board);
+                        print_all_and_single_candidates(&board);
                         println!("\n==> Failed to generate a complete solution");
                         exit(1);
                     }
@@ -92,7 +94,7 @@ pub fn create_puzzle(args: CreateArgs) {
     let (start, actions) = finder.backtracking_find(board);
 
     println!();
-    print_candidates(&start);
+    print_all_and_single_candidates(&start);
     println!(
         "\n==> Created puzzle with {} clues in {} µs\n\n    {}\n",
         start.known_count(),

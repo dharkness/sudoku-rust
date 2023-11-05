@@ -4,8 +4,8 @@ use std::time::Instant;
 use clap::Args;
 
 use crate::io::{
-    format_for_wiki, format_runtime, print_candidates, print_known_values, Parse, Parser,
-    SUDOKUWIKI_URL,
+    format_for_wiki, format_runtime, print_all_and_single_candidates, print_known_values, Parse,
+    Parser, SUDOKUWIKI_URL,
 };
 use crate::puzzle::{ChangeResult, Changer, Options};
 use crate::solve::{find_brute_force, BruteForceResult};
@@ -21,7 +21,7 @@ pub struct BingoArgs {
     pause: u32,
 
     /// Maximum number of solutions to find before stopping
-    #[clap(short, long, default_value = "10", value_parser = max_solutions_in_range)]
+    #[clap(short, long, default_value = "100", value_parser = max_solutions_in_range)]
     max: usize,
 
     /// Clues for a puzzle to solve using Bowman's Bingo
@@ -30,12 +30,12 @@ pub struct BingoArgs {
 
 /// Creates a new puzzle and prints it to stdout.
 pub fn bingo(args: BingoArgs) {
-    let changer = Changer::new(Options::all());
+    let changer = Changer::new(Options::none());
     let parser = Parse::packed_with_player(changer);
 
     let (mut board, effects, failure) = parser.parse(&args.puzzle);
     if !board.is_fully_solved() {
-        print_candidates(&board);
+        print_all_and_single_candidates(&board);
         println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&board));
     }
 
@@ -83,42 +83,13 @@ pub fn bingo(args: BingoArgs) {
             cells.len(),
             cells
         );
-    }
-    if let Some(solution) = solution {
-        match changer.apply_all(&board, &solution) {
-            ChangeResult::None => (),
-            ChangeResult::Valid(after, _) => {
-                board = *after;
-            }
-            ChangeResult::Invalid(before, _, action, errors) => {
-                println!();
-                print_candidates(&before);
-                println!("\nbrute force will cause errors with {}\n", action);
-                errors.print_errors();
-                println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&before));
-            }
-        }
-    }
-    if let Some(solutions) = solutions {
-        for (i, solution) in solutions.iter().enumerate() {
-            if i == 10 {
-                break;
-            }
-            match changer.apply_all(&board, solution) {
-                ChangeResult::None => (),
-                ChangeResult::Valid(after, _) => {
-                    println!("\nsolution {}\n", i + 1);
-                    print_known_values(&after);
-                    println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&after));
-                }
-                ChangeResult::Invalid(before, _, action, errors) => {
-                    println!();
-                    print_candidates(&before);
-                    println!("\nsolution {} will cause errors with {}\n", i + 1, action);
-                    errors.print_errors();
-                    println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&before));
-                }
-            }
+    } else if let Some(solution) = solution {
+        board = *solution;
+    } else if let Some(solutions) = solutions {
+        for (i, solution) in solutions.iter().take(10).enumerate() {
+            println!("\nsolution {}\n", i + 1);
+            print_known_values(solution);
+            println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(solution));
         }
     }
 
