@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 use crate::layout::{Cell, CellSet, Known, KnownSet};
 
-use super::{Action, Board, Error, Strategy};
+use super::{Action, Board, Change, Error, Strategy};
 
 /// Collects actions and errors encountered while modifying a board.
 #[derive(Clone, Debug)]
@@ -148,9 +148,9 @@ impl Effects {
         self.actions.append(&mut from.actions);
     }
 
-    pub fn apply(&self, board: &mut Board, effects: &mut Effects) -> bool {
-        self.actions.iter().fold(false, |changed, action| {
-            action.apply(board, effects) || changed
+    pub fn apply(&self, board: &mut Board, effects: &mut Effects) -> Change {
+        self.actions.iter().fold(Change::None, |change, action| {
+            change & action.apply(board, effects)
         })
     }
 
@@ -159,12 +159,12 @@ impl Effects {
         board: &mut Board,
         strategy: Strategy,
         effects: &mut Effects,
-    ) -> bool {
-        self.actions.iter().fold(false, |changed, action| {
+    ) -> Change {
+        self.actions.iter().fold(Change::None, |change, action| {
             if action.has_strategy(strategy) {
-                action.apply(board, effects)
+                change & action.apply(board, effects)
             } else {
-                changed
+                change
             }
         })
     }

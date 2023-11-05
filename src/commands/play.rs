@@ -12,7 +12,7 @@ use crate::io::{
     SUDOKUWIKI_URL,
 };
 use crate::layout::{Cell, Known, KnownSet};
-use crate::puzzle::{Board, Change, Changer, Effects, Options, Strategy};
+use crate::puzzle::{Board, ChangeResult, Changer, Effects, Options, Strategy};
 use crate::solve::{find_brute_force, BruteForceResult, NON_PEER_TECHNIQUES};
 use crate::symbols::{MISSING, UNKNOWN_VALUE};
 
@@ -273,17 +273,17 @@ pub fn start_player(args: PlayArgs) {
                     }
                 };
                 match changer.set_given(board, Strategy::Given, cell, known) {
-                    Change::None => {
+                    ChangeResult::None => {
                         println!("\n==> {} is not a candidate for {}\n", known, cell);
                         continue;
                     }
-                    Change::Valid(after, _) => {
+                    ChangeResult::Valid(after, _) => {
                         deductions = None;
                         boards.push(*after);
                         println!();
                         show_board = true;
                     }
-                    Change::Invalid(_, _, _, errors) => {
+                    ChangeResult::Invalid(_, _, _, errors) => {
                         println!("\n==> Invalid move\n");
                         errors.print_errors();
                         println!();
@@ -311,17 +311,17 @@ pub fn start_player(args: PlayArgs) {
                     }
                 };
                 match changer.set_known(board, Strategy::Solve, cell, known) {
-                    Change::None => {
+                    ChangeResult::None => {
                         println!("\n==> {} is not a candidate for {}\n", known, cell);
                         continue;
                     }
-                    Change::Valid(after, _) => {
+                    ChangeResult::Valid(after, _) => {
                         deductions = None;
                         boards.push(*after);
                         println!();
                         show_board = true;
                     }
-                    Change::Invalid(_, _, _, errors) => {
+                    ChangeResult::Invalid(_, _, _, errors) => {
                         println!("\n==> Invalid move\n");
                         errors.print_errors();
                         println!();
@@ -345,15 +345,15 @@ pub fn start_player(args: PlayArgs) {
                 let mut changed = false;
                 for known in KnownSet::from(input[2]) {
                     match changer.remove_candidate(&clone, Strategy::Erase, cell, known) {
-                        Change::None => {
+                        ChangeResult::None => {
                             println!("\n==> {} is not a candidate for {}", known, cell);
                             continue;
                         }
-                        Change::Valid(after, _) => {
+                        ChangeResult::Valid(after, _) => {
                             clone = *after;
                             changed = true;
                         }
-                        Change::Invalid(_, _, _, errors) => {
+                        ChangeResult::Invalid(_, _, _, errors) => {
                             println!("\n==> Invalid move\n");
                             errors.print_errors();
                             println!();
@@ -518,16 +518,16 @@ pub fn start_player(args: PlayArgs) {
                         }
                         let deduction = &found.actions()[n - 1];
                         match changer.apply(board, deduction) {
-                            Change::None => {
+                            ChangeResult::None => {
                                 println!("\n==> Did not apply {}\n", deduction);
                             }
-                            Change::Valid(after, _) => {
+                            ChangeResult::Valid(after, _) => {
                                 boards.push(*after);
                                 println!("\n==> Applied {}\n", deduction);
                                 deductions = None;
                                 show_board = true;
                             }
-                            Change::Invalid(_, _, _, errors) => {
+                            ChangeResult::Invalid(_, _, _, errors) => {
                                 println!("\n==> Applying {} will cause errors\n", deduction);
                                 errors.print_errors();
                                 println!();
@@ -546,12 +546,12 @@ pub fn start_player(args: PlayArgs) {
                         let mut applied = 0;
                         for action in actions.actions() {
                             match changer.apply(&clone, action) {
-                                Change::None => (),
-                                Change::Valid(after, _) => {
+                                ChangeResult::None => (),
+                                ChangeResult::Valid(after, _) => {
                                     applied += 1;
                                     clone = *after;
                                 }
-                                Change::Invalid(_, _, _, errors) => {
+                                ChangeResult::Invalid(_, _, _, errors) => {
                                     println!(
                                         "\n==> Applying {} will cause errors\n    {}\n",
                                         solver.name(),
@@ -610,13 +610,13 @@ pub fn start_player(args: PlayArgs) {
                             format_runtime(runtime.elapsed())
                         );
                         match changer.apply_all(board, &actions) {
-                            Change::None => (),
-                            Change::Valid(after, _) => {
+                            ChangeResult::None => (),
+                            ChangeResult::Valid(after, _) => {
                                 boards.push(*after);
                                 println!();
                                 show_board = true;
                             }
-                            Change::Invalid(_, _, _, errors) => {
+                            ChangeResult::Invalid(_, _, _, errors) => {
                                 println!("\n==> Solution caused errors\n");
                                 errors.print_errors();
                                 println!();
@@ -640,13 +640,13 @@ pub fn start_player(args: PlayArgs) {
             }
             "R" => {
                 let mut reset = Board::new();
+                let mut effects = Effects::new();
                 for (cell, known) in board.known_iter() {
-                    let mut effects = Effects::new();
                     reset.set_given(cell, known, &mut effects);
-                    if effects.has_errors() {
-                        println!("\n==> Invalid board\n");
-                        effects.print_errors();
-                    }
+                }
+                if effects.has_errors() {
+                    println!("\n==> Invalid board\n");
+                    effects.print_errors();
                 }
                 deductions = None;
                 boards.push(reset);

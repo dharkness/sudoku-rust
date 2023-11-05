@@ -1,8 +1,9 @@
 use std::thread::sleep;
 use std::time::Duration;
 
-use super::*;
 use crate::io::{print_candidates, Cancelable};
+
+use super::*;
 
 const MINIMUM_KNOWNS_TO_BE_UNIQUELY_SOLVABLE: usize = 17;
 
@@ -75,8 +76,8 @@ pub fn find_brute_force(
         }
 
         match changer.apply(board, &action) {
-            Change::None => (),
-            Change::Valid(after, _) => {
+            ChangeResult::None => (),
+            ChangeResult::Valid(after, _) => {
                 if log {
                     print_candidates(&after);
                 }
@@ -102,7 +103,7 @@ pub fn find_brute_force(
 
                 stack.push(Entry::new(*after, actions));
             }
-            Change::Invalid(_, _, _, errors) => {
+            ChangeResult::Invalid(_, _, _, errors) => {
                 if log {
                     println!("failed\n");
                     errors.print_errors();

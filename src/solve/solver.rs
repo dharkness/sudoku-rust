@@ -1,5 +1,5 @@
 use crate::io::Cancelable;
-use crate::puzzle::{Action, Board, Change, Changer, Effects, Options};
+use crate::puzzle::{Action, Board, ChangeResult, Changer, Effects, Options};
 use crate::solve::{find_brute_force, Difficulty, NON_PEER_TECHNIQUES};
 
 pub enum Resolution {
@@ -68,13 +68,13 @@ impl Solver {
                     }
 
                     match self.changer.apply(&board, action) {
-                        Change::None => (),
-                        Change::Valid(after, actions) => {
+                        ChangeResult::None => (),
+                        ChangeResult::Valid(after, actions) => {
                             applied.add_action(action.clone());
                             board = *after;
                             next.take_actions(actions);
                         }
-                        Change::Invalid(before, _, action, errors) => {
+                        ChangeResult::Invalid(before, _, action, errors) => {
                             if self.check && find_brute_force(start, false, 0, 2).is_solved() {
                                 eprintln!(
                                     "error: solver caused errors in solvable puzzle: {}",

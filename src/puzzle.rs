@@ -26,8 +26,8 @@
 //! and any errors that arise due to those actions.
 
 pub use action::Action;
-pub use board::Board;
-pub use changer::{Change, Changer};
+pub use board::{Board, Change};
+pub use changer::{ChangeResult, Changer};
 pub use effects::Effects;
 pub use error::Error;
 pub use options::Options;

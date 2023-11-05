@@ -1,10 +1,48 @@
 use std::fmt;
+use std::ops::{BitAnd, BitAndAssign};
 
 use crate::io::format_for_fancy_console;
 use crate::layout::{Cell, CellSet, House, Known, KnownSet, Value};
 use crate::solve::creates_deadly_rectangles;
 
 use super::{Effects, Error, PseudoCell, Strategy};
+
+/// Indicates the result of setting a given or known or removing a candidate.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Change {
+    None,
+    Valid,
+    Invalid,
+}
+
+impl Change {
+    pub fn changed(self) -> bool {
+        self != Change::None
+    }
+
+    pub fn and(self, other: Change) -> Change {
+        match (self, other) {
+            (Change::None, _) => other,
+            (_, Change::None) => self,
+            (Change::Valid, Change::Valid) => Change::Valid,
+            _ => Change::Invalid,
+        }
+    }
+}
+
+impl BitAnd for Change {
+    type Output = Change;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        self.and(rhs)
+    }
+}
+
+impl BitAndAssign for Change {
+    fn bitand_assign(&mut self, rhs: Self) {
+        *self = self.and(rhs);
+    }
+}
 
 /// Tracks the full state of a puzzle in play.
 ///
@@ -167,13 +205,12 @@ impl Board {
     /// and returns true along with any follow-up actions found.
     ///
     /// See [`Board::set_known()`] for more details.
-    pub fn set_given(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> bool {
-        if self.set_known(cell, known, effects) {
+    pub fn set_given(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> Change {
+        let change = self.set_known(cell, known, effects);
+        if change.changed() {
             self.givens += cell;
-            true
-        } else {
-            false
         }
+        change
     }
 
     /// Sets the cell to the candidate and returns true
@@ -191,17 +228,17 @@ impl Board {
     ///
     /// Returns false with no actions or errors
     /// if the known is not a candidate for the cell.
-    pub fn set_known(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> bool {
+    pub fn set_known(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> Change {
         if let Some(current) = self.value(cell).known() {
             if current == known {
-                return true;
+                return Change::None;
             } else {
                 effects.add_error(Error::AlreadySolved(cell, known, current));
-                return false;
+                return Change::Invalid;
             }
         } else if !self.is_candidate(cell, known) {
             effects.add_error(Error::NotCandidate(cell, known));
-            return false;
+            return Change::Invalid;
         }
 
         if let Some(rectangles) = creates_deadly_rectangles(self, cell, known) {
@@ -215,6 +252,7 @@ impl Board {
         self.solved_cells_by_known[known.usize()] += cell;
         self.candidate_cells_by_known[known.usize()] -= cell;
 
+        let mut change = Change::Valid;
         let mut candidates = self.candidate_knowns_by_cell[cell.usize()];
         self.cells_with_n_candidates[candidates.len()] -= cell;
         self.cells_with_n_candidates[0] += cell;
@@ -222,15 +260,15 @@ impl Board {
         self.candidate_knowns_by_cell[cell.usize()] = KnownSet::empty();
         for known in candidates {
             self.candidate_cells_by_known[known.usize()] -= cell;
-            self.remove_candidate_cell_from_houses(cell, known, effects);
+            change &= self.remove_candidate_cell_from_houses(cell, known, effects);
         }
 
         for peer in self.candidate_cells_by_known[known.usize()] & cell.peers() {
-            self.remove_candidate(peer, known, effects);
+            change &= self.remove_candidate(peer, known, effects);
             // effects.add_erase(Strategy::Peer, peer, known)
         }
 
-        true
+        change
     }
 
     /// Returns a new pseudo cell with the given cells and their candidates.
@@ -303,10 +341,10 @@ impl Board {
     ///
     /// Returns false with no actions or errors
     /// if the known is not a candidate for the cell.
-    pub fn remove_candidate(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> bool {
+    pub fn remove_candidate(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> Change {
         let knowns = &mut self.candidate_knowns_by_cell[cell.usize()];
         if !knowns[known] {
-            return false;
+            return Change::None;
         }
 
         let size = knowns.len();
@@ -315,14 +353,15 @@ impl Board {
         self.cells_with_n_candidates[size - 1] += cell;
         self.candidate_cells_by_known[known.usize()] -= cell;
 
+        let mut change = Change::Valid;
         if knowns.is_empty() {
             effects.add_error(Error::UnsolvableCell(cell));
+            change = Change::Invalid;
         } else if let Some(single) = knowns.as_single() {
             effects.add_set(Strategy::NakedSingle, cell, single);
         }
-        self.remove_candidate_cell_from_houses(cell, known, effects);
 
-        true
+        change & self.remove_candidate_cell_from_houses(cell, known, effects)
     }
 
     /// Removes the cell as a candidate for the known
@@ -338,20 +377,26 @@ impl Board {
         cell: Cell,
         known: Known,
         effects: &mut Effects,
-    ) {
+    ) -> Change {
+        let mut change = Change::None;
+
         for house in cell.houses() {
             if self.is_house_known(house, known) {
                 continue;
             }
 
+            change &= Change::Valid;
             let candidates = self.house_candidate_cells(house, known);
             if candidates.is_empty() {
                 effects.add_error(Error::UnsolvableHouse(house, known));
+                change &= Change::Invalid;
             } else if candidates.len() == 1 {
                 let single = candidates.as_single().unwrap();
                 effects.add_set(Strategy::HiddenSingle, single, known);
             }
         }
+
+        change
     }
 
     /// Removes the candidates from the cell and returns true
@@ -363,9 +408,9 @@ impl Board {
         cell: Cell,
         knowns: KnownSet,
         effects: &mut Effects,
-    ) -> bool {
-        knowns.iter().fold(false, |acc, known| {
-            self.remove_candidate(cell, known, effects) || acc
+    ) -> Change {
+        knowns.iter().fold(Change::None, |change, known| {
+            change & self.remove_candidate(cell, known, effects)
         })
     }
 
@@ -378,9 +423,9 @@ impl Board {
         cells: CellSet,
         known: Known,
         effects: &mut Effects,
-    ) -> bool {
-        cells.iter().fold(false, |acc, cell| {
-            self.remove_candidate(cell, known, effects) || acc
+    ) -> Change {
+        cells.iter().fold(Change::None, |change, cell| {
+            change & self.remove_candidate(cell, known, effects)
         })
     }
 
@@ -393,11 +438,12 @@ impl Board {
         cells: CellSet,
         knowns: KnownSet,
         effects: &mut Effects,
-    ) -> bool {
-        cells.iter().fold(false, |acc, cell| {
-            knowns.iter().fold(false, |acc, known| {
-                self.remove_candidate(cell, known, effects) || acc
-            }) || acc
+    ) -> Change {
+        cells.iter().fold(Change::None, |change, cell| {
+            change
+                & knowns.iter().fold(Change::None, |change, known| {
+                    change & self.remove_candidate(cell, known, effects)
+                })
         })
     }
 
@@ -454,12 +500,14 @@ impl fmt::Display for Board {
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use itertools::Itertools;
+
     use crate::io::{Parse, Parser};
     use crate::layout::cells::cell::cell;
     use crate::layout::values::known::known;
     use crate::testing::strip_leading_whitespace;
-    use itertools::Itertools;
+
+    use super::*;
 
     fn fixture() -> Board {
         Parse::grid().parse_simple(

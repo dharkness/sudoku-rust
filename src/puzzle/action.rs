@@ -7,7 +7,7 @@ use itertools::Itertools;
 use crate::layout::{Cell, CellSet, Known, KnownSet};
 use crate::symbols::{EMPTY_SET, REMOVE_CANDIDATE, SET_KNOWN};
 
-use super::{Board, Effects, Strategy};
+use super::{Board, Change, Effects, Strategy};
 
 /// One or more changes to the board derived using a specific strategy.
 #[derive(Clone, Debug)]
@@ -120,29 +120,29 @@ impl Action {
         self.erase[&cell]
     }
 
-    pub fn apply(&self, board: &mut Board, effects: &mut Effects) -> bool {
-        let mut changed = false;
+    pub fn apply(&self, board: &mut Board, effects: &mut Effects) -> Change {
+        let mut change = Change::None;
 
         for (cell, knowns) in &self.erase {
             for known in knowns.iter() {
                 // println!("erase {} from {}", known, cell);
-                changed = board.remove_candidate(*cell, known, effects) || changed;
+                change &= board.remove_candidate(*cell, known, effects);
             }
         }
 
         if matches!(self.strategy, Strategy::Given) {
             for (cell, known) in &self.set {
                 // println!("give {} to {}", cell, known);
-                changed = board.set_given(*cell, *known, effects) || changed;
+                change &= board.set_given(*cell, *known, effects);
             }
         } else {
             for (cell, known) in &self.set {
                 // println!("set {} to {}", cell, known);
-                changed = board.set_known(*cell, *known, effects) || changed;
+                change &= board.set_known(*cell, *known, effects);
             }
         }
 
-        changed
+        change
     }
 }
 

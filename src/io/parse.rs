@@ -1,7 +1,7 @@
 use itertools::Itertools;
 
 use crate::layout::{Cell, Known, KnownSet};
-use crate::puzzle::{Board, Change, Changer, Effects, Options, Strategy};
+use crate::puzzle::{Board, ChangeResult, Changer, Effects, Options, Strategy};
 
 pub trait Parser {
     /// Builds a new board using an input string to set some cells,
@@ -88,12 +88,12 @@ impl Parser for ParsePacked {
                     let current = board.value(cell);
                     if current != known.value() {
                         match self.changer.set_given(&board, Strategy::Given, cell, known) {
-                            Change::None => (),
-                            Change::Valid(after, actions) => {
+                            ChangeResult::None => (),
+                            ChangeResult::Valid(after, actions) => {
                                 board = *after;
                                 unapplied.take_actions(actions);
                             }
-                            Change::Invalid(before, _, _, mut errors) => {
+                            ChangeResult::Invalid(before, _, _, mut errors) => {
                                 if self.changer.options.stop_on_error {
                                     errors.take_actions(unapplied);
                                     return (*before, errors, Some((cell, known)));
@@ -158,14 +158,15 @@ impl Parser for ParseGrid {
             let cell = Cell::new(c as u8);
 
             if let Some(solved) = knowns.as_single() {
-                board.set_known(cell, solved, &mut effects);
-                if effects.has_errors() && self.stop_on_error {
-                    return (board, effects, Some((cell, solved)));
+                if board.set_known(cell, solved, &mut effects).changed() {
+                    if effects.has_errors() && self.stop_on_error {
+                        return (board, effects, Some((cell, solved)));
+                    }
+                    effects.clear_actions();
                 }
-                effects.clear_actions();
             } else {
                 for known in knowns.inverted() {
-                    if board.remove_candidate(cell, known, &mut effects) {
+                    if board.remove_candidate(cell, known, &mut effects).changed() {
                         if effects.has_errors() && self.stop_on_error {
                             return (board, effects, Some((cell, known)));
                         }

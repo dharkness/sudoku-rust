@@ -1,12 +1,13 @@
-use clap::Args;
 use std::ops::RangeInclusive;
 use std::time::Instant;
+
+use clap::Args;
 
 use crate::io::{
     format_for_wiki, format_runtime, print_candidates, print_known_values, Parse, Parser,
     SUDOKUWIKI_URL,
 };
-use crate::puzzle::{Change, Changer, Options};
+use crate::puzzle::{ChangeResult, Changer, Options};
 use crate::solve::{find_brute_force, BruteForceResult};
 
 #[derive(Debug, Args)]
@@ -44,7 +45,7 @@ pub fn bingo(args: BingoArgs) {
         effects.print_errors();
         return;
     }
-    if let Change::Invalid(_, _, action, errors) = changer.apply_all(&board, &effects) {
+    if let ChangeResult::Invalid(_, _, action, errors) = changer.apply_all(&board, &effects) {
         println!("\ninvalid puzzle");
         println!("\napplying {} will cause errors\n", action);
         errors.print_errors();
@@ -85,11 +86,11 @@ pub fn bingo(args: BingoArgs) {
     }
     if let Some(solution) = solution {
         match changer.apply_all(&board, &solution) {
-            Change::None => (),
-            Change::Valid(after, _) => {
+            ChangeResult::None => (),
+            ChangeResult::Valid(after, _) => {
                 board = *after;
             }
-            Change::Invalid(before, _, action, errors) => {
+            ChangeResult::Invalid(before, _, action, errors) => {
                 println!();
                 print_candidates(&before);
                 println!("\nbrute force will cause errors with {}\n", action);
@@ -104,13 +105,13 @@ pub fn bingo(args: BingoArgs) {
                 break;
             }
             match changer.apply_all(&board, solution) {
-                Change::None => (),
-                Change::Valid(after, _) => {
+                ChangeResult::None => (),
+                ChangeResult::Valid(after, _) => {
                     println!("\nsolution {}\n", i + 1);
                     print_known_values(&after);
                     println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&after));
                 }
-                Change::Invalid(before, _, action, errors) => {
+                ChangeResult::Invalid(before, _, action, errors) => {
                     println!();
                     print_candidates(&before);
                     println!("\nsolution {} will cause errors with {}\n", i + 1, action);

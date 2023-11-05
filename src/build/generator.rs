@@ -3,7 +3,7 @@ use rand::seq::SliceRandom;
 
 use crate::io::{show_progress, Cancelable};
 use crate::layout::{Cell, Known, KnownSet};
-use crate::puzzle::{Board, Change, Changer, Strategy};
+use crate::puzzle::{Board, ChangeResult, Changer, Strategy};
 use crate::solve::find_intersection_removals;
 
 /// Generates a complete puzzle solution.
@@ -53,12 +53,12 @@ impl Generator {
 
             let known = candidates.pop().unwrap();
             let mut clone = match changer.set_known(&board, Strategy::BruteForce, cell, known) {
-                Change::None => {
+                ChangeResult::None => {
                     // failed to set known which we know is a candidate
                     return Some(board);
                 }
-                Change::Valid(after, _) => *after,
-                Change::Invalid(..) => {
+                ChangeResult::Valid(after, _) => *after,
+                ChangeResult::Invalid(..) => {
                     continue;
                 }
             };
