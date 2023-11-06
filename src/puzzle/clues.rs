@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt;
 
@@ -41,7 +42,13 @@ impl Clues {
             known,
             cells,
         };
-        match self.clues.binary_search(&clue) {
+        match self.clues.binary_search_by(|clue| {
+            match color.partial_cmp(&clue.color) {
+                Some(Ordering::Equal) => known.partial_cmp(&clue.known),
+                result => result,
+            }
+            .unwrap()
+        }) {
             Ok(index) => self.clues[index].cells |= cells,
             Err(index) => self.clues.insert(index, clue),
         }
