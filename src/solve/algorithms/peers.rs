@@ -6,7 +6,7 @@ pub fn find_peers(board: &Board) -> Option<Effects> {
     for (cell, known) in board.known_iter() {
         let peers = cell.peers() & board.candidate_cells(known);
         let mut action = Action::new_erase_cells(Strategy::Peer, peers, known);
-        action.add(Color::Blue, known, cell);
+        action.clue_cell_for_known(Color::Blue, cell, known);
 
         effects.add_action(action);
     }

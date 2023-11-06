@@ -8,10 +8,10 @@ pub fn find_hidden_singles(board: &Board) -> Option<Effects> {
             for house in cell.houses() {
                 if board.house_candidate_cells(house, known).len() == 1 {
                     let mut action = Action::new_set(Strategy::HiddenSingle, cell, known);
-                    action.add_known_cells(
+                    action.clue_cells_for_known(
                         Color::None,
-                        known,
                         house.cells() - cell - board.knowns(),
+                        known,
                     );
 
                     effects.add_action(action);

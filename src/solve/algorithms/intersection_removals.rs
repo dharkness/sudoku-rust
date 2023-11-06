@@ -63,8 +63,16 @@ fn check_intersection(board: &Board, block: House, houses: HouseSet, effects: &m
                     if !erase.is_empty() {
                         let mut action = Action::new(Strategy::BoxLineReduction);
                         action.erase_cells(erase, known);
-                        action.add_known_cells(Color::Blue, known, intersection_candidate_cells);
-                        action.add_known_cells(Color::None, known, line_cells - board.knowns());
+                        action.clue_cells_for_known(
+                            Color::Blue,
+                            intersection_candidate_cells,
+                            known,
+                        );
+                        action.clue_cells_for_known(
+                            Color::None,
+                            line_cells - board.knowns(),
+                            known,
+                        );
                         effects.add_action(action);
                     }
                 }
@@ -77,11 +85,11 @@ fn check_intersection(board: &Board, block: House, houses: HouseSet, effects: &m
                     }
                     let mut action = Action::new(strategy);
                     action.erase_cells(erase, known);
-                    action.add_known_cells(Color::Blue, known, intersection_candidate_cells);
-                    action.add_known_cells(
+                    action.clue_cells_for_known(Color::Blue, intersection_candidate_cells, known);
+                    action.clue_cells_for_known(
                         Color::None,
-                        known,
                         block_cells - intersection_cells - board.knowns(),
+                        known,
                     );
                     effects.add_action(action);
                 }

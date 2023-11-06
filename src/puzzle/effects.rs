@@ -205,6 +205,14 @@ impl Effects {
     }
 }
 
+impl From<Action> for Effects {
+    fn from(action: Action) -> Self {
+        let mut effects = Self::new();
+        effects.add_action(action);
+        effects
+    }
+}
+
 impl fmt::Display for Effects {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.has_errors() {

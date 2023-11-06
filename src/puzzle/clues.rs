@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt;
+use std::fmt::Write;
 
 use crate::layout::{Cell, CellSet, Known, KnownSet};
 use crate::symbols::EMPTY_SET;
@@ -32,11 +33,11 @@ impl Clues {
         Self { clues: Vec::new() }
     }
 
-    pub fn add(&mut self, color: Color, known: Known, cell: Cell) {
-        self.add_known_cells(color, known, CellSet::empty() + cell)
+    pub fn clue_cell_for_known(&mut self, color: Color, cell: Cell, known: Known) {
+        self.clue_cells_for_known(color, CellSet::empty() + cell, known)
     }
 
-    pub fn add_known_cells(&mut self, color: Color, known: Known, cells: CellSet) {
+    pub fn clue_cells_for_known(&mut self, color: Color, cells: CellSet, known: Known) {
         let clue = Clue {
             color,
             known,
@@ -54,12 +55,22 @@ impl Clues {
         }
     }
 
-    pub fn add_cell_knowns(&mut self, color: Color, cell: Cell, knowns: KnownSet) {
-        knowns.iter().for_each(|known| self.add(color, known, cell))
+    pub fn clue_cell_for_knowns(&mut self, color: Color, cell: Cell, knowns: KnownSet) {
+        self.clue_cells_for_knowns(color, CellSet::empty() + cell, knowns)
+    }
+
+    pub fn clue_cells_for_knowns(&mut self, color: Color, cells: CellSet, knowns: KnownSet) {
+        knowns
+            .iter()
+            .for_each(|known| self.clue_cells_for_known(color, cells, known))
     }
 
     pub fn is_empty(&self) -> bool {
         self.clues.is_empty()
+    }
+
+    pub fn clues(&self) -> &Vec<Clue> {
+        &self.clues
     }
 
     pub fn collect(&self) -> HashMap<Cell, HashMap<Known, Color>> {
@@ -75,7 +86,7 @@ impl Clues {
 impl fmt::Display for Clues {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.is_empty() {
-            f.write_str(EMPTY_SET)
+            f.write_char(EMPTY_SET)
         } else {
             let mut first = true;
             let mut prev_color = Color::Blue;

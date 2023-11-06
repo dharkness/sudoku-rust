@@ -90,7 +90,9 @@ fn check_type_one(
     found_type_ones.insert(rectangle);
     let mut action = Action::new(Strategy::UniqueRectangle);
     action.erase_knowns(fourth, pair);
-    // println!("type 1 {} - {}", rectangle, action);
+    action.clue_cells_for_knowns(Color::Purple, corners, pair);
+    action.clue_cell_for_knowns(Color::Blue, fourth, candidates - pair);
+
     effects.add_action(action);
 }
 
@@ -235,7 +237,7 @@ impl Candidate {
         floor2: Cell,
     ) -> Result<Self, ()> {
         let block1 = floor1.block();
-        let block2 = floor1.block();
+        let block2 = floor2.block();
         if block1 == block2
             || (block1.rows() != block2.rows() && block1.columns() != block2.columns())
         {
@@ -310,6 +312,8 @@ impl Candidate {
 
         let mut action = Action::new(Strategy::UniqueRectangle);
         action.erase_cells(cells, extra);
+        action.clue_cells_for_knowns(Color::Purple, self.rectangle.cells, self.pair);
+        action.clue_cells_for_known(Color::Blue, self.roof, extra);
         // println!("type 2 {} - {}", self.rectangle, action);
         effects.add_action(action);
     }
@@ -320,6 +324,9 @@ impl Candidate {
         }
 
         let mut action = Action::new(Strategy::UniqueRectangle);
+        action.clue_cells_for_knowns(Color::Purple, self.rectangle.cells, self.pair);
+        action.clue_cell_for_knowns(Color::Blue, self.roof_left, self.roof_left_extras);
+        action.clue_cell_for_knowns(Color::Blue, self.roof_right, self.roof_right_extras);
 
         for house in self.roof_left.common_houses(self.roof_right) {
             let peers = house.cells() - self.roof;
@@ -330,30 +337,38 @@ impl Candidate {
 
             for size in 2..=4 {
                 // find naked tuples
-                peer_knowns
+                if size < self.roof_extras.len() {
+                    continue;
+                }
+
+                for peer_knowns_combo in peer_knowns
                     .iter()
                     .filter(|(_, knowns)| (2..=size).contains(&knowns.len()))
                     .combinations(size - 1)
-                    .for_each(|peer_knowns| {
-                        let known_sets: Vec<KnownSet> = peer_knowns
-                            .iter()
-                            .map(|(_, ks)| *ks)
-                            .chain([self.roof_extras])
-                            .collect();
-                        let knowns = known_sets.iter().copied().union_knowns();
-                        if knowns.len() != size
-                            || naked_tuples::is_degenerate(&known_sets, size, 2)
-                            || naked_tuples::is_degenerate(&known_sets, size, 3)
-                        {
-                            return;
-                        }
+                {
+                    let known_sets: Vec<KnownSet> = peer_knowns_combo
+                        .iter()
+                        .map(|(_, ks)| *ks)
+                        .chain([self.roof_extras])
+                        .collect();
+                    let knowns = known_sets.iter().copied().union_knowns();
+                    if knowns.len() != size
+                        || naked_tuples::is_degenerate(&known_sets, size, 2)
+                        || naked_tuples::is_degenerate(&known_sets, size, 3)
+                    {
+                        continue;
+                    }
 
-                        let cells = peers - peer_knowns.iter().map(|(c, _)| *c).union_cells();
+                    let cells = peers - peer_knowns_combo.iter().map(|(c, _)| *c).union_cells();
 
-                        knowns
-                            .iter()
-                            .for_each(|k| action.erase_cells(cells & board.candidate_cells(k), k));
-                    });
+                    for (cell, knowns) in peer_knowns_combo {
+                        action.clue_cell_for_knowns(Color::Blue, *cell, *knowns);
+                    }
+                    for known in knowns {
+                        action.erase_cells(cells & board.candidate_cells(known), known)
+                    }
+                    break;
+                }
             }
         }
 
@@ -362,9 +377,9 @@ impl Candidate {
     }
 
     fn check_type_four(&self, board: &Board, effects: &mut Effects) {
-        for s in Shape::iter() {
-            let house = self.roof_left.house(s);
-            if house != self.roof_right.house(s) {
+        for shape in Shape::iter() {
+            let house = self.roof_left.house(shape);
+            if house != self.roof_right.house(shape) {
                 continue;
             }
 
@@ -375,13 +390,16 @@ impl Candidate {
                 continue;
             }
 
-            let erase = if pair1_required {
-                self.pair2
+            let (required, erase) = if pair1_required {
+                (self.pair1, self.pair2)
             } else {
-                self.pair1
+                (self.pair2, self.pair1)
             };
             let mut action = Action::new(Strategy::UniqueRectangle);
             action.erase_cells(self.roof, erase);
+            action.clue_cells_for_knowns(Color::Purple, self.floor, self.pair);
+            action.clue_cells_for_known(Color::Blue, self.roof, required);
+
             // println!("type 4 {} - {}", self.rectangle, action);
             effects.add_action(action);
             return;
@@ -408,10 +426,10 @@ impl Candidate {
 
         if let Some(erase) = erase {
             let mut action = Action::new(Strategy::UniqueRectangle);
-            action.erase_cells(
-                CellSet::from_iter([self.floor_left, self.floor_right]),
-                erase,
-            );
+            action.erase_cells(CellSet::of(&[self.floor_left, self.floor_right]), erase);
+            action.clue_cells_for_knowns(Color::Purple, self.roof, self.pair);
+            action.clue_cells_for_knowns(Color::Purple, self.floor, self.pair - erase);
+
             // println!("type 5 {} - {}", self.rectangle, action);
             effects.add_action(action);
         }
@@ -423,5 +441,154 @@ fn sort_by_column(first: Cell, second: Cell) -> (Cell, Cell) {
         (first, second)
     } else {
         (second, first)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::io::{Parse, Parser};
+    use crate::layout::cells::cell::cell;
+    use crate::layout::cells::cell_set::cells;
+    use crate::layout::values::known::known;
+    use crate::layout::values::known_set::knowns;
+
+    use super::*;
+
+    #[test]
+    fn test_type_1() {
+        let parser = Parse::wiki();
+        let (board, effects, failed) = parser.parse(
+            "k0k02109050h81031181110c21g1030k410sgkgs03418111gki8ish6g60hh009412181g40981h0h02105030h41g421410h03810911g4jkgkh4034109hgi0815048h8810h21h005032i0q810511g141282o",
+        );
+        assert_eq!(None, failed);
+        assert!(!effects.has_errors());
+
+        if let Some(got) = find_unique_rectangles(&board) {
+            let mut action =
+                Action::new_erase_knowns(Strategy::UniqueRectangle, cell!("D1"), knowns!("2 9"));
+            action.clue_cells_for_knowns(Color::Purple, cells!("D9 F1 F9"), knowns!("2 9"));
+            action.clue_cell_for_knowns(Color::Blue, cell!("D1"), knowns!("1 5"));
+            assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
+        } else {
+            panic!("not found");
+        }
+    }
+
+    #[test]
+    fn test_type_2() {
+        let parser = Parse::packed_with_options(Options::all());
+        let (board, effects, failed) = parser.parse(
+            "42.9..386 .6.2..794 8.9.6.251 7....3.25 9..1.26.3 2..5....8 ..4.2.567 6827..439 ......812",
+        );
+        assert_eq!(None, failed);
+        assert!(!effects.has_errors());
+
+        if let Some(got) = find_unique_rectangles(&board) {
+            let mut action =
+                Action::new_erase_cells(Strategy::UniqueRectangle, cells!("A3 C6"), known!("7"));
+            action.clue_cells_for_knowns(Color::Purple, cells!("A5 A6 H5 H6"), knowns!("1 5"));
+            action.clue_cells_for_known(Color::Blue, cells!("A5 A6"), known!("7"));
+            assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
+        } else {
+            panic!("not found");
+        }
+    }
+
+    #[test]
+    fn test_type_2_diagonal() {
+        let parser = Parse::wiki();
+        let (board, effects, failed) = parser.parse(
+            "814kg10s2u246c116e110922812m41i42mg42i4k621sg134812m6e05g10h215081030950418128g11c0334240h2803114c4c0h64g181gq4g055g81j0j822jagg1181032k09g441i4ga214a5454h40h81he",
+        );
+        assert_eq!(None, failed);
+        assert!(!effects.has_errors());
+
+        if let Some(got) = find_unique_rectangles(&board) {
+            let mut action =
+                Action::new_erase_cells(Strategy::UniqueRectangle, cells!("A9 C9 G7"), known!("6"));
+            action.clue_cells_for_knowns(Color::Purple, cells!("B7 B9 H7 H9"), knowns!("2 9"));
+            action.clue_cells_for_known(Color::Blue, cells!("B7 H9"), known!("6"));
+            assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
+        } else {
+            panic!("not found");
+        }
+    }
+
+    #[test]
+    fn test_type_3() {
+        let parser = Parse::wiki();
+        let (board, effects, failed) = parser.parse(
+            "gg800541081102igiggi4111g2210408gg81g209200go2o00540100812g08104607g3i2i21040h10k002k08009811240g80gi8j0j20440g18a20928o1g050i05210agal2ko80hqgi100g8a05o2o8i0ia40",
+        );
+        assert_eq!(None, failed);
+        assert!(!effects.has_errors());
+
+        if let Some(got) = find_unique_rectangles(&board) {
+            let mut action = Action::new(Strategy::UniqueRectangle);
+            action.erase_knowns(cell!("H8"), knowns!("4 9"));
+            action.erase_knowns(cell!("J8"), knowns!("6 9"));
+            action.clue_cells_for_knowns(Color::Purple, cells!("D2 D8 F2 F8"), knowns!("1 5"));
+            action.clue_cell_for_knowns(Color::Blue, cell!("A8"), knowns!("4 6 9"));
+            action.clue_cell_for_knowns(Color::Blue, cell!("B8"), knowns!("4 9"));
+            action.clue_cell_for_knowns(Color::Blue, cell!("D8"), knowns!("4 6"));
+            action.clue_cell_for_knowns(Color::Blue, cell!("F8"), knowns!("6 9"));
+            assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
+        } else {
+            panic!("not found");
+        }
+    }
+
+    #[test]
+    fn test_type_4() {
+        let parser = Parse::wiki();
+        let (board, effects, failed) = parser.parse(
+            "k0k02109050h81031181110c21g1030k410sgkgs03418111gki8is12g60hh009412181g40981h0h02105030h41g421410h03810911g4jkgkh4034109hgi081l0k8h8810h21h005032i0q810511g141282o",
+        );
+        assert_eq!(None, failed);
+        assert!(!effects.has_errors());
+
+        if let Some(got) = find_unique_rectangles(&board) {
+            let mut action = Action::new(Strategy::UniqueRectangle);
+            action.erase_cells(cells!("H1 H2"), known!("9"));
+            action.clue_cells_for_knowns(Color::Purple, cells!("A1 A2"), knowns!("7 9"));
+            action.clue_cells_for_known(Color::Blue, cells!("H1 H2"), known!("7"));
+            assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
+        } else {
+            panic!("not found");
+        }
+    }
+
+    #[test]
+    fn test_type_5() {
+        let parser = Parse::grid().stop_on_error();
+        let (board, effects, failed) = parser.parse(
+            "
+                +----------------+----------------+-----------------+
+                | 7   589  3589  | 4   259  6     | 28    238  1    |
+                | 49  2    369   | 8   179  17    | 467   367  5    |
+                | 1   4568 568   | 3   257  27    | 24678 9    2467 |
+                +----------------+----------------+-----------------+
+                | 3   169  4     | 279 127  5     | 2678  2678 267  |
+                | 289 7    56    | 29  3    28    | 456   1    46   |
+                | 28  15   125   | 6   1247 12478 | 3     257  9    |
+                +----------------+----------------+-----------------+
+                | 249 3    1279  | 5   2467 247   | 19    267  8    |
+                | 5   189  12789 | 27  2678 3     | 19    4    267  |
+                | 6   48   278   | 1   2478 9     | 257   257  3    |
+                +----------------+----------------+-----------------+
+            ",
+        );
+        assert!(failed.is_none());
+        assert!(!effects.has_errors());
+
+        if let Some(got) = find_unique_rectangles(&board) {
+            let mut action =
+                Action::new_erase_cells(Strategy::UniqueRectangle, cells!("E6 F1"), known!("2"));
+            action.clue_cells_for_known(Color::Purple, cells!("E1 F6"), known!("2"));
+            action.clue_cells_for_known(Color::Purple, cells!("E1 E6 F1 F6"), known!("8"));
+            assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
+        } else {
+            panic!("not found");
+        }
     }
 }

@@ -37,10 +37,10 @@ fn check_houses(board: &Board, houses: HouseSet, cross: Shape, effects: &mut Eff
 
             let mut action = Action::new(Strategy::Skyscraper);
             action.erase_cells(candidates, known);
-            action.add(Color::Blue, known, f1);
-            action.add(Color::Blue, known, c2);
-            action.add(Color::Red, known, f2);
-            action.add(Color::Red, known, c1);
+            action.clue_cell_for_known(Color::Blue, f1, known);
+            action.clue_cell_for_known(Color::Blue, c2, known);
+            action.clue_cell_for_known(Color::Red, f2, known);
+            action.clue_cell_for_known(Color::Red, c1, known);
             effects.add_action(action);
         };
 

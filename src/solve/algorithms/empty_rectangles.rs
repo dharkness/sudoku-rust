@@ -39,10 +39,10 @@ pub fn find_empty_rectangles(board: &Board) -> Option<Effects> {
                                 if ends.len() == 1 {
                                     action.erase(start, known);
                                 } else {
-                                    action.add(Color::Blue, known, start);
+                                    action.clue_cell_for_known(Color::Blue, start, known);
                                 }
-                                action.add(Color::Blue, known, pivot);
-                                action.add_known_cells(Color::Red, known, cells);
+                                action.clue_cell_for_known(Color::Blue, pivot, known);
+                                action.clue_cells_for_known(Color::Red, cells, known);
 
                                 effects.add_action(action);
                             }

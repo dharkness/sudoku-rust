@@ -621,6 +621,7 @@ impl FusedIterator for BitIter {}
 mod tests {
     use crate::layout::cells::cell::cell;
     use crate::layout::houses::house_set::houses;
+    use crate::symbols::EMPTY_SET_STR;
 
     use super::*;
 
@@ -1028,13 +1029,13 @@ mod tests {
 
     #[test]
     fn to_string() {
-        assert_eq!(EMPTY_SET, CellSet::empty().to_string());
+        assert_eq!(EMPTY_SET_STR, CellSet::empty().to_string());
         assert_eq!("B8 C4 F5 H2", cells!("B8 C4 F5 H2").to_string());
     }
 
     #[test]
     fn fmt_debug() {
-        assert_eq!(EMPTY_SET, format!("{:?}", CellSet::empty()));
+        assert_eq!(EMPTY_SET_STR, format!("{:?}", CellSet::empty()));
         assert_eq!("B8 C4 F5 H2", format!("{:?}", cells!("B8 C4 F5 H2")));
     }
 

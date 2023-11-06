@@ -83,11 +83,11 @@ fn check_houses(
                 let mut action = Action::new(strategy);
                 action.erase_cells(erase, known);
                 candidates.iter().for_each(|(house, cells, _)| {
-                    action.add_known_cells(Color::Blue, known, *cells);
-                    action.add_known_cells(
+                    action.clue_cells_for_known(Color::Blue, *cells, known);
+                    action.clue_cells_for_known(
                         Color::None,
-                        known,
                         house.cells() - main_cells - board.knowns(),
+                        known,
                     );
                 });
                 effects.add_action(action);

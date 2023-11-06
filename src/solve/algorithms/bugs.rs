@@ -32,10 +32,10 @@ pub fn find_bugs(board: &Board) -> Option<Effects> {
     if eliminated.len() == 2 {
         let solution = (candidates - eliminated).as_single().unwrap();
         let mut action = Action::new_set(Strategy::Bug, triple, solution);
-        action.add_known_cells(
+        action.clue_cells_for_known(
             Color::Blue,
-            solution,
             triple.peers() & board.candidate_cells(solution),
+            solution,
         );
         effects.add_action(action);
     }
@@ -64,7 +64,7 @@ mod tests {
         );
 
         let mut action = Action::new_set(Strategy::Bug, cell!("G1"), known!("3"));
-        action.add_known_cells(Color::Blue, known!("3"), cells!("C1 G2 G4 H1"));
+        action.clue_cells_for_known(Color::Blue, cells!("C1 G2 G4 H1"), known!("3"));
 
         let effects = find_bugs(&board).unwrap();
         assert_eq!(action, effects.actions()[0]);

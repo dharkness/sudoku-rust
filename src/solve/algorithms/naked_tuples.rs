@@ -38,10 +38,18 @@ fn find_naked_tuples(board: &Board, size: usize, strategy: Strategy) -> Option<E
 
                 tuple_knowns.iter().for_each(|k| {
                     action.erase_cells(erase_cells & board.candidate_cells(k), k);
-                    action.add_known_cells(Color::Blue, k, tuple_cells & board.candidate_cells(k));
+                    action.clue_cells_for_known(
+                        Color::Blue,
+                        tuple_cells & board.candidate_cells(k),
+                        k,
+                    );
                 });
                 tuple_cells.iter().for_each(|c| {
-                    action.add_cell_knowns(Color::None, c, KnownSet::full() - board.candidates(c));
+                    action.clue_cell_for_knowns(
+                        Color::None,
+                        c,
+                        KnownSet::full() - board.candidates(c),
+                    );
                 });
 
                 if !action.is_empty() {

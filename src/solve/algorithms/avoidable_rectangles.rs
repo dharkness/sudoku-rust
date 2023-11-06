@@ -27,7 +27,7 @@ pub fn find_avoidable_rectangles(board: &Board) -> Option<Effects> {
             let mut action = Action::new_erase(Strategy::AvoidableRectangle, c, k);
             board
                 .knowns_iter(r.cells & candidates)
-                .for_each(|(cell, known)| action.add(Color::Blue, known, cell));
+                .for_each(|(cell, known)| action.clue_cell_for_known(Color::Blue, cell, known));
             effects.add_action(action);
         });
 
@@ -52,8 +52,8 @@ pub fn find_avoidable_rectangles(board: &Board) -> Option<Effects> {
                 if !(ks1.has(k4) && ks2.has(k3)) {
                     continue;
                 }
-                action.add(Color::Red, k3, c3);
-                action.add(Color::Red, k4, c4);
+                action.clue_cell_for_known(Color::Red, c3, k3);
+                action.clue_cell_for_known(Color::Red, c4, k4);
             } else {
                 continue;
             }
@@ -64,8 +64,8 @@ pub fn find_avoidable_rectangles(board: &Board) -> Option<Effects> {
 
             unsolved.iter().for_each(|c| {
                 let cs = board.candidates(c);
-                action.add_cell_knowns(Color::Red, c, cs & solved);
-                action.add_cell_knowns(Color::Blue, c, cs - solved);
+                action.clue_cell_for_knowns(Color::Red, c, cs & solved);
+                action.clue_cell_for_knowns(Color::Blue, c, cs - solved);
             });
             if let Some(k) = pseudo.knowns.as_single() {
                 // type 2 - naked single
@@ -103,7 +103,7 @@ pub fn find_avoidable_rectangles(board: &Board) -> Option<Effects> {
                                 let erase_cells = peers - tuple_cells;
 
                                 tuple_cells.iter().for_each(|c| {
-                                    action.add_cell_knowns(
+                                    action.clue_cell_for_knowns(
                                         Color::Blue,
                                         c,
                                         knowns & board.candidates(c),

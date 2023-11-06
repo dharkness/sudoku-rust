@@ -458,6 +458,7 @@ impl FusedIterator for Iter {}
 #[cfg(test)]
 mod tests {
     use crate::layout::houses::coord::coord;
+    use crate::symbols::EMPTY_SET_STR;
 
     use super::*;
 
@@ -622,7 +623,7 @@ mod tests {
     fn strings() {
         let mut set = CoordSet::empty();
 
-        assert_eq!(EMPTY_SET, set.to_string());
+        assert_eq!(EMPTY_SET_STR, set.to_string());
 
         set += coord!(4);
         set += coord!(2);

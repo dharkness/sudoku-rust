@@ -1,6 +1,8 @@
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Write;
+use std::vec::IntoIter;
 
 use itertools::Itertools;
 
@@ -10,7 +12,7 @@ use crate::symbols::{EMPTY_SET, REMOVE_CANDIDATE, SET_KNOWN};
 use super::{Board, Change, Clues, Color, Effects, Strategy};
 
 /// One or more changes to the board derived using a specific strategy.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct Action {
     strategy: Strategy,
     set: HashMap<Cell, Known>,      // [CellSet; 9], [Value; 81]
@@ -90,6 +92,16 @@ impl Action {
         }
     }
 
+    pub fn collect_sets(&self) -> IntoIter<(Cell, Known)> {
+        self.set
+            .iter()
+            .map(|(cell, known)| (*cell, *known))
+            .sorted_by(|a, b| match a.0.cmp(&b.0) {
+                Ordering::Equal => a.1.cmp(&b.1),
+                result => result,
+            })
+    }
+
     pub fn erase(&mut self, cell: Cell, known: Known) {
         *self.erase.entry(cell).or_insert_with(KnownSet::empty) += known;
     }
@@ -133,16 +145,30 @@ impl Action {
         self.erase[&cell]
     }
 
-    pub fn add(&mut self, color: Color, known: Known, cell: Cell) {
-        self.clues.add(color, known, cell);
+    pub fn collect_erases(&self) -> IntoIter<(Cell, KnownSet)> {
+        self.erase
+            .iter()
+            .map(|(cell, knowns)| (*cell, *knowns))
+            .sorted_by(|a, b| match a.0.cmp(&b.0) {
+                Ordering::Equal => a.1.cmp(&b.1),
+                result => result,
+            })
     }
 
-    pub fn add_known_cells(&mut self, color: Color, known: Known, cells: CellSet) {
-        self.clues.add_known_cells(color, known, cells);
+    pub fn clue_cell_for_known(&mut self, color: Color, cell: Cell, known: Known) {
+        self.clues.clue_cell_for_known(color, cell, known);
     }
 
-    pub fn add_cell_knowns(&mut self, color: Color, cell: Cell, knowns: KnownSet) {
-        self.clues.add_cell_knowns(color, cell, knowns);
+    pub fn clue_cells_for_known(&mut self, color: Color, cells: CellSet, known: Known) {
+        self.clues.clue_cells_for_known(color, cells, known);
+    }
+
+    pub fn clue_cell_for_knowns(&mut self, color: Color, cell: Cell, knowns: KnownSet) {
+        self.clues.clue_cell_for_knowns(color, cell, knowns);
+    }
+
+    pub fn clue_cells_for_knowns(&mut self, color: Color, cells: CellSet, knowns: KnownSet) {
+        self.clues.clue_cells_for_knowns(color, cells, knowns);
     }
 
     pub fn has_clues(&self) -> bool {
@@ -151,6 +177,20 @@ impl Action {
 
     pub fn clues(&self) -> &Clues {
         &self.clues
+    }
+
+    pub fn collect_clues(&self) -> IntoIter<(Cell, Known, Color)> {
+        self.clues
+            .collect()
+            .iter()
+            .flat_map(|(cell, map)| map.iter().map(|(known, color)| (*cell, *known, *color)))
+            .sorted_by(|a, b| match a.0.cmp(&b.0) {
+                Ordering::Equal => match a.1.cmp(&b.1) {
+                    Ordering::Equal => a.2.cmp(&b.2),
+                    result => result,
+                },
+                result => result,
+            })
     }
 
     pub fn apply(&self, board: &mut Board, effects: &mut Effects) -> Change {
@@ -179,11 +219,32 @@ impl Action {
     }
 }
 
+impl fmt::Debug for Action {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self.strategy)?;
+        if self.is_empty() {
+            f.write_char(' ')?;
+            f.write_char(EMPTY_SET)
+        } else {
+            for (cell, knowns) in self.collect_erases() {
+                f.write_str(&format!("\n- {} {} {}", cell, REMOVE_CANDIDATE, knowns))?;
+            }
+            for (cell, known) in self.collect_sets() {
+                f.write_str(&format!("\n- {} {} {}", cell, SET_KNOWN, known))?;
+            }
+            for (cell, known, color) in self.collect_clues() {
+                f.write_str(&format!("\n- {} {} {:?}", cell, known, color))?;
+            }
+            Ok(())
+        }
+    }
+}
+
 impl fmt::Display for Action {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:20}", format!("{}", self.strategy))?;
         if self.is_empty() {
-            f.write_str(EMPTY_SET)
+            f.write_char(EMPTY_SET)
         } else {
             let mut first = true;
             for (knowns, cells) in self

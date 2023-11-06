@@ -39,10 +39,14 @@ pub fn find_hidden_tuples(board: &Board, size: usize, strategy: Strategy) -> Opt
                     .iter()
                     .for_each(|c| action.erase_knowns(c, board.candidates(c) - tuple_knowns));
                 tuple_knowns.iter().for_each(|k| {
-                    action.add_known_cells(Color::Blue, k, board.house_candidate_cells(house, k));
+                    action.clue_cells_for_known(
+                        Color::Blue,
+                        board.house_candidate_cells(house, k),
+                        k,
+                    );
                 });
                 (house.cells() - tuple_cells).iter().for_each(|c| {
-                    action.add_cell_knowns(Color::None, c, tuple_knowns);
+                    action.clue_cell_for_knowns(Color::None, c, tuple_knowns);
                 });
 
                 if !action.is_empty() {

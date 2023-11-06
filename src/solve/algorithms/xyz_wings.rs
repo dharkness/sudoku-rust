@@ -55,11 +55,11 @@ pub fn find_xyz_wings(board: &Board) -> Option<Effects> {
 
                 let mut action = Action::new(Strategy::XYZWing);
                 action.erase_cells(candidates & board.candidate_cells(k), k);
-                action.add_known_cells(Color::Blue, k, pair + pivot);
-                action.add_cell_knowns(Color::Purple, pivot, ks1 - k);
-                action.add_cell_knowns(Color::Red, pivot, ks2 - k);
-                action.add_cell_knowns(Color::Red, c1, ks1 - k);
-                action.add_cell_knowns(Color::Purple, c2, ks2 - k);
+                action.clue_cells_for_known(Color::Blue, pair + pivot, k);
+                action.clue_cell_for_knowns(Color::Purple, pivot, ks1 - k);
+                action.clue_cell_for_knowns(Color::Red, pivot, ks2 - k);
+                action.clue_cell_for_knowns(Color::Red, c1, ks1 - k);
+                action.clue_cell_for_knowns(Color::Purple, c2, ks2 - k);
                 effects.add_action(action);
             });
     });
