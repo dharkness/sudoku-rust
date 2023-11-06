@@ -1,8 +1,8 @@
-use super::*;
-
 use std::collections::{HashMap, VecDeque};
 use std::fmt;
 use std::rc::Rc;
+
+use super::*;
 
 pub fn find_xy_chains(board: &Board) -> Option<Effects> {
     let mut effects = Effects::new();
@@ -82,7 +82,7 @@ impl Forest {
             .iter()
             .filter(|(_, g)| g.can_add_node(&node))
             .map(|(c, _)| *c)
-            .union();
+            .union_cells();
 
         if sees.is_empty() {
             self.graphs.insert(cell, Graph::new(&node));

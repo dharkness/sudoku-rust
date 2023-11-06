@@ -24,7 +24,7 @@ fn find_naked_tuples(board: &Board, size: usize, strategy: Strategy) -> Option<E
             .combinations(size)
             .for_each(|candidates| {
                 let known_sets = candidates.iter().map(|(_, ks)| *ks).collect::<Vec<_>>();
-                let knowns = known_sets.iter().copied().union() as KnownSet;
+                let knowns = known_sets.iter().copied().union_knowns();
                 if knowns.len() != size
                     || is_degenerate(&known_sets, size, 2)
                     || is_degenerate(&known_sets, size, 3)
@@ -32,7 +32,7 @@ fn find_naked_tuples(board: &Board, size: usize, strategy: Strategy) -> Option<E
                     return;
                 }
 
-                let cells = house_cells - candidates.iter().map(|(c, _)| *c).union();
+                let cells = house_cells - candidates.iter().map(|(c, _)| *c).union_cells();
                 let mut action = Action::new(strategy);
 
                 knowns
@@ -58,7 +58,7 @@ pub fn is_degenerate(known_sets: &[KnownSet], size: usize, smaller_size: usize) 
         && known_sets
             .iter()
             .combinations(smaller_size)
-            .map(|sets| sets.into_iter().copied().union())
+            .map(|sets| sets.into_iter().copied().union_knowns())
             .any(|set| (set.len()) <= smaller_size)
 }
 

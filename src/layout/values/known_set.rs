@@ -198,7 +198,7 @@ impl From<&str> for KnownSet {
         labels
             .chars()
             .filter_map(|c| Known::try_from(c).ok())
-            .union() as KnownSet
+            .union_knowns()
     }
 }
 
@@ -213,6 +213,7 @@ impl IntoIterator for KnownSet {
 
 pub trait KnownIteratorUnion {
     fn union(self) -> KnownSet;
+    fn union_knowns(self) -> KnownSet;
 }
 
 impl<I> KnownIteratorUnion for I
@@ -220,12 +221,17 @@ where
     I: Iterator<Item = Known>,
 {
     fn union(self) -> KnownSet {
+        self.union_knowns()
+    }
+
+    fn union_knowns(self) -> KnownSet {
         self.fold(KnownSet::empty(), |acc, h| acc + h)
     }
 }
 
 pub trait KnownSetIteratorUnion {
     fn union(self) -> KnownSet;
+    fn union_knowns(self) -> KnownSet;
 }
 
 impl<I> KnownSetIteratorUnion for I
@@ -233,6 +239,10 @@ where
     I: Iterator<Item = KnownSet>,
 {
     fn union(self) -> KnownSet {
+        self.union_knowns()
+    }
+
+    fn union_knowns(self) -> KnownSet {
         self.fold(KnownSet::empty(), |acc, h| acc | h)
     }
 }

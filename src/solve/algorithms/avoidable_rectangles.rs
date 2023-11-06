@@ -77,7 +77,7 @@ pub fn find_avoidable_rectangles(board: &Board) -> Option<Effects> {
                                     .map(|(_, ks)| *ks)
                                     .chain([pseudo.knowns])
                                     .collect();
-                                let knowns = known_sets.iter().copied().union() as KnownSet;
+                                let knowns = known_sets.iter().copied().union_knowns();
                                 if knowns.len() != size
                                     || naked_tuples::is_degenerate(&known_sets, size, 2)
                                     || naked_tuples::is_degenerate(&known_sets, size, 3)
@@ -85,7 +85,8 @@ pub fn find_avoidable_rectangles(board: &Board) -> Option<Effects> {
                                     return;
                                 }
 
-                                let cells = peers - peer_knowns.iter().map(|(c, _)| *c).union();
+                                let cells =
+                                    peers - peer_knowns.iter().map(|(c, _)| *c).union_cells();
 
                                 knowns.iter().for_each(|k| {
                                     action.erase_cells(cells & board.candidate_cells(k), k)

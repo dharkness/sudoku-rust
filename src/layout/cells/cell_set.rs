@@ -80,7 +80,7 @@ impl CellSet {
                 .collect::<Vec<char>>()
                 .chunks(2)
                 .map(|c| Cell::from_string(c.iter().collect::<String>()))
-                .union()
+                .union_cells()
         }
     }
 
@@ -355,6 +355,7 @@ impl IntoIterator for CellSet {
 
 pub trait CellIteratorUnion {
     fn union(self) -> CellSet;
+    fn union_cells(self) -> CellSet;
 }
 
 impl<I> CellIteratorUnion for I
@@ -363,12 +364,18 @@ where
 {
     /// Collects the cells in `iter` into a set.
     fn union(self) -> CellSet {
+        self.union_cells()
+    }
+
+    /// Collects the cells in `iter` into a set.
+    fn union_cells(self) -> CellSet {
         self.fold(CellSet::empty(), |acc, c| acc + c)
     }
 }
 
 pub trait CellSetIteratorUnion {
     fn union(self) -> CellSet;
+    fn union_cells(self) -> CellSet;
 }
 
 impl<I> CellSetIteratorUnion for I
@@ -377,6 +384,11 @@ where
 {
     /// Collects all members of the sets in `iter` into a set.
     fn union(self) -> CellSet {
+        self.union_cells()
+    }
+
+    /// Collects all members of the sets in `iter` into a set.
+    fn union_cells(self) -> CellSet {
         self.fold(CellSet::empty(), |acc, c| acc | c)
     }
 }

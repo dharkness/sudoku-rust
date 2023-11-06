@@ -220,7 +220,7 @@ impl CoordSet {
 impl From<&str> for CoordSet {
     //noinspection RsTypeCheck
     fn from(labels: &str) -> Self {
-        labels.split(' ').map(Coord::from).union()
+        labels.split(' ').map(Coord::from).union_coords()
     }
 }
 
@@ -242,6 +242,7 @@ impl IntoIterator for CoordSet {
 
 pub trait CoordIteratorUnion {
     fn union(self) -> CoordSet;
+    fn union_coords(self) -> CoordSet;
 }
 
 impl<I> CoordIteratorUnion for I
@@ -249,12 +250,17 @@ where
     I: Iterator<Item = Coord>,
 {
     fn union(self) -> CoordSet {
+        self.union_coords()
+    }
+
+    fn union_coords(self) -> CoordSet {
         self.fold(CoordSet::empty(), |acc, h| acc + h)
     }
 }
 
 pub trait CoordSetIteratorUnion {
     fn union(self) -> CoordSet;
+    fn union_coords(self) -> CoordSet;
 }
 
 impl<I> CoordSetIteratorUnion for I
@@ -262,6 +268,10 @@ where
     I: Iterator<Item = CoordSet>,
 {
     fn union(self) -> CoordSet {
+        self.union_coords()
+    }
+
+    fn union_coords(self) -> CoordSet {
         self.fold(CoordSet::empty(), |acc, h| acc | h)
     }
 }

@@ -42,7 +42,10 @@ fn check_houses(
             .combinations(size)
             .for_each(|candidates| {
                 // HouseSet
-                let crosses = candidates.iter().map(|(_, _, crosses)| *crosses).union();
+                let crosses = candidates
+                    .iter()
+                    .map(|(_, _, crosses)| *crosses)
+                    .union_houses();
                 if crosses.len() != size {
                     return;
                 }
@@ -71,7 +74,7 @@ fn check_houses(
                     return;
                 }
 
-                let main_cells = candidates.iter().map(|(_, cells, _)| *cells).union();
+                let main_cells = candidates.iter().map(|(_, cells, _)| *cells).union_cells();
                 let cross_cells = crosses.cells() & candidate_cells;
                 let erase = cross_cells - main_cells;
                 if erase.is_empty() {
@@ -87,10 +90,11 @@ fn check_houses(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::io::{Parse, Parser};
     use crate::layout::cells::cell_set::cells;
     use crate::layout::values::known::known;
+
+    use super::*;
 
     #[test]
     fn x_wing() {

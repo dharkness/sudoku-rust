@@ -276,7 +276,7 @@ impl From<House> for HouseSet {
 
 impl From<&str> for HouseSet {
     fn from(labels: &str) -> Self {
-        labels.split(' ').map(House::from).union() as HouseSet
+        labels.split(' ').map(House::from).union_houses()
     }
 }
 
@@ -291,6 +291,7 @@ impl IntoIterator for HouseSet {
 
 pub trait HouseIteratorUnion {
     fn union(self) -> HouseSet;
+    fn union_houses(self) -> HouseSet;
 }
 
 impl<I> HouseIteratorUnion for I
@@ -298,6 +299,10 @@ where
     I: Iterator<Item = House>,
 {
     fn union(self) -> HouseSet {
+        self.union_houses()
+    }
+
+    fn union_houses(self) -> HouseSet {
         self.fold((true, HouseSet::empty(Shape::Row)), |(first, acc), h| {
             (false, if first { h.into() } else { acc + h })
         })
@@ -307,6 +312,7 @@ where
 
 pub trait HouseSetIteratorUnion {
     fn union(self) -> HouseSet;
+    fn union_houses(self) -> HouseSet;
 }
 
 impl<I> HouseSetIteratorUnion for I
@@ -314,6 +320,10 @@ where
     I: Iterator<Item = HouseSet>,
 {
     fn union(self) -> HouseSet {
+        self.union_houses()
+    }
+
+    fn union_houses(self) -> HouseSet {
         self.reduce(|acc, set| acc | set)
             .unwrap_or(HouseSet::empty(Shape::Row))
     }

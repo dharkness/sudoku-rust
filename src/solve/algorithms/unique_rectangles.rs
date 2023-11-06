@@ -340,7 +340,7 @@ impl Candidate {
                             .map(|(_, ks)| *ks)
                             .chain([self.roof_extras])
                             .collect();
-                        let knowns = known_sets.iter().copied().union() as KnownSet;
+                        let knowns = known_sets.iter().copied().union_knowns();
                         if knowns.len() != size
                             || naked_tuples::is_degenerate(&known_sets, size, 2)
                             || naked_tuples::is_degenerate(&known_sets, size, 3)
@@ -348,7 +348,7 @@ impl Candidate {
                             return;
                         }
 
-                        let cells = peers - peer_knowns.iter().map(|(c, _)| *c).union();
+                        let cells = peers - peer_knowns.iter().map(|(c, _)| *c).union_cells();
 
                         knowns
                             .iter()
