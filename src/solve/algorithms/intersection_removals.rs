@@ -7,7 +7,7 @@ use super::*;
 ///   the candidate cells in the block are called a Pointing Pair/Triple.
 /// - When the candidate is removed from the block disjoint, it is called
 ///   a Box Line Reduction.
-
+///
 /// # Example
 ///
 /// This shows one Pointing Pair and one Box Line Reduction.
@@ -41,50 +41,62 @@ pub fn find_intersection_removals(board: &Board) -> Option<Effects> {
 
 fn check_intersection(board: &Board, block: House, houses: HouseSet, effects: &mut Effects) {
     for known in Known::iter() {
-        houses.iter().for_each(|house| {
-            let segment = block.cells() & house.cells();
-            let block_disjoint = block.cells() - segment;
-            let other_disjoint = house.cells() - segment;
-            let block_disjoint_candidates = board.all_candidates(block_disjoint);
-            let other_disjoint_candidates = board.all_candidates(other_disjoint);
+        for house in houses.iter() {
+            let block_cells = block.cells();
+            let intersection_cells = block_cells & house.cells();
+            let box_cells = block_cells - intersection_cells;
+            let box_candidates = board.all_candidates(box_cells);
+            let line_cells = house.cells() - intersection_cells;
+            let line_candidates = board.all_candidates(line_cells);
 
             let candidate_cells = board.candidate_cells(known);
-            let segment_candidate_cells_count = (segment & candidate_cells).len();
-            if segment_candidate_cells_count < 2 {
-                return;
+            let intersection_candidate_cells = intersection_cells & candidate_cells;
+            let intersection_candidate_cells_count = intersection_candidate_cells.len();
+            if intersection_candidate_cells_count < 2 {
+                // ignore hidden single
+                continue;
             }
 
-            if block_disjoint_candidates[known] {
-                if !other_disjoint_candidates[known] {
-                    let erase = block_disjoint & candidate_cells;
+            if box_candidates[known] {
+                if !line_candidates[known] {
+                    let erase = box_cells & candidate_cells;
                     if !erase.is_empty() {
                         let mut action = Action::new(Strategy::BoxLineReduction);
                         action.erase_cells(erase, known);
+                        action.add_known_cells(Color::Blue, known, intersection_candidate_cells);
+                        action.add_known_cells(Color::None, known, line_cells - board.knowns());
                         effects.add_action(action);
                     }
                 }
-            } else if other_disjoint_candidates[known] {
-                let erase = other_disjoint & candidate_cells;
+            } else if line_candidates[known] {
+                let erase = line_cells & candidate_cells;
                 if !erase.is_empty() {
                     let mut strategy = Strategy::PointingPair;
-                    if segment_candidate_cells_count == 3 {
+                    if intersection_candidate_cells_count == 3 {
                         strategy = Strategy::PointingTriple;
                     }
                     let mut action = Action::new(strategy);
                     action.erase_cells(erase, known);
+                    action.add_known_cells(Color::Blue, known, intersection_candidate_cells);
+                    action.add_known_cells(
+                        Color::None,
+                        known,
+                        block_cells - intersection_cells - board.knowns(),
+                    );
                     effects.add_action(action);
                 }
             }
-        });
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::io::{Parse, Parser};
     use crate::layout::cells::cell_set::cells;
     use crate::layout::values::known::known;
+
+    use super::*;
 
     #[test]
     fn intersection_removals() {

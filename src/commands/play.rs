@@ -8,12 +8,12 @@ use clap::Args;
 use crate::build::{Finder, Generator};
 use crate::io::{
     format_for_fancy_console, format_for_wiki, format_grid, format_packed, format_runtime,
-    print_all_and_single_candidates, print_candidate, print_givens, print_known_values, Cancelable,
-    Parse, Parser, SUDOKUWIKI_URL,
+    print_all_and_single_candidates, print_all_and_single_candidates_with_highlight,
+    print_candidate, print_givens, print_known_values, Cancelable, Parse, Parser, SUDOKUWIKI_URL,
 };
 use crate::layout::{Cell, CellSet, Known, KnownSet};
 use crate::puzzle::{Board, ChangeResult, Changer, Effects, Options, Strategy};
-use crate::solve::{find_brute_force, BruteForceResult, NON_PEER_TECHNIQUES};
+use crate::solve::{find_brute_force, BruteForceResult, TECHNIQUES};
 use crate::symbols::{MISSING, UNKNOWN_VALUE};
 
 const MAXIMUM_SOLUTIONS: usize = 100;
@@ -24,6 +24,10 @@ pub struct PlayArgs {
     /// Print help information
     #[clap(long, action = clap::ArgAction::HelpLong)]
     help: Option<bool>,
+
+    /// Do not automatically remove peer candidates
+    #[clap(short, long)]
+    peers: bool,
 
     /// Automatically solve naked singles
     #[clap(short, long)]
@@ -49,6 +53,7 @@ impl PlayArgs {
     pub fn new() -> Self {
         Self {
             help: None,
+            peers: false,
             naked: false,
             hidden: false,
             singles: false,
@@ -60,7 +65,7 @@ impl PlayArgs {
     pub fn options(&self) -> Options {
         Options {
             stop_on_error: true,
-            remove_peers: true,
+            remove_peers: !self.peers,
             solve_naked_singles: self.naked || self.singles,
             solve_hidden_singles: self.hidden || self.singles,
             solve_intersection_removals: self.intersection,
@@ -74,6 +79,7 @@ pub fn start_player(args: PlayArgs) {
     let mut boards = vec![];
     let mut show_board = false;
     let mut deductions = None;
+    let mut highlight = None;
 
     match args.puzzle {
         Some(clues) => {
@@ -104,6 +110,9 @@ pub fn start_player(args: PlayArgs) {
             if board.is_fully_solved() {
                 print_known_values(board);
                 println!("\n==> Congratulations!\n");
+            } else if let Some(action) = &highlight {
+                print_all_and_single_candidates_with_highlight(board, action);
+                println!();
             } else {
                 print_all_and_single_candidates(board);
                 println!();
@@ -129,9 +138,9 @@ pub fn start_player(args: PlayArgs) {
                 if input.len() >= 2 {
                     for c in input[1].to_uppercase().chars() {
                         match c {
-                            // 'P' => {
-                            //     changer.options.remove_peers = !changer.options.remove_peers;
-                            // }
+                            'P' => {
+                                changer.options.remove_peers = !changer.options.remove_peers;
+                            }
                             'N' => {
                                 changer.options.solve_naked_singles =
                                     !changer.options.solve_naked_singles;
@@ -152,16 +161,16 @@ pub fn start_player(args: PlayArgs) {
                     concat!(
                         "\n==> Options\n",
                         "\n",
-                        // "  P - {} peer candidates\n",
+                        "  P - {} peer candidates\n",
                         "  N - {} naked singles\n",
                         "  H - {} hidden singles\n",
                         "  I - {} intersection removals\n",
                     ),
-                    // if changer.options.remove_peers {
-                    //     "removing"
-                    // } else {
-                    //     "not removing"
-                    // },
+                    if changer.options.remove_peers {
+                        "removing"
+                    } else {
+                        "not removing"
+                    },
                     if changer.options.solve_naked_singles {
                         "solving"
                     } else {
@@ -182,6 +191,7 @@ pub fn start_player(args: PlayArgs) {
             "N" => {
                 if let Some(board) = create_new_puzzle(changer) {
                     deductions = None;
+                    highlight = None;
                     boards.push(board);
                     println!();
                 }
@@ -195,6 +205,7 @@ pub fn start_player(args: PlayArgs) {
                         let (start, _) = finder.backtracking_find(board);
                         println!("\n==> Clues: {}\n", start);
                         deductions = None;
+                        highlight = None;
                         boards.push(start);
                         show_board = true;
                     }
@@ -285,6 +296,7 @@ pub fn start_player(args: PlayArgs) {
                 }
                 if changed {
                     deductions = None;
+                    highlight = None;
                     boards.push(clone);
                     println!();
                     show_board = true;
@@ -323,6 +335,7 @@ pub fn start_player(args: PlayArgs) {
                 }
                 if changed {
                     deductions = None;
+                    highlight = None;
                     boards.push(clone);
                     println!();
                     show_board = true;
@@ -356,6 +369,7 @@ pub fn start_player(args: PlayArgs) {
                 }
                 if changed {
                     deductions = None;
+                    highlight = None;
                     boards.push(clone);
                     println!();
                     show_board = true;
@@ -410,7 +424,7 @@ pub fn start_player(args: PlayArgs) {
             "F" => {
                 if deductions.is_none() {
                     let mut found = Effects::new();
-                    NON_PEER_TECHNIQUES.iter().for_each(|solver| {
+                    TECHNIQUES.iter().for_each(|solver| {
                         if let Some(actions) = solver.solve(board) {
                             found.take_actions(actions);
                         }
@@ -474,19 +488,24 @@ pub fn start_player(args: PlayArgs) {
 
                     let mut found_any = false;
                     for (i, action) in found.actions().iter().enumerate() {
+                        let mut found = None;
                         if let Some(cell) = affecting_cell {
                             if action.affects_cell(cell) {
-                                found_any = true;
-                                println!("{:>4} - {}", i + 1, action);
+                                found = Some(action);
                             }
                         } else if let Some(known) = affecting_known {
                             if action.affects_known(known) {
-                                found_any = true;
-                                println!("{:>4} - {}", i + 1, action);
+                                found = Some(action);
                             }
                         } else {
+                            found = Some(action);
+                        }
+                        if let Some(action) = found {
                             found_any = true;
                             println!("{:>4} - {}", i + 1, action);
+                            // if action.has_clues() {
+                            //     println!("                           {}", action.clues());
+                            // }
                         }
                     }
                     if found_any {
@@ -496,6 +515,33 @@ pub fn start_player(args: PlayArgs) {
                     println!("\n==> No deductions found affecting {}\n", cell);
                 } else {
                     println!("\n==> No deductions found\n");
+                }
+            }
+            "H" => {
+                if input.len() != 2 {
+                    println!("\n==> H <num>\n");
+                    continue;
+                }
+                if let Some(ref mut found) = &mut deductions {
+                    let n = input[1].parse::<usize>().unwrap_or(0);
+                    if n < 1 || n > found.action_count() {
+                        println!(
+                            "\n==> Enter a deduction number 1 - {}\n",
+                            found.action_count()
+                        );
+                        continue;
+                    }
+                    let action = found.actions()[n - 1].clone();
+                    println!(
+                        "\n==> Highlighting deduction {} - {:?}",
+                        n,
+                        action.strategy()
+                    );
+                    highlight = Some(action);
+                    println!();
+                    show_board = true;
+                } else {
+                    println!("\n==> Find deductions first with F\n");
                 }
             }
             "A" => {
@@ -518,6 +564,7 @@ pub fn start_player(args: PlayArgs) {
                                 boards.push(*after);
                                 println!("\n==> Applied {}\n", deduction);
                                 deductions = None;
+                                highlight = None;
                                 show_board = true;
                             }
                             ChangeResult::Invalid(_, _, _, errors) => {
@@ -534,7 +581,7 @@ pub fn start_player(args: PlayArgs) {
 
                 let mut any_applied = false;
                 let mut clone = *board;
-                let _ = NON_PEER_TECHNIQUES.iter().try_for_each(|solver| {
+                let _ = TECHNIQUES.iter().try_for_each(|solver| {
                     if let Some(actions) = solver.solve(board) {
                         let mut applied = 0;
                         for action in actions.actions() {
@@ -565,6 +612,7 @@ pub fn start_player(args: PlayArgs) {
 
                 if any_applied {
                     deductions = None;
+                    highlight = None;
                     boards.push(clone);
                     println!();
                     show_board = true;
@@ -631,6 +679,7 @@ pub fn start_player(args: PlayArgs) {
                     effects.print_errors();
                 }
                 deductions = None;
+                highlight = None;
                 boards.push(reset);
                 println!();
                 show_board = true;
@@ -638,12 +687,14 @@ pub fn start_player(args: PlayArgs) {
             "Z" => {
                 if boards.len() > 1 {
                     println!("\n==> Undoing last move\n");
+                    deductions = None;
+                    highlight = None;
                     boards.pop();
-                    show_board = true
+                    show_board = true;
                 }
             }
 
-            "?" | "H" => print_help(),
+            "?" => print_help(),
             "Q" => break,
 
             _ => println!("\n==> Unknown command: {}\n", input[0]),
@@ -651,6 +702,12 @@ pub fn start_player(args: PlayArgs) {
     }
 }
 
+// Used: ABC.EFGH....MNOPQRS..VWX.Z
+//
+// Want:
+// - Y for redo
+// - D for deductions?
+// - L for lock candidate(s)
 fn print_help() {
     println!(concat!(
         "\n==> Help\n",
@@ -668,21 +725,23 @@ fn print_help() {
         "  S <cells> <digit>   - solve a cell\n",
         "  E <cells> <digits>  - erase one or more candidates\n",
         "\n",
+        "  F [cell | digit]    - find deductions\n",
+        "  H <num>             - highlight a single deduction\n",
+        "  A [num]             - apply a single or all deductions\n",
         "  V                   - verify that puzzle is solvable\n",
-        "  F [cell or digit]   - find deductions\n",
-        "  A <num>             - apply a single or all deductions\n",
         "  B                   - use Bowman's Bingo to solve the puzzle if possible\n",
         "  R                   - reset candidates based on solved cells\n",
         "  Z                   - undo last change\n",
         "\n",
-        "  H                   - this help message\n",
+        "  ?                   - this help message\n",
         "  Q                   - quit\n",
         "\n",
-        "      <option> - P, N or H\n",
+        "      <option> - H, N or I\n",
         "      <cell>   - A1 to J9\n",
         "      <digit>  - 1 to 9\n",
         "      <num>    - any positive number\n",
         "      <char>   - any single character\n",
+        "      [...]    - optional\n",
         "\n",
         "  Commands and cells are not case-sensitive - \"s a2 4\" and \"E D8 6\" are fine\n",
     ))

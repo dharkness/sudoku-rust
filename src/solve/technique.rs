@@ -66,19 +66,16 @@ pub const TECHNIQUES: [Technique; 22] = [
     Technique::new(Difficulty::Tough, "x-wing", algorithms::find_x_wings),
     Technique::new(Difficulty::Tough, "singles chain", algorithms::find_singles_chains),
     Technique::new(Difficulty::Tough, "y-wing", algorithms::find_y_wings),
+    Technique::new(Difficulty::Tough, "empty rectangle", algorithms::find_empty_rectangles),
     Technique::new(Difficulty::Tough, "swordfish", algorithms::find_swordfish),
     Technique::new(Difficulty::Tough, "xyz-wing", algorithms::find_xyz_wings),
+    Technique::new(Difficulty::Tough, "bug", algorithms::find_bugs),
 
     Technique::new(Difficulty::Diabolical, "jellyfish", algorithms::find_jellyfish),
     Technique::new(Difficulty::Diabolical, "skyscraper", algorithms::find_skyscrapers),
     Technique::new(Difficulty::Diabolical, "avoidable rectangle", algorithms::find_avoidable_rectangles),
     Technique::new(Difficulty::Diabolical, "xy-chain", algorithms::find_xy_chains),
     Technique::new(Difficulty::Diabolical, "unique rectangle", algorithms::find_unique_rectangles),
-
-    // kills some unique rectangles, breaking the puzzle
-    Technique::new(Difficulty::Tough, "bug", algorithms::find_bugs),
-
-    Technique::new(Difficulty::Extreme, "empty rectangle", algorithms::find_empty_rectangles),
 ];
 
 /// All techniques except finding peers.

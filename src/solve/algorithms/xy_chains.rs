@@ -346,7 +346,21 @@ impl Found {
                 .cmp(&right.len)
                 .then(left.erases.len().cmp(&right.erases.len()))
         }) {
-            effects.add_erase_cells(Strategy::XYChain, chain.erases, chain.start_known);
+            let mut action =
+                Action::new_erase_cells(Strategy::XYChain, chain.erases, chain.start_known);
+            let mut cell = chain.end;
+            let mut known = chain.end_known;
+            let mut link = Some(&chain.head);
+            action.add(Color::Blue, known, cell);
+            action.add(Color::Red, chain.end_known, cell);
+            while let Some(next) = link {
+                cell = next.node.cell;
+                known = next.node.other(next.known);
+                action.add(Color::Blue, known, cell);
+                action.add(Color::Red, next.known, cell);
+                link = next.tail.as_ref();
+            }
+            effects.add_action(action);
 
             remaining -= chain.erases;
             if remaining.is_empty() {

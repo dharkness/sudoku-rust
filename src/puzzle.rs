@@ -28,6 +28,7 @@
 pub use action::Action;
 pub use board::{Board, Change};
 pub use changer::{ChangeResult, Changer};
+pub use clues::{Clues, Color};
 pub use effects::Effects;
 pub use error::Error;
 pub use options::Options;
@@ -37,6 +38,7 @@ pub use strategy::Strategy;
 mod action;
 mod board;
 mod changer;
+mod clues;
 mod effects;
 mod error;
 mod options;

@@ -23,21 +23,21 @@ pub fn find_xyz_wings(board: &Board) -> Option<Effects> {
         return None;
     }
 
-    tri_values.iter().for_each(|cell| {
+    tri_values.iter().for_each(|pivot| {
         // let (k1, k2) = board.candidates(cell).as_pair().unwrap();
-        (cell.peers() & bi_values)
+        (pivot.peers() & bi_values)
             .iter()
             .combinations(2)
             .map(|pair| pair.iter().copied().union_cells())
             .for_each(|pair| {
                 let (c1, c2) = pair.as_pair().expect("cell pair");
-                let candidates = cell.peers() & c1.peers() & c2.peers();
+                let candidates = pivot.peers() & c1.peers() & c2.peers();
                 if candidates.len() != 2 {
                     // degenerate naked triple
                     return;
                 }
 
-                let ks = board.candidates(cell);
+                let ks = board.candidates(pivot);
                 let ks1 = board.candidates(c1);
                 let ks2 = board.candidates(c2);
                 if ks1 | ks2 != ks {
@@ -49,12 +49,17 @@ pub fn find_xyz_wings(board: &Board) -> Option<Effects> {
                 if log {
                     println!(
                         "{}-{}: {}-{} {}-{} - {}",
-                        cell, ks, c1, ks1, c2, ks2, candidates
+                        pivot, ks, c1, ks1, c2, ks2, candidates
                     )
                 }
 
                 let mut action = Action::new(Strategy::XYZWing);
                 action.erase_cells(candidates & board.candidate_cells(k), k);
+                action.add_known_cells(Color::Blue, k, pair + pivot);
+                action.add_cell_knowns(Color::Purple, pivot, ks1 - k);
+                action.add_cell_knowns(Color::Red, pivot, ks2 - k);
+                action.add_cell_knowns(Color::Red, c1, ks1 - k);
+                action.add_cell_knowns(Color::Purple, c2, ks2 - k);
                 effects.add_action(action);
             });
     });

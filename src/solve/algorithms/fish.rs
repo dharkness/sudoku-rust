@@ -41,7 +41,6 @@ fn check_houses(
             .map(|(house, cells)| (house, cells, house.crossing_houses(cells)))
             .combinations(size)
             .for_each(|candidates| {
-                // HouseSet
                 let crosses = candidates
                     .iter()
                     .map(|(_, _, crosses)| *crosses)
@@ -83,6 +82,14 @@ fn check_houses(
 
                 let mut action = Action::new(strategy);
                 action.erase_cells(erase, known);
+                candidates.iter().for_each(|(house, cells, _)| {
+                    action.add_known_cells(Color::Blue, known, *cells);
+                    action.add_known_cells(
+                        Color::None,
+                        known,
+                        house.cells() - main_cells - board.knowns(),
+                    );
+                });
                 effects.add_action(action);
             });
     });

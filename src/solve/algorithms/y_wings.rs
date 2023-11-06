@@ -6,9 +6,9 @@ pub fn find_y_wings(board: &Board) -> Option<Effects> {
     let bi_values = board.cells_with_n_candidates(2);
     let log = false;
 
-    bi_values.iter().for_each(|cell| {
-        let (k1, k2) = board.candidates(cell).as_pair().unwrap();
-        let peers = cell.peers() & bi_values;
+    bi_values.iter().for_each(|pivot| {
+        let (k1, k2) = board.candidates(pivot).as_pair().unwrap();
+        let peers = pivot.peers() & bi_values;
         if peers.len() < 2 {
             return;
         }
@@ -17,7 +17,7 @@ pub fn find_y_wings(board: &Board) -> Option<Effects> {
         let k2_peers = peers & board.candidate_cells(k2);
 
         if log {
-            println!("{}: {}-{}: {}-{}", cell, k1, k2, k1_peers, k2_peers)
+            println!("{}: {}-{}: {}-{}", pivot, k1, k2, k1_peers, k2_peers)
         }
 
         k1_peers.iter().for_each(|c1| {
@@ -36,6 +36,12 @@ pub fn find_y_wings(board: &Board) -> Option<Effects> {
 
                 let mut action = Action::new(Strategy::YWing);
                 action.erase_cells(erase, k);
+                action.add(Color::Blue, k1, pivot);
+                action.add(Color::Red, k2, pivot);
+                action.add(Color::Red, k1, c1);
+                action.add(Color::Blue, k, c1);
+                action.add(Color::Blue, k2, c2);
+                action.add(Color::Red, k, c2);
                 effects.add_action(action);
             });
         });

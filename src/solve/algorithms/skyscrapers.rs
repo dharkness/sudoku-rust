@@ -1,5 +1,8 @@
 use super::*;
 
+// 697.....2 ..1972.63 ..3..679. 912...6.7 374.6.95. 8657.9.24 148693275 7.9.24..6 ..68.7..9
+//
+// https://hodoku.sourceforge.net/en/tech_sdp.php
 pub fn find_skyscrapers(board: &Board) -> Option<Effects> {
     let mut effects = Effects::new();
 
@@ -15,23 +18,29 @@ pub fn find_skyscrapers(board: &Board) -> Option<Effects> {
 
 fn check_houses(board: &Board, houses: HouseSet, cross: Shape, effects: &mut Effects) {
     for known in Known::iter() {
-        let mut check_candidate = |f1: Cell, c1: Cell, _f2: Cell, c2: Cell| {
+        let candidate_cells = board.candidate_cells(known);
+
+        let mut check_candidate = |f1: Cell, c1: Cell, f2: Cell, c2: Cell| {
             if c1.house(cross) == c2.house(cross) {
                 // degenerate X-Wing
                 return;
             }
-            if (board.candidate_cells(known) & f1.house(cross).cells()).len() == 2 {
+            if (candidate_cells & f1.house(cross).cells()).len() == 2 {
                 // degenerate Singles Chain
                 return;
             }
 
-            let candidates = c1.peers() & c2.peers() & board.candidate_cells(known);
+            let candidates = c1.peers() & c2.peers() & candidate_cells;
             if candidates.is_empty() {
                 return;
             }
 
             let mut action = Action::new(Strategy::Skyscraper);
             action.erase_cells(candidates, known);
+            action.add(Color::Blue, known, f1);
+            action.add(Color::Blue, known, c2);
+            action.add(Color::Red, known, f2);
+            action.add(Color::Red, known, c1);
             effects.add_action(action);
         };
 

@@ -31,7 +31,13 @@ pub fn find_bugs(board: &Board) -> Option<Effects> {
 
     if eliminated.len() == 2 {
         let solution = (candidates - eliminated).as_single().unwrap();
-        effects.add_set(Strategy::Bug, triple, solution);
+        let mut action = Action::new_set(Strategy::Bug, triple, solution);
+        action.add_known_cells(
+            Color::Blue,
+            solution,
+            triple.peers() & board.candidate_cells(solution),
+        );
+        effects.add_action(action);
     }
 
     if effects.has_actions() {
@@ -45,6 +51,7 @@ pub fn find_bugs(board: &Board) -> Option<Effects> {
 mod tests {
     use crate::io::{Parse, Parser};
     use crate::layout::cells::cell::cell;
+    use crate::layout::cells::cell_set::cells;
     use crate::layout::values::known::known;
 
     use super::*;
@@ -56,10 +63,10 @@ mod tests {
             "418121030511090hg10i110kg109410681210ag10c81210h06411181210341g1050h1109g10o0o2111038105411105410h8109g121030s0o9018032141g1840c4190180hg12103842103g105418111090h",
         );
 
+        let mut action = Action::new_set(Strategy::Bug, cell!("G1"), known!("3"));
+        action.add_known_cells(Color::Blue, known!("3"), cells!("C1 G2 G4 H1"));
+
         let effects = find_bugs(&board).unwrap();
-        assert_eq!(
-            Action::new_set(Strategy::Bug, cell!("G1"), known!("3")),
-            effects.actions()[0]
-        );
+        assert_eq!(action, effects.actions()[0]);
     }
 }

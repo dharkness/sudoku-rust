@@ -4,7 +4,7 @@ pub use algorithms::{find_brute_force, find_intersection_removals, BruteForceRes
 pub use deadly_rectangles::creates_deadly_rectangles;
 pub use reporter::Reporter;
 pub use solver::{Resolution, Solver};
-pub use technique::{Difficulty, NON_PEER_TECHNIQUES};
+pub use technique::{Difficulty, NON_PEER_TECHNIQUES, TECHNIQUES};
 
 pub mod algorithms;
 mod deadly_rectangles;

@@ -24,20 +24,25 @@ fn find_naked_tuples(board: &Board, size: usize, strategy: Strategy) -> Option<E
             .combinations(size)
             .for_each(|candidates| {
                 let known_sets = candidates.iter().map(|(_, ks)| *ks).collect::<Vec<_>>();
-                let knowns = known_sets.iter().copied().union_knowns();
-                if knowns.len() != size
+                let tuple_knowns = known_sets.iter().copied().union_knowns();
+                if tuple_knowns.len() != size
                     || is_degenerate(&known_sets, size, 2)
                     || is_degenerate(&known_sets, size, 3)
                 {
                     return;
                 }
 
-                let cells = house_cells - candidates.iter().map(|(c, _)| *c).union_cells();
+                let tuple_cells = candidates.iter().map(|(c, _)| *c).union_cells();
+                let erase_cells = house_cells - tuple_cells;
                 let mut action = Action::new(strategy);
 
-                knowns
-                    .iter()
-                    .for_each(|k| action.erase_cells(cells & board.candidate_cells(k), k));
+                tuple_knowns.iter().for_each(|k| {
+                    action.erase_cells(erase_cells & board.candidate_cells(k), k);
+                    action.add_known_cells(Color::Blue, k, tuple_cells & board.candidate_cells(k));
+                });
+                tuple_cells.iter().for_each(|c| {
+                    action.add_cell_knowns(Color::None, c, KnownSet::full() - board.candidates(c));
+                });
 
                 if !action.is_empty() {
                     // TODO check for dupes (same pair in block and row or column)
@@ -64,10 +69,11 @@ pub fn is_degenerate(known_sets: &[KnownSet], size: usize, smaller_size: usize) 
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::layout::cells::cell::cell;
     use crate::layout::cells::cell_set::cells;
     use crate::layout::values::known_set::knowns;
+
+    use super::*;
 
     #[test]
     fn naked_pairs() {

@@ -1,5 +1,6 @@
-use super::*;
 use itertools::Itertools;
+
+use super::*;
 
 pub fn find_hidden_pairs(board: &Board) -> Option<Effects> {
     find_hidden_tuples(board, 2, Strategy::HiddenPair)
@@ -23,20 +24,26 @@ pub fn find_hidden_tuples(board: &Board, size: usize, strategy: Strategy) -> Opt
             .combinations(size)
             .for_each(|candidates| {
                 let cell_sets = candidates.iter().map(|(_, cs)| *cs).collect::<Vec<_>>();
-                let cells = cell_sets.iter().copied().union_cells();
-                if cells.len() != size
+                let tuple_cells = cell_sets.iter().copied().union_cells();
+                if tuple_cells.len() != size
                     || is_degenerate(&cell_sets, size, 2)
                     || is_degenerate(&cell_sets, size, 3)
                 {
                     return;
                 }
 
-                let knowns = candidates.iter().map(|(k, _)| *k).union_knowns();
+                let tuple_knowns = candidates.iter().map(|(k, _)| *k).union_knowns();
                 let mut action = Action::new(strategy);
 
-                cells
+                tuple_cells
                     .iter()
-                    .for_each(|c| action.erase_knowns(c, board.candidates(c) - knowns));
+                    .for_each(|c| action.erase_knowns(c, board.candidates(c) - tuple_knowns));
+                tuple_knowns.iter().for_each(|k| {
+                    action.add_known_cells(Color::Blue, k, board.house_candidate_cells(house, k));
+                });
+                (house.cells() - tuple_cells).iter().for_each(|c| {
+                    action.add_cell_knowns(Color::None, c, tuple_knowns);
+                });
 
                 if !action.is_empty() {
                     // TODO check for dupes (same pair in block and row or column)
@@ -63,11 +70,12 @@ pub fn is_degenerate(cell_sets: &[CellSet], size: usize, smaller_size: usize) ->
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::layout::cells::cell::cell;
     use crate::layout::cells::cell_set::cells;
     use crate::layout::values::known_set::knowns;
     use crate::layout::Cell;
+
+    use super::*;
 
     #[test]
     fn hidden_pairs() {

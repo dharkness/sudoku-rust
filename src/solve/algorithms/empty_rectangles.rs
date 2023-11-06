@@ -38,7 +38,12 @@ pub fn find_empty_rectangles(board: &Board) -> Option<Effects> {
                                     Action::new_erase(Strategy::EmptyRectangle, end, known);
                                 if ends.len() == 1 {
                                     action.erase(start, known);
+                                } else {
+                                    action.add(Color::Blue, known, start);
                                 }
+                                action.add(Color::Blue, known, pivot);
+                                action.add_known_cells(Color::Red, known, cells);
+
                                 effects.add_action(action);
                             }
                         }

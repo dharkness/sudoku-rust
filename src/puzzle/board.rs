@@ -144,6 +144,13 @@ impl Board {
             .map(|cell| (cell, self.value(cell).known().unwrap()))
     }
 
+    /// Returns an iterator of the cells which are known with their digit, including givens.
+    pub fn knowns_iter(&self, cells: CellSet) -> impl Iterator<Item = (Cell, Known)> + '_ {
+        (cells & self.knowns)
+            .into_iter()
+            .map(|cell| (cell, self.value(cell).known().unwrap()))
+    }
+
     /// Returns the set of digits to which any of the cells is set.
     pub fn all_knowns(&self, cells: CellSet) -> KnownSet {
         cells.iter().fold(KnownSet::empty(), |acc, cell| {
@@ -264,8 +271,8 @@ impl Board {
         }
 
         for peer in self.candidate_cells_by_known[known.usize()] & cell.peers() {
-            change &= self.remove_candidate(peer, known, effects);
-            // effects.add_erase(Strategy::Peer, peer, known)
+            // change &= self.remove_candidate(peer, known, effects);
+            effects.add_erase(Strategy::Peer, peer, known)
         }
 
         change
