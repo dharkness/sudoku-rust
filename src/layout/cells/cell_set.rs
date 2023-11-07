@@ -300,6 +300,12 @@ impl CellSet {
             .fold(HouseSet::empty(shape), |set, cell| set + cell.house(shape))
     }
 
+    /// Returns the common peers of all members of this set.
+    pub fn peers(&self) -> CellSet {
+        self.iter()
+            .fold(CellSet::full(), |set, cell| set & cell.peers())
+    }
+
     /// Returns an iterator over the members of this set in row-then-column order.
     pub const fn iter(&self) -> CellIter {
         CellIter {
