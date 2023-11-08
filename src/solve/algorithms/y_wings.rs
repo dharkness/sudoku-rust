@@ -36,12 +36,12 @@ pub fn find_y_wings(board: &Board) -> Option<Effects> {
 
                 let mut action = Action::new(Strategy::YWing);
                 action.erase_cells(erase, k);
-                action.clue_cell_for_known(Color::Blue, pivot, k1);
-                action.clue_cell_for_known(Color::Red, pivot, k2);
-                action.clue_cell_for_known(Color::Red, c1, k1);
-                action.clue_cell_for_known(Color::Blue, c1, k);
-                action.clue_cell_for_known(Color::Blue, c2, k2);
-                action.clue_cell_for_known(Color::Red, c2, k);
+                action.clue_cell_for_known(Verdict::Secondary, pivot, k1);
+                action.clue_cell_for_known(Verdict::Tertiary, pivot, k2);
+                action.clue_cell_for_known(Verdict::Tertiary, c1, k1);
+                action.clue_cell_for_known(Verdict::Secondary, c1, k);
+                action.clue_cell_for_known(Verdict::Secondary, c2, k2);
+                action.clue_cell_for_known(Verdict::Tertiary, c2, k);
                 effects.add_action(action);
             });
         });

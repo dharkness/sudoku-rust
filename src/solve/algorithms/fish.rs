@@ -83,9 +83,9 @@ fn check_houses(
                 let mut action = Action::new(strategy);
                 action.erase_cells(erase, known);
                 candidates.iter().for_each(|(house, cells, _)| {
-                    action.clue_cells_for_known(Color::Blue, *cells, known);
+                    action.clue_cells_for_known(Verdict::Secondary, *cells, known);
                     action.clue_cells_for_known(
-                        Color::None,
+                        Verdict::Related,
                         house.cells() - main_cells - board.knowns(),
                         known,
                     );

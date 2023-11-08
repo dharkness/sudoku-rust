@@ -9,7 +9,7 @@ pub fn find_hidden_singles(board: &Board) -> Option<Effects> {
                 if board.house_candidate_cells(house, known).len() == 1 {
                     let mut action = Action::new_set(Strategy::HiddenSingle, cell, known);
                     action.clue_cells_for_known(
-                        Color::None,
+                        Verdict::Related,
                         house.cells() - cell - board.knowns(),
                         known,
                     );

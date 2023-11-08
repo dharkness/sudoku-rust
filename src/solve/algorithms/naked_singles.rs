@@ -6,7 +6,7 @@ pub fn find_naked_singles(board: &Board) -> Option<Effects> {
     for (cell, knowns) in board.cell_candidates_with_n_candidates(1) {
         let known = knowns.as_single().unwrap();
         let mut action = Action::new_set(Strategy::NakedSingle, cell, known);
-        action.clue_cell_for_knowns(Color::None, cell, KnownSet::full() - known);
+        action.clue_cell_for_knowns(Verdict::Related, cell, KnownSet::full() - known);
 
         effects.add_action(action);
     }

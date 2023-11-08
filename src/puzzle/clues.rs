@@ -7,18 +7,18 @@ use crate::layout::{Cell, CellSet, Known, KnownSet};
 use crate::symbols::EMPTY_SET;
 
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub enum Color {
-    None,
-    Blue,
-    Green,
-    Purple,
-    Red,
-    Yellow,
+pub enum Verdict {
+    Set,
+    Erase,
+    Related,
+    Primary,
+    Secondary,
+    Tertiary,
 }
 
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Clue {
-    color: Color,
+    color: Verdict,
     known: Known,
     cells: CellSet,
 }
@@ -33,11 +33,11 @@ impl Clues {
         Self { clues: Vec::new() }
     }
 
-    pub fn clue_cell_for_known(&mut self, color: Color, cell: Cell, known: Known) {
+    pub fn clue_cell_for_known(&mut self, color: Verdict, cell: Cell, known: Known) {
         self.clue_cells_for_known(color, CellSet::empty() + cell, known)
     }
 
-    pub fn clue_cells_for_known(&mut self, color: Color, cells: CellSet, known: Known) {
+    pub fn clue_cells_for_known(&mut self, color: Verdict, cells: CellSet, known: Known) {
         let clue = Clue {
             color,
             known,
@@ -55,11 +55,11 @@ impl Clues {
         }
     }
 
-    pub fn clue_cell_for_knowns(&mut self, color: Color, cell: Cell, knowns: KnownSet) {
+    pub fn clue_cell_for_knowns(&mut self, color: Verdict, cell: Cell, knowns: KnownSet) {
         self.clue_cells_for_knowns(color, CellSet::empty() + cell, knowns)
     }
 
-    pub fn clue_cells_for_knowns(&mut self, color: Color, cells: CellSet, knowns: KnownSet) {
+    pub fn clue_cells_for_knowns(&mut self, color: Verdict, cells: CellSet, knowns: KnownSet) {
         knowns
             .iter()
             .for_each(|known| self.clue_cells_for_known(color, cells, known))
@@ -73,7 +73,7 @@ impl Clues {
         &self.clues
     }
 
-    pub fn collect(&self) -> HashMap<Cell, HashMap<Known, Color>> {
+    pub fn collect(&self) -> HashMap<Cell, HashMap<Known, Verdict>> {
         self.clues.iter().fold(HashMap::new(), |mut map, clue| {
             clue.cells.iter().for_each(|cell| {
                 map.entry(cell).or_default().insert(clue.known, clue.color);
@@ -89,7 +89,7 @@ impl fmt::Display for Clues {
             f.write_char(EMPTY_SET)
         } else {
             let mut first = true;
-            let mut prev_color = Color::Blue;
+            let mut prev_color = Verdict::Secondary;
             for Clue {
                 color,
                 known,

@@ -90,8 +90,8 @@ fn check_type_one(
     found_type_ones.insert(rectangle);
     let mut action = Action::new(Strategy::UniqueRectangle);
     action.erase_knowns(fourth, pair);
-    action.clue_cells_for_knowns(Color::Purple, corners, pair);
-    action.clue_cell_for_knowns(Color::Blue, fourth, candidates - pair);
+    action.clue_cells_for_knowns(Verdict::Primary, corners, pair);
+    action.clue_cell_for_knowns(Verdict::Secondary, fourth, candidates - pair);
 
     effects.add_action(action);
 }
@@ -312,8 +312,8 @@ impl Candidate {
 
         let mut action = Action::new(Strategy::UniqueRectangle);
         action.erase_cells(cells, extra);
-        action.clue_cells_for_knowns(Color::Purple, self.rectangle.cells, self.pair);
-        action.clue_cells_for_known(Color::Blue, self.roof, extra);
+        action.clue_cells_for_knowns(Verdict::Primary, self.rectangle.cells, self.pair);
+        action.clue_cells_for_known(Verdict::Secondary, self.roof, extra);
         // println!("type 2 {} - {}", self.rectangle, action);
         effects.add_action(action);
     }
@@ -324,9 +324,9 @@ impl Candidate {
         }
 
         let mut action = Action::new(Strategy::UniqueRectangle);
-        action.clue_cells_for_knowns(Color::Purple, self.rectangle.cells, self.pair);
-        action.clue_cell_for_knowns(Color::Blue, self.roof_left, self.roof_left_extras);
-        action.clue_cell_for_knowns(Color::Blue, self.roof_right, self.roof_right_extras);
+        action.clue_cells_for_knowns(Verdict::Primary, self.rectangle.cells, self.pair);
+        action.clue_cell_for_knowns(Verdict::Secondary, self.roof_left, self.roof_left_extras);
+        action.clue_cell_for_knowns(Verdict::Secondary, self.roof_right, self.roof_right_extras);
 
         for house in self.roof_left.common_houses(self.roof_right) {
             let peers = house.cells() - self.roof;
@@ -362,7 +362,7 @@ impl Candidate {
                     let cells = peers - peer_knowns_combo.iter().map(|(c, _)| *c).union_cells();
 
                     for (cell, knowns) in peer_knowns_combo {
-                        action.clue_cell_for_knowns(Color::Blue, *cell, *knowns);
+                        action.clue_cell_for_knowns(Verdict::Secondary, *cell, *knowns);
                     }
                     for known in knowns {
                         action.erase_cells(cells & board.candidate_cells(known), known)
@@ -397,8 +397,8 @@ impl Candidate {
             };
             let mut action = Action::new(Strategy::UniqueRectangle);
             action.erase_cells(self.roof, erase);
-            action.clue_cells_for_knowns(Color::Purple, self.floor, self.pair);
-            action.clue_cells_for_known(Color::Blue, self.roof, required);
+            action.clue_cells_for_knowns(Verdict::Primary, self.floor, self.pair);
+            action.clue_cells_for_known(Verdict::Secondary, self.roof, required);
 
             // println!("type 4 {} - {}", self.rectangle, action);
             effects.add_action(action);
@@ -427,8 +427,8 @@ impl Candidate {
         if let Some(erase) = erase {
             let mut action = Action::new(Strategy::UniqueRectangle);
             action.erase_cells(CellSet::of(&[self.floor_left, self.floor_right]), erase);
-            action.clue_cells_for_knowns(Color::Purple, self.roof, self.pair);
-            action.clue_cells_for_knowns(Color::Purple, self.floor, self.pair - erase);
+            action.clue_cells_for_knowns(Verdict::Primary, self.roof, self.pair);
+            action.clue_cells_for_knowns(Verdict::Primary, self.floor, self.pair - erase);
 
             // println!("type 5 {} - {}", self.rectangle, action);
             effects.add_action(action);
@@ -466,8 +466,8 @@ mod tests {
         if let Some(got) = find_unique_rectangles(&board) {
             let mut action =
                 Action::new_erase_knowns(Strategy::UniqueRectangle, cell!("D1"), knowns!("2 9"));
-            action.clue_cells_for_knowns(Color::Purple, cells!("D9 F1 F9"), knowns!("2 9"));
-            action.clue_cell_for_knowns(Color::Blue, cell!("D1"), knowns!("1 5"));
+            action.clue_cells_for_knowns(Verdict::Primary, cells!("D9 F1 F9"), knowns!("2 9"));
+            action.clue_cell_for_knowns(Verdict::Secondary, cell!("D1"), knowns!("1 5"));
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
             panic!("not found");
@@ -486,8 +486,8 @@ mod tests {
         if let Some(got) = find_unique_rectangles(&board) {
             let mut action =
                 Action::new_erase_cells(Strategy::UniqueRectangle, cells!("A3 C6"), known!("7"));
-            action.clue_cells_for_knowns(Color::Purple, cells!("A5 A6 H5 H6"), knowns!("1 5"));
-            action.clue_cells_for_known(Color::Blue, cells!("A5 A6"), known!("7"));
+            action.clue_cells_for_knowns(Verdict::Primary, cells!("A5 A6 H5 H6"), knowns!("1 5"));
+            action.clue_cells_for_known(Verdict::Secondary, cells!("A5 A6"), known!("7"));
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
             panic!("not found");
@@ -506,8 +506,8 @@ mod tests {
         if let Some(got) = find_unique_rectangles(&board) {
             let mut action =
                 Action::new_erase_cells(Strategy::UniqueRectangle, cells!("A9 C9 G7"), known!("6"));
-            action.clue_cells_for_knowns(Color::Purple, cells!("B7 B9 H7 H9"), knowns!("2 9"));
-            action.clue_cells_for_known(Color::Blue, cells!("B7 H9"), known!("6"));
+            action.clue_cells_for_knowns(Verdict::Primary, cells!("B7 B9 H7 H9"), knowns!("2 9"));
+            action.clue_cells_for_known(Verdict::Secondary, cells!("B7 H9"), known!("6"));
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
             panic!("not found");
@@ -527,11 +527,11 @@ mod tests {
             let mut action = Action::new(Strategy::UniqueRectangle);
             action.erase_knowns(cell!("H8"), knowns!("4 9"));
             action.erase_knowns(cell!("J8"), knowns!("6 9"));
-            action.clue_cells_for_knowns(Color::Purple, cells!("D2 D8 F2 F8"), knowns!("1 5"));
-            action.clue_cell_for_knowns(Color::Blue, cell!("A8"), knowns!("4 6 9"));
-            action.clue_cell_for_knowns(Color::Blue, cell!("B8"), knowns!("4 9"));
-            action.clue_cell_for_knowns(Color::Blue, cell!("D8"), knowns!("4 6"));
-            action.clue_cell_for_knowns(Color::Blue, cell!("F8"), knowns!("6 9"));
+            action.clue_cells_for_knowns(Verdict::Primary, cells!("D2 D8 F2 F8"), knowns!("1 5"));
+            action.clue_cell_for_knowns(Verdict::Secondary, cell!("A8"), knowns!("4 6 9"));
+            action.clue_cell_for_knowns(Verdict::Secondary, cell!("B8"), knowns!("4 9"));
+            action.clue_cell_for_knowns(Verdict::Secondary, cell!("D8"), knowns!("4 6"));
+            action.clue_cell_for_knowns(Verdict::Secondary, cell!("F8"), knowns!("6 9"));
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
             panic!("not found");
@@ -550,8 +550,8 @@ mod tests {
         if let Some(got) = find_unique_rectangles(&board) {
             let mut action = Action::new(Strategy::UniqueRectangle);
             action.erase_cells(cells!("H1 H2"), known!("9"));
-            action.clue_cells_for_knowns(Color::Purple, cells!("A1 A2"), knowns!("7 9"));
-            action.clue_cells_for_known(Color::Blue, cells!("H1 H2"), known!("7"));
+            action.clue_cells_for_knowns(Verdict::Primary, cells!("A1 A2"), knowns!("7 9"));
+            action.clue_cells_for_known(Verdict::Secondary, cells!("H1 H2"), known!("7"));
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
             panic!("not found");
@@ -584,8 +584,8 @@ mod tests {
         if let Some(got) = find_unique_rectangles(&board) {
             let mut action =
                 Action::new_erase_cells(Strategy::UniqueRectangle, cells!("E6 F1"), known!("2"));
-            action.clue_cells_for_known(Color::Purple, cells!("E1 F6"), known!("2"));
-            action.clue_cells_for_known(Color::Purple, cells!("E1 E6 F1 F6"), known!("8"));
+            action.clue_cells_for_known(Verdict::Primary, cells!("E1 F6"), known!("2"));
+            action.clue_cells_for_known(Verdict::Primary, cells!("E1 E6 F1 F6"), known!("8"));
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
             panic!("not found");

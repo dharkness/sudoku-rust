@@ -51,8 +51,8 @@ pub fn find_two_string_kites(board: &Board) -> Option<Effects> {
                 }
 
                 let mut action = Action::new_erase_cells(Strategy::TwoStringKite, erase, known);
-                action.clue_cells_for_known(Color::Blue, ends, known);
-                action.clue_cells_for_known(Color::Purple, pivots, known);
+                action.clue_cells_for_known(Verdict::Secondary, ends, known);
+                action.clue_cells_for_known(Verdict::Primary, pivots, known);
                 effects.add_action(action);
             }
         }
@@ -86,8 +86,8 @@ mod tests {
         if let Some(got) = find_two_string_kites(&board) {
             let mut action = Action::new(Strategy::TwoStringKite);
             action.erase(cell!("B4"), known!("5"));
-            action.clue_cells_for_known(Color::Blue, cells!("B7 H4"), known!("5"));
-            action.clue_cells_for_known(Color::Purple, cells!("H9 J7"), known!("5"));
+            action.clue_cells_for_known(Verdict::Secondary, cells!("B7 H4"), known!("5"));
+            action.clue_cells_for_known(Verdict::Primary, cells!("H9 J7"), known!("5"));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

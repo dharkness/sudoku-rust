@@ -5,7 +5,7 @@
 use colored::Colorize;
 
 use crate::layout::{Cell, House, Known};
-use crate::puzzle::{Action, Board, Color};
+use crate::puzzle::{Action, Board, Verdict};
 use crate::symbols::{GIVEN, MISSING};
 
 // Unicode line characters: https://www.w3.org/TR/xml-entity-names/025.html
@@ -241,23 +241,23 @@ pub fn write_candidates_with_clues(board: &Board, action: &Action) -> Vec<String
                     if candidates[known] {
                         char = known.label();
                     }
-                    let mut color: Option<Color> = None;
+                    let mut color: Option<Verdict> = None;
                     if action.sets(cell, known) {
-                        color = Some(Color::Green);
+                        color = Some(Verdict::Set);
                     } else if action.erases(cell, known) {
-                        color = Some(Color::Yellow);
+                        color = Some(Verdict::Erase);
                     } else if let Some(map) = cell_known_colors.get(&cell) {
                         color = map.get(&known).cloned();
                     }
                     if let Some(color) = color {
                         let mut label = char.to_string().blink().bold();
                         match color {
-                            Color::None => (),
-                            Color::Blue => label = label.bright_cyan(),
-                            Color::Green => label = label.bright_green(),
-                            Color::Purple => label = label.bright_purple(),
-                            Color::Red => label = label.bright_red(),
-                            Color::Yellow => label = label.bright_yellow(),
+                            Verdict::Set => label = label.bright_green(),
+                            Verdict::Erase => label = label.bright_yellow(),
+                            Verdict::Primary => label = label.bright_purple(),
+                            Verdict::Secondary => label = label.bright_cyan(),
+                            Verdict::Tertiary => label = label.bright_red(),
+                            _ => (),
                         }
                         cell_lines[line].push_str(label.to_string().as_str());
                     } else {
@@ -268,11 +268,11 @@ pub fn write_candidates_with_clues(board: &Board, action: &Action) -> Vec<String
             } else {
                 cell_lines[0].push_str("      ");
                 let known = value.known().unwrap();
-                let mut color: Option<Color> = None;
+                let mut color: Option<Verdict> = None;
                 if action.sets(cell, known) {
-                    color = Some(Color::Green);
+                    color = Some(Verdict::Set);
                 } else if action.erases(cell, known) {
-                    color = Some(Color::Yellow);
+                    color = Some(Verdict::Erase);
                 } else if let Some(map) = cell_known_colors.get(&cell) {
                     color = map.get(&known).cloned();
                 }
@@ -281,27 +281,27 @@ pub fn write_candidates_with_clues(board: &Board, action: &Action) -> Vec<String
                     let mut label = value.to_string().blink().bold();
                     let mut missing = MISSING.to_string().blink().bold();
                     match color {
-                        Color::None => (),
-                        Color::Blue => {
-                            label = label.bright_cyan();
-                            missing = missing.bright_cyan()
-                        }
-                        Color::Green => {
+                        Verdict::Set => {
                             label = label.bright_green();
                             missing = missing.bright_green()
                         }
-                        Color::Purple => {
-                            label = label.bright_purple();
-                            missing = missing.bright_purple()
-                        }
-                        Color::Red => {
-                            label = label.bright_red();
-                            missing = missing.bright_red()
-                        }
-                        Color::Yellow => {
+                        Verdict::Erase => {
                             label = label.bright_yellow();
                             missing = missing.bright_yellow()
                         }
+                        Verdict::Primary => {
+                            label = label.bright_purple();
+                            missing = missing.bright_purple()
+                        }
+                        Verdict::Secondary => {
+                            label = label.bright_cyan();
+                            missing = missing.bright_cyan()
+                        }
+                        Verdict::Tertiary => {
+                            label = label.bright_red();
+                            missing = missing.bright_red()
+                        }
+                        _ => (),
                     }
                     cell_lines[1].push_str(&format!("  {}   ", label.to_string().as_str()));
                     if board.is_given(cell) {

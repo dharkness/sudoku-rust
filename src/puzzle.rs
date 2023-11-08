@@ -28,7 +28,7 @@
 pub use action::Action;
 pub use board::{Board, Change};
 pub use changer::{ChangeResult, Changer};
-pub use clues::{Clues, Color};
+pub use clues::{Clues, Verdict};
 pub use effects::Effects;
 pub use error::Error;
 pub use options::Options;

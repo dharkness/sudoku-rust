@@ -351,13 +351,13 @@ impl Found {
             let mut cell = chain.end;
             let mut known = chain.end_known;
             let mut link = Some(&chain.head);
-            action.clue_cell_for_known(Color::Blue, cell, known);
-            action.clue_cell_for_known(Color::Red, cell, chain.end_known);
+            action.clue_cell_for_known(Verdict::Secondary, cell, known);
+            action.clue_cell_for_known(Verdict::Tertiary, cell, chain.end_known);
             while let Some(next) = link {
                 cell = next.node.cell;
                 known = next.node.other(next.known);
-                action.clue_cell_for_known(Color::Blue, cell, known);
-                action.clue_cell_for_known(Color::Red, cell, next.known);
+                action.clue_cell_for_known(Verdict::Secondary, cell, known);
+                action.clue_cell_for_known(Verdict::Tertiary, cell, next.known);
                 link = next.tail.as_ref();
             }
             effects.add_action(action);

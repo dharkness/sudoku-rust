@@ -9,7 +9,7 @@ use itertools::Itertools;
 use crate::layout::{Cell, CellSet, Known, KnownSet};
 use crate::symbols::{EMPTY_SET, REMOVE_CANDIDATE, SET_KNOWN};
 
-use super::{Board, Change, Clues, Color, Effects, Strategy};
+use super::{Board, Change, Clues, Effects, Strategy, Verdict};
 
 /// One or more changes to the board derived using a specific strategy.
 #[derive(Clone, Eq, PartialEq)]
@@ -155,19 +155,19 @@ impl Action {
             })
     }
 
-    pub fn clue_cell_for_known(&mut self, color: Color, cell: Cell, known: Known) {
+    pub fn clue_cell_for_known(&mut self, color: Verdict, cell: Cell, known: Known) {
         self.clues.clue_cell_for_known(color, cell, known);
     }
 
-    pub fn clue_cells_for_known(&mut self, color: Color, cells: CellSet, known: Known) {
+    pub fn clue_cells_for_known(&mut self, color: Verdict, cells: CellSet, known: Known) {
         self.clues.clue_cells_for_known(color, cells, known);
     }
 
-    pub fn clue_cell_for_knowns(&mut self, color: Color, cell: Cell, knowns: KnownSet) {
+    pub fn clue_cell_for_knowns(&mut self, color: Verdict, cell: Cell, knowns: KnownSet) {
         self.clues.clue_cell_for_knowns(color, cell, knowns);
     }
 
-    pub fn clue_cells_for_knowns(&mut self, color: Color, cells: CellSet, knowns: KnownSet) {
+    pub fn clue_cells_for_knowns(&mut self, color: Verdict, cells: CellSet, knowns: KnownSet) {
         self.clues.clue_cells_for_knowns(color, cells, knowns);
     }
 
@@ -179,7 +179,7 @@ impl Action {
         &self.clues
     }
 
-    pub fn collect_clues(&self) -> IntoIter<(Cell, Known, Color)> {
+    pub fn collect_clues(&self) -> IntoIter<(Cell, Known, Verdict)> {
         self.clues
             .collect()
             .iter()
