@@ -96,6 +96,7 @@ pub enum Strategy {
     Skyscraper,         // (Known, floor (Cell, Cell), ceiling (Cell, Cell))
     YWing,              // (Known, pivot Cell, arms (Cell, Cell))
     XYZWing,            // (Known, pivot Cell, arms (Cell, Cell))
+    WXYZWing,           // (Known, pivot Cell, arms (Cell, Cell, Cell))
 
     XYChain,         // (Known, Vec<Cell>)
     UniqueRectangle, // (Cell, Cell, Cell, Cell)
@@ -133,6 +134,7 @@ impl Strategy {
             Self::Skyscraper => "Skyscraper",
             Self::YWing => "Y-Wing",
             Self::XYZWing => "XYZ-Wing",
+            Self::WXYZWing => "WXYZ-Wing",
             Self::XYChain => "XY-Chain",
             Self::UniqueRectangle => "Unique Rectangle",
             Self::EmptyRectangle => "Empty Rectangle",

@@ -50,7 +50,7 @@ type TechniqueFunc = fn(&Board) -> Option<Effects>;
 
 /// All techniques implemented by this solver.
 #[rustfmt::skip]
-pub const TECHNIQUES: [Technique; 23] = [
+pub const TECHNIQUES: [Technique; 24] = [
     Technique::new(Difficulty::Trivial, "peer", algorithms::find_peers),
     Technique::new(Difficulty::Trivial, "naked single", algorithms::find_naked_singles),
     Technique::new(Difficulty::Trivial, "hidden single", algorithms::find_hidden_singles),
@@ -70,30 +70,34 @@ pub const TECHNIQUES: [Technique; 23] = [
     Technique::new(Difficulty::Tough, "empty rectangle", algorithms::find_empty_rectangles),
     Technique::new(Difficulty::Tough, "swordfish", algorithms::find_swordfish),
     Technique::new(Difficulty::Tough, "xyz-wing", algorithms::find_xyz_wings),
-    Technique::new(Difficulty::Tough, "bug", algorithms::find_bugs),
     Technique::new(Difficulty::Tough, "avoidable rectangle", algorithms::find_avoidable_rectangles),
 
     Technique::new(Difficulty::Diabolical, "jellyfish", algorithms::find_jellyfish),
     Technique::new(Difficulty::Diabolical, "skyscraper", algorithms::find_skyscrapers),
     Technique::new(Difficulty::Diabolical, "xy-chain", algorithms::find_xy_chains),
     Technique::new(Difficulty::Diabolical, "unique rectangle", algorithms::find_unique_rectangles),
+    Technique::new(Difficulty::Diabolical, "wxyz-wing", algorithms::find_wxyz_wings),
+
+    // BUG causes unavoidable rectangles in several puzzles which UR fixes
+    Technique::new(Difficulty::Tough, "bug", algorithms::find_bugs),
 ];
 
 /// All techniques except finding peers.
 #[rustfmt::skip]
-pub const NON_PEER_TECHNIQUES: [Technique; 22] = [
+pub const NON_PEER_TECHNIQUES: [Technique; 23] = [
     TECHNIQUES[1],  TECHNIQUES[2],  TECHNIQUES[3],  TECHNIQUES[4],  TECHNIQUES[5],
     TECHNIQUES[6],  TECHNIQUES[7],  TECHNIQUES[8],  TECHNIQUES[9],  TECHNIQUES[10],
     TECHNIQUES[11], TECHNIQUES[12], TECHNIQUES[13], TECHNIQUES[14], TECHNIQUES[15],
     TECHNIQUES[16], TECHNIQUES[17], TECHNIQUES[18], TECHNIQUES[19], TECHNIQUES[20],
-    TECHNIQUES[21], TECHNIQUES[22],
+    TECHNIQUES[21], TECHNIQUES[22], TECHNIQUES[23],
 ];
 
 /// All techniques that cannot be handled automatically by the [`Board`].
 #[rustfmt::skip]
-pub const MANUAL_TECHNIQUES: [Technique; 20] = [
+pub const MANUAL_TECHNIQUES: [Technique; 21] = [
     TECHNIQUES[3],  TECHNIQUES[4],  TECHNIQUES[5],  TECHNIQUES[6],  TECHNIQUES[7],
     TECHNIQUES[8],  TECHNIQUES[9],  TECHNIQUES[10], TECHNIQUES[11], TECHNIQUES[12],
     TECHNIQUES[13], TECHNIQUES[14], TECHNIQUES[15], TECHNIQUES[16], TECHNIQUES[17],
     TECHNIQUES[18], TECHNIQUES[19], TECHNIQUES[20], TECHNIQUES[21], TECHNIQUES[22],
+    TECHNIQUES[23],
 ];
