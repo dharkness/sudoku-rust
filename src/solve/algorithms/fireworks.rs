@@ -4,15 +4,24 @@ use super::*;
 pub fn find_fireworks(board: &Board) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    for pivot in Cell::iter() {
+    for pivot in board.unknowns() {
         let row_cells = pivot.row().cells();
         let column_cells = pivot.column().cells();
         let block_cells = pivot.block().cells();
         let disjoint_cells = (row_cells | column_cells) - block_cells;
         let full_cells = disjoint_cells + pivot;
-        for candidates in Known::iter()
-            .map(|known| {
+        let candidates = board.all_candidates(row_cells) & board.all_candidates(column_cells);
+        for combos in candidates
+            .iter()
+            .filter_map(|known| {
                 let set = board.candidate_cells(known);
+                if set.has_any(row_cells) && set.has_any(column_cells) {
+                    Some((known, set))
+                } else {
+                    None
+                }
+            })
+            .map(|(known, set)| {
                 (
                     known,
                     set & block_cells,
@@ -25,12 +34,12 @@ pub fn find_fireworks(board: &Board) -> Option<Effects> {
             })
             .combinations(3)
         {
-            let triple = candidates.iter().map(|(known, ..)| *known).union_knowns();
+            let triple = combos.iter().map(|(known, ..)| *known).union_knowns();
             if triple.len() != 3 {
                 continue;
             }
 
-            let wings = candidates
+            let wings = combos
                 .iter()
                 .map(|(_, _, disjoint_set, _)| *disjoint_set)
                 .union_cells();
@@ -45,7 +54,7 @@ pub fn find_fireworks(board: &Board) -> Option<Effects> {
                     continue;
                 }
 
-                let full_sets = candidates
+                let full_sets = combos
                     .iter()
                     .map(|(_, _, _, full_set)| *full_set)
                     .collect_vec();
@@ -105,10 +114,10 @@ mod tests {
     }
 
     #[test]
-    fn not_found() {
+    fn candidate_must_not_be_solved_in_cross() {
         let parser = Parse::wiki().stop_on_error();
         let (board, effects, failed) = parser.parse(
-            "4m8111kcka06gk21gk06i6i6j4o20h4108p44k09m4n4s0b403okpk8e0goem0k222o411u621h6o6l00h09o4o6s61241g281053209giii8e068e0h11g12141065232620c8884hggigig1140h032140948409",
+            "4m811108k2060k21gk06g02230820h4108944k0960n0s03403gkpk080g04m0k222801162211280500h09g006461241g0810532090i2g8006080h11g12141065220420408801ggigig1140h032140148009",
         );
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
