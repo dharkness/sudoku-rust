@@ -51,7 +51,7 @@ pub fn solve_puzzles(args: SolveArgs) {
             let mut count = 0;
             let mut solved = 0;
 
-            println!("                   µs NS HS NP NT NQ HP HT HQ PP PT BL XW SC YW ER SF XZ JF SK TS AR XY UR WZ BG");
+            println!("                   µs NS HS NP NT NQ HP HT HQ PP PT BL XW SC YW ER SF XZ JF SK TS AR XY UR FW WZ BG");
             for puzzle in stdin.lock().lines().map_while(Result::ok) {
                 if cancelable.is_canceled() {
                     break;
@@ -241,7 +241,7 @@ impl CSVReporter {
 
     fn format_counts(&self, counts: &HashMap<Strategy, i32>) -> String {
         format!(
-            "{:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2}",
+            "{:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2}",
             // counts.get(&Strategy::Peer).unwrap_or(0),
             // counts.get(&Strategy::NakedSingle).unwrap_or(0),
             // counts.get(&Strategy::HiddenSingle).unwrap_or(0),
@@ -272,6 +272,7 @@ impl CSVReporter {
             counts.get(&Strategy::TwoStringKite).unwrap_or(&0),
             counts.get(&Strategy::XYChain).unwrap_or(&0),
             counts.get(&Strategy::UniqueRectangle).unwrap_or(&0),
+            counts.get(&Strategy::Fireworks).unwrap_or(&0),
             counts.get(&Strategy::WXYZWing).unwrap_or(&0),
             counts.get(&Strategy::Bug).unwrap_or(&0),
         )

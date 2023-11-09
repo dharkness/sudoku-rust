@@ -99,7 +99,8 @@ pub enum Strategy {
     WXYZWing,           // (Known, pivot Cell, arms (Cell, Cell, Cell))
 
     XYChain,         // (Known, Vec<Cell>)
-    UniqueRectangle, // (Cell, Cell, Cell, Cell)
+    UniqueRectangle, // (KnownSet, Cell, Cell, Cell, Cell)
+    Fireworks,       // (KnownSet, Cell, Cell, Cell)
 
     EmptyRectangle, // (Known, Block, Row, Column, Cell) - CellSet instead of three houses
 
@@ -137,6 +138,7 @@ impl Strategy {
             Self::WXYZWing => "WXYZ-Wing",
             Self::XYChain => "XY-Chain",
             Self::UniqueRectangle => "Unique Rectangle",
+            Self::Fireworks => "Fireworks",
             Self::EmptyRectangle => "Empty Rectangle",
             Self::BruteForce => "Brute Force",
         }
