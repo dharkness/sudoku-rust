@@ -6,7 +6,7 @@ use crate::layout::{Cell, CellSet, Known, KnownSet};
 use super::{Action, Board, Change, Error, Strategy};
 
 /// Collects actions and errors encountered while modifying a board.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Effects {
     errors: Vec<Error>,
     actions: Vec<Action>,

@@ -578,7 +578,7 @@ mod tests {
                 +----------------+----------------+-----------------+
             ",
         );
-        assert!(failed.is_none());
+        assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
         if let Some(got) = find_unique_rectangles(&board) {

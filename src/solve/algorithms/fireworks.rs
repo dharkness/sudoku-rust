@@ -113,9 +113,6 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        assert!(
-            find_fireworks(&board).is_none(),
-            "found unexpected fireworks"
-        );
+        assert_eq!(None, find_fireworks(&board));
     }
 }

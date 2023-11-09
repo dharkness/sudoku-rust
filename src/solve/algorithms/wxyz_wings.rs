@@ -14,6 +14,16 @@ pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
         if wing.rows().len() == 1 || wing.columns().len() == 1 || wing.blocks().len() == 1 {
             continue;
         }
+        if wing.iter().combinations(2).any(|combo| {
+            if !combo[0].sees(combo[1]) {
+                false
+            } else {
+                let candidates = board.candidates(combo[0]);
+                candidates.len() == 2 && candidates == board.candidates(combo[1])
+            }
+        }) {
+            continue;
+        }
 
         let wing_knowns = wing
             .iter()
@@ -76,7 +86,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_all_in_pivot() {
+    fn all_in_pivot() {
         let parser = Parse::wiki().stop_on_error();
         let (board, effects, failed) = parser.parse(
             "q2i2o2p2050h410992110ho20941o0052182050941b212b0h2o20h41j6h6h009h4810h32i0j4090h8103h0k470g2810hl021l4h20609090686e20ie02g11g18i4190b2g1092g8205oih221051i9009c2c2",
@@ -101,7 +111,7 @@ mod tests {
     }
 
     #[test]
-    fn test_not_all_in_pivot() {
+    fn not_all_in_pivot() {
         let parser = Parse::wiki().stop_on_error();
         let (board, effects, failed) = parser.parse(
             "810h053030094103g160m00903s00hb0942411m00344s4o4a0090hi009812403i40h4111gg051g09h0410321810330413g9gb005g1090990215k5k14g19g034gd01gg10903b094240503g1813g30091g41",
@@ -123,5 +133,17 @@ mod tests {
         } else {
             panic!("not found");
         }
+    }
+
+    #[test]
+    fn ignores_naked_pairs() {
+        let parser = Parse::wiki().stop_on_error();
+        let (board, effects, failed) = parser.parse(
+            "4m8111kcka06gk21gk06i6i6j4o20h4108p44k09m4n4s0b403okpk8e0goem0k222o411u621h6o6l00h09o4o6s61241g281053209giii8e068e0h11g12141065232620c8884hggigig1140h032140948409",
+        );
+        assert_eq!(None, failed);
+        assert!(!effects.has_errors());
+
+        assert_eq!(None, find_wxyz_wings(&board));
     }
 }
