@@ -14,6 +14,7 @@ pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
         if wing.rows().len() == 1 || wing.columns().len() == 1 || wing.blocks().len() == 1 {
             continue;
         }
+        // ignore naked pair
         if wing.iter().combinations(2).any(|combo| {
             if !combo[0].sees(combo[1]) {
                 false
@@ -29,6 +30,12 @@ pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
             .iter()
             .fold(KnownSet::empty(), |set, cell| set | board.candidates(cell));
         if wing_knowns.len() != 4 {
+            continue;
+        }
+        if wing_knowns
+            .iter()
+            .any(|known| (wing & board.candidate_cells(known)).len() < 2)
+        {
             continue;
         }
 
@@ -140,6 +147,18 @@ mod tests {
         let parser = Parse::wiki().stop_on_error();
         let (board, effects, failed) = parser.parse(
             "4m8111kcka06gk21gk06i6i6j4o20h4108p44k09m4n4s0b403okpk8e0goem0k222o411u621h6o6l00h09o4o6s61241g281053209giii8e068e0h11g12141065232620c8884hggigig1140h032140948409",
+        );
+        assert_eq!(None, failed);
+        assert!(!effects.has_errors());
+
+        assert_eq!(None, find_wxyz_wings(&board));
+    }
+
+    #[test]
+    fn each_primary_must_appear_at_least_twice() {
+        let parser = Parse::wiki().stop_on_error();
+        let (board, effects, failed) = parser.parse(
+            "k020081102k0800h0503s0d4g4210gl008h00gk014084481h02002210gk0g4441003810804s2s22009k20g10k01008k20h80k204k02008050h41h020h0028080112002gg0409k0kgk0k2k2801g0821041g"
         );
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
