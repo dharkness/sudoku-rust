@@ -33,7 +33,7 @@ pub fn find_brute_force(
     }
 
     let cancelable = Cancelable::new();
-    let changer = Changer::new(Options::errors_and_peers());
+    let changer = Changer::new(Options::errors());
     let mut solutions = Vec::new();
     let mut stack = Vec::with_capacity(81);
     stack.push(Entry::new(*board));

@@ -271,8 +271,8 @@ impl Board {
         }
 
         for peer in self.candidate_cells_by_known[known.usize()] & cell.peers() {
-            // change &= self.remove_candidate(peer, known, effects);
-            effects.add_erase(Strategy::Peer, peer, known)
+            change &= self.remove_candidate(peer, known, effects);
+            // effects.add_erase(Strategy::Peer, peer, known)
         }
 
         change

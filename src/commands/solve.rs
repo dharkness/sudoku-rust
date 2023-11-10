@@ -26,7 +26,7 @@ pub struct SolveArgs {
 /// Creates a new puzzle and prints it to stdout.
 pub fn solve_puzzles(args: SolveArgs) {
     let cancelable = Cancelable::new();
-    let changer = Changer::new(Options::errors_and_peers());
+    let changer = Changer::new(Options::errors());
     let parser = Parse::packed_with_player(changer);
     let solver = Solver::new(args.check);
 

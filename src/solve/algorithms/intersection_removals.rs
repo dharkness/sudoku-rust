@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn intersection_removals() {
-        let board = Parse::packed_with_options(Options::errors_and_peers()).parse_simple(
+        let board = Parse::packed_with_options(Options::errors()).parse_simple(
             "
                 7..1....9
                 .2.3..7..

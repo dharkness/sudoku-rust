@@ -190,7 +190,7 @@ fn determine_worker_count(requested: Option<isize>) -> usize {
 }
 
 fn parse_puzzle_or_exit(solution: String) -> Board {
-    let changer = Changer::new(Options::errors_and_peers());
+    let changer = Changer::new(Options::errors());
     let parser = Parse::packed_with_player(changer);
     let (board, effects, failure) = parser.parse(&solution);
 

@@ -47,7 +47,7 @@ pub struct Solver {
 impl Solver {
     pub fn new(check: bool) -> Solver {
         Solver {
-            changer: Changer::new(Options::errors_and_peers()),
+            changer: Changer::new(Options::errors()),
             cancelable: Cancelable::new(),
             check,
         }

@@ -266,7 +266,7 @@ mod tests {
 
     #[test]
     fn test_format_for_console() {
-        let board = Parse::packed_with_options(Options::errors_and_peers()).parse_simple(
+        let board = Parse::packed_with_options(Options::errors()).parse_simple(
             "
                 .8.1.3.7.
                 .9.5.6...
@@ -288,7 +288,7 @@ mod tests {
 
     #[test]
     fn test_format_packed() {
-        let board = Parse::packed_with_options(Options::errors_and_peers()).parse_simple(
+        let board = Parse::packed_with_options(Options::errors()).parse_simple(
             "
                 .8.1.3.7.
                 .9.5.6...
@@ -310,7 +310,7 @@ mod tests {
 
     #[test]
     fn test_format_grid() {
-        let board = Parse::packed_with_options(Options::errors_and_peers()).parse_simple(
+        let board = Parse::packed_with_options(Options::errors()).parse_simple(
             "
                 ..2...376
                 .1..3.5..
