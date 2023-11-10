@@ -348,14 +348,10 @@ impl Found {
         }) {
             let mut action =
                 Action::new_erase_cells(Strategy::XYChain, chain.erases, chain.start_known);
-            let mut cell = chain.end;
-            let mut known = chain.end_known;
             let mut link = Some(&chain.head);
-            action.clue_cell_for_known(Verdict::Secondary, cell, known);
-            action.clue_cell_for_known(Verdict::Tertiary, cell, chain.end_known);
             while let Some(next) = link {
-                cell = next.node.cell;
-                known = next.node.other(next.known);
+                let cell = next.node.cell;
+                let known = next.node.other(next.known);
                 action.clue_cell_for_known(Verdict::Secondary, cell, known);
                 action.clue_cell_for_known(Verdict::Tertiary, cell, next.known);
                 link = next.tail.as_ref();
@@ -393,5 +389,38 @@ fn add_candidate(new: &Rc<Chain>, chains: &mut Vec<Rc<Chain>>) {
 
     if add {
         chains.push(Rc::clone(new));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::io::{Parse, Parser};
+    use crate::layout::cells::cell::cell;
+    use crate::layout::cells::cell_set::cells;
+    use crate::layout::values::known::known;
+
+    use super::*;
+
+    #[test]
+    fn test() {
+        let parser = Parse::wiki().stop_on_error();
+        let (board, ..) = parser.parse(
+            "441181i402i4k4080h0g20g10884418411024c0c03o4100gs421g4p4o4410h09q403o030o6om091184o42go040p0og20o040031g0508g2g214a40ha409403020411403g108100g8188880g412011g402g4",
+        );
+
+        if let Some(got) = find_xy_chains(&board) {
+            let mut action = Action::new(Strategy::XYChain);
+            action.erase(cell!("C4"), known!("9"));
+            action.clue_cells_for_known(Verdict::Secondary, cells!("B7 E5"), known!("2"));
+            action.clue_cells_for_known(Verdict::Tertiary, cells!("B5 C9"), known!("2"));
+            action.clue_cells_for_known(Verdict::Secondary, cells!("B5 F4"), known!("8"));
+            action.clue_cells_for_known(Verdict::Tertiary, cells!("B7 E5"), known!("8"));
+            action.clue_cells_for_known(Verdict::Secondary, cells!("C9"), known!("9"));
+            action.clue_cells_for_known(Verdict::Tertiary, cells!("F4"), known!("9"));
+
+            assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
+        } else {
+            panic!("No effects found");
+        }
     }
 }
