@@ -279,6 +279,36 @@ impl CellSet {
         *self = self.inverted()
     }
 
+    /// Returns true if all cells in this set are in the same row.
+    pub fn share_row(&self) -> bool {
+        self.share_house(Shape::Row)
+    }
+
+    /// Returns true if all cells in this set are in the same column.
+    pub fn share_column(&self) -> bool {
+        self.share_house(Shape::Column)
+    }
+
+    /// Returns true if all cells in this set are in the same block.
+    pub fn share_block(&self) -> bool {
+        self.share_house(Shape::Block)
+    }
+
+    /// Returns true if all cells in this set are in the same `shape` house.
+    pub fn share_house(&self, shape: Shape) -> bool {
+        if self.is_empty() {
+            false
+        } else {
+            let house = self.first().unwrap().house(shape);
+            for cell in self.iter() {
+                if cell.house(shape) != house {
+                    return false;
+                }
+            }
+            true
+        }
+    }
+
     /// Returns the minimal set of rows containing the members of this set.
     pub fn rows(&self) -> HouseSet {
         self.houses(Shape::Row)
@@ -857,6 +887,27 @@ mod tests {
         set += cell!("B8");
         set += cell!("D3");
         assert_eq!(CellSet::full(), set)
+    }
+
+    #[test]
+    fn same_row() {
+        assert_eq!(true, cells!("A1 A2 A3").share_row());
+        assert_eq!(false, cells!("A1 A2 C3").share_row());
+        assert_eq!(false, cells!("A1 C2 C3").share_row());
+    }
+
+    #[test]
+    fn same_column() {
+        assert_eq!(false, cells!("A1 A2 A3").share_column());
+        assert_eq!(false, cells!("A1 A2 C3").share_column());
+        assert_eq!(true, cells!("A1 B1 F1 J1").share_column());
+    }
+
+    #[test]
+    fn same_block() {
+        assert_eq!(true, cells!("A1 A2 A3").share_block());
+        assert_eq!(true, cells!("A1 C2 C3").share_block());
+        assert_eq!(false, cells!("A1 A4").share_block());
     }
 
     #[test]

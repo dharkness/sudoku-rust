@@ -5,23 +5,57 @@ use super::*;
 pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    let wing_candidates = (2..=4).fold(CellSet::empty(), |set, n| {
-        set | board.cells_with_n_candidates(n)
-    });
+    let bi_values = board.cells_with_n_candidates(2);
+    let wing_candidates =
+        bi_values | board.cells_with_n_candidates(3) | board.cells_with_n_candidates(4);
+    if wing_candidates.len() < 4 {
+        return None;
+    }
 
-    for wing in wing_candidates.into_iter().combinations(4) {
+    // the other bi-value cells that each bi-value cell sees with the same two candidates
+    // only tracks the earlier of the two cells
+    let seen_bi_values: HashMap<Cell, CellSet> = board
+        .cell_candidates_with_n_candidates(2)
+        .fold(
+            HashMap::new(),
+            |mut map: HashMap<KnownSet, CellSet>, (cell, candidates)| {
+                *map.entry(candidates).or_default() += cell;
+                map
+            },
+        )
+        .iter()
+        .fold(HashMap::new(), |mut map, (_, cells)| {
+            cells.iter().combinations(2).for_each(|combo| {
+                let (c1, c2) = (combo[0], combo[1]);
+                if c1.sees(c2) {
+                    if c1 < c2 {
+                        *map.entry(c1).or_default() += c2;
+                    } else {
+                        *map.entry(c2).or_default() += c1;
+                    }
+                }
+            });
+            map
+        });
+
+    'wing: for wing in wing_candidates.into_iter().combinations(4) {
         let wing = wing.into_iter().union_cells();
-        if wing.rows().len() == 1 || wing.columns().len() == 1 || wing.blocks().len() == 1 {
+        // ignore xy chains
+        if (wing & bi_values) == wing {
             continue;
         }
-        // ignore naked pair
-        if wing.iter().combinations(2).any(|combo| {
-            if !combo[0].sees(combo[1]) {
-                false
-            } else {
-                let candidates = board.candidates(combo[0]);
-                candidates.len() == 2 && candidates == board.candidates(combo[1])
+        // ignore naked quads
+        if wing.share_row() || wing.share_column() || wing.share_block() {
+            continue;
+        }
+        // ignore naked pairs
+        if (wing & bi_values).iter().any(|cell| {
+            if let Some(seen) = seen_bi_values.get(&cell) {
+                if !(*seen & wing).is_empty() {
+                    return true;
+                }
             }
+            false
         }) {
             continue;
         }
@@ -50,10 +84,13 @@ pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
             if is_restricted {
                 restricted.insert(known, candidates);
             } else {
+                if !non_restricted.is_empty() {
+                    continue 'wing;
+                }
                 non_restricted.insert(known, candidates);
             }
         }
-        if non_restricted.len() != 1 {
+        if non_restricted.is_empty() {
             continue;
         }
 
@@ -159,6 +196,18 @@ mod tests {
         let parser = Parse::wiki().stop_on_error();
         let (board, effects, failed) = parser.parse(
             "k020081102k0800h0503s0d4g4210gl008h00gk014084481h02002210gk0g4441003810804s2s22009k20g10k01008k20h80k204k02008050h41h020h0028080112002gg0409k0kgk0k2k2801g0821041g"
+        );
+        assert_eq!(None, failed);
+        assert!(!effects.has_errors());
+
+        assert_eq!(None, find_wxyz_wings(&board));
+    }
+
+    #[test]
+    fn ignores_xy_chains() {
+        let parser = Parse::wiki().stop_on_error();
+        let (board, effects, failed) = parser.parse(
+            "0305090h5050a0a0g10h11210381g10541094181g10921050h1103054i4i50522109g181094281g10h4211242421g11105098141030h114a42e0k64aq20h24814q0560k24qi22811g1210i90161q828c41"
         );
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
