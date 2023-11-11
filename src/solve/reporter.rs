@@ -2,8 +2,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use crate::layout::{Cell, Known};
-use crate::puzzle::{Action, Board, Effects, Strategy};
-use crate::solve::Difficulty;
+use crate::puzzle::{Action, Board, Difficulty, Effects, Strategy};
 
 /// One of these methods is called for each puzzle run through the solver.
 pub trait Reporter {

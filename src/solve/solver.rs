@@ -1,6 +1,6 @@
 use crate::io::Cancelable;
-use crate::puzzle::{Action, Board, ChangeResult, Changer, Effects, Options};
-use crate::solve::{find_brute_force, Difficulty, NON_PEER_TECHNIQUES};
+use crate::puzzle::{Action, Board, ChangeResult, Changer, Difficulty, Effects, Options};
+use crate::solve::{find_brute_force, NON_PEER_TECHNIQUES};
 
 pub enum Resolution {
     /// Returned when the user interrupts the solver

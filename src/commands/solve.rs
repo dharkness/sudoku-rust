@@ -10,8 +10,8 @@ use crate::io::{
     print_known_values, Cancelable, Parse, ParsePacked, Parser, SUDOKUWIKI_URL,
 };
 use crate::layout::{Cell, Known};
-use crate::puzzle::{Action, Board, Changer, Effects, Options, Strategy};
-use crate::solve::{Difficulty, Reporter, Resolution, Solver};
+use crate::puzzle::{Action, Board, Changer, Difficulty, Effects, Options, Strategy};
+use crate::solve::{Reporter, Resolution, Solver};
 
 #[derive(Debug, Args)]
 pub struct SolveArgs {

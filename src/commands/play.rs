@@ -579,7 +579,7 @@ pub fn start_player(args: PlayArgs) {
                                 ChangeResult::Invalid(_, _, _, errors) => {
                                     println!(
                                         "\n==> Applying {} will cause errors\n    {}\n",
-                                        solver.name(),
+                                        solver.label(),
                                         action
                                     );
                                     errors.print_errors();
@@ -589,7 +589,7 @@ pub fn start_player(args: PlayArgs) {
                         }
                         if applied > 0 {
                             any_applied = true;
-                            println!("\n==> Applied {}", pluralize(applied, solver.name()));
+                            println!("\n==> Applied {}", pluralize(applied, solver.label()));
                         }
                     }
                     Ok(())

@@ -12,8 +12,8 @@ use crate::io::{
     format_number, format_runtime, print_all_and_single_candidates, Cancelable, Parse, Parser,
 };
 use crate::layout::CellSet;
-use crate::puzzle::{Board, Changer, Effects, Options};
-use crate::solve::{Difficulty, Resolution, Solver};
+use crate::puzzle::{Board, Changer, Difficulty, Effects, Options};
+use crate::solve::{Resolution, Solver};
 
 #[derive(Debug, Args)]
 pub struct FindArgs {

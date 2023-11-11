@@ -33,7 +33,7 @@ pub use effects::Effects;
 pub use error::Error;
 pub use options::Options;
 pub use pseudo_cell::PseudoCell;
-pub use strategy::Strategy;
+pub use strategy::{Difficulty, Strategy};
 
 mod action;
 mod board;

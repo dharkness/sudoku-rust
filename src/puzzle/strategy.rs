@@ -43,20 +43,16 @@ pub enum Strategy {
     /// from every cell in the same row, column or box.
     Peer, // (Known, Cell)
 
+    /// This strategy produces pointing pairs and triples and box/line reductions.
+    IntersectionRemoval,
     /// A candidate that may only appear in two cells in one segment of a block
     /// may be removed from the other two segments in the segment's row or column.
-    ///
-    /// This is one form of intersection removals.
     PointingPair, // (Known, block House, House, (Cell, Cell))
     /// A candidate that may only appear in three cells one segment of a block
     /// may be removed from the other two segments in the segment's row or column.
-    ///
-    /// This is one form of intersection removals.
     PointingTriple, // (Known, block House, House, (Cell, Cell, Cell))
     /// A candidate that may only appear in one segment of a block
     /// may be removed from the other cells in the block.
-    ///
-    /// This is one form of intersection removals.
     BoxLineReduction, // (Known, block House, House)
 
     /// A cell with one candidate remaining may be solved.
@@ -108,12 +104,55 @@ pub enum Strategy {
 }
 
 impl Strategy {
-    pub fn label(&self) -> &str {
+    pub const fn difficulty(&self) -> Difficulty {
+        match self {
+            Self::Given => Difficulty::Trivial,
+            Self::Solve => Difficulty::Trivial,
+            Self::Erase => Difficulty::Trivial,
+
+            Self::Peer => Difficulty::Trivial,
+            Self::NakedSingle => Difficulty::Trivial,
+            Self::HiddenSingle => Difficulty::Trivial,
+
+            Self::NakedPair => Difficulty::Basic,
+            Self::HiddenPair => Difficulty::Basic,
+            Self::NakedTriple => Difficulty::Basic,
+            Self::HiddenTriple => Difficulty::Basic,
+            Self::NakedQuad => Difficulty::Basic,
+            Self::HiddenQuad => Difficulty::Basic,
+            Self::IntersectionRemoval => Difficulty::Basic,
+            Self::PointingPair => Difficulty::Basic,
+            Self::PointingTriple => Difficulty::Basic,
+            Self::BoxLineReduction => Difficulty::Basic,
+
+            Self::XWing => Difficulty::Tough,
+            Self::TwoStringKite => Difficulty::Tough,
+            Self::SinglesChain => Difficulty::Tough,
+            Self::YWing => Difficulty::Tough,
+            Self::EmptyRectangle => Difficulty::Tough,
+            Self::Swordfish => Difficulty::Tough,
+            Self::XYZWing => Difficulty::Tough,
+            Self::AvoidableRectangle => Difficulty::Tough,
+            Self::Bug => Difficulty::Tough,
+
+            Self::Jellyfish => Difficulty::Diabolical,
+            Self::Skyscraper => Difficulty::Diabolical,
+            Self::XYChain => Difficulty::Diabolical,
+            Self::UniqueRectangle => Difficulty::Diabolical,
+            Self::Fireworks => Difficulty::Diabolical,
+            Self::WXYZWing => Difficulty::Diabolical,
+
+            Self::BruteForce => Difficulty::Extreme,
+        }
+    }
+
+    pub const fn label(&self) -> &'static str {
         match self {
             Self::Given => "Given",
             Self::Solve => "Solve",
             Self::Erase => "Erase",
             Self::Peer => "Peer",
+            Self::IntersectionRemoval => "Intersection Removal",
             Self::PointingPair => "Pointing Pair",
             Self::PointingTriple => "Pointing Triple",
             Self::BoxLineReduction => "Box/Line Reduction",
@@ -149,4 +188,14 @@ impl fmt::Display for Strategy {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.label())
     }
+}
+
+/// Groups solvers by difficulty based on the SudokuWiki website.
+#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq, PartialOrd, Ord)]
+pub enum Difficulty {
+    Trivial,
+    Basic,
+    Tough,
+    Diabolical,
+    Extreme,
 }
