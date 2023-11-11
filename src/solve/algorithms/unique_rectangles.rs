@@ -361,11 +361,18 @@ impl Candidate {
 
                     let cells = peers - peer_knowns_combo.iter().map(|(c, _)| *c).union_cells();
 
-                    for (cell, knowns) in peer_knowns_combo {
-                        action.clue_cell_for_knowns(Verdict::Secondary, *cell, *knowns);
-                    }
+                    let mut found = false;
                     for known in knowns {
-                        action.erase_cells(cells & board.candidate_cells(known), known)
+                        let erase = cells & board.candidate_cells(known);
+                        if !erase.is_empty() {
+                            found = true;
+                            action.erase_cells(erase, known)
+                        }
+                    }
+                    if found {
+                        for (cell, knowns) in peer_knowns_combo {
+                            action.clue_cell_for_knowns(Verdict::Secondary, *cell, *knowns);
+                        }
                     }
                     break;
                 }
