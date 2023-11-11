@@ -5,48 +5,118 @@ use super::*;
 pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    let bi_values = board.cells_with_n_candidates(2);
-    let wing_candidates =
-        bi_values | board.cells_with_n_candidates(3) | board.cells_with_n_candidates(4);
-    if wing_candidates.len() < 4 {
-        return None;
-    }
+    let pairs_by_candidates = board.cell_candidates_with_n_candidates(2).fold(
+        HashMap::new(),
+        |mut map: HashMap<KnownSet, CellSet>, (cell, candidates)| {
+            *map.entry(candidates).or_default() += cell;
+            map
+        },
+    );
+    let triples_by_candidates = board.cell_candidates_with_n_candidates(3).fold(
+        HashMap::new(),
+        |mut map: HashMap<KnownSet, CellSet>, (cell, candidates)| {
+            *map.entry(candidates).or_default() += cell;
+            map
+        },
+    );
+    let quads_by_candidates = board.cell_candidates_with_n_candidates(4).fold(
+        HashMap::new(),
+        |mut map: HashMap<KnownSet, CellSet>, (cell, candidates)| {
+            *map.entry(candidates).or_default() += cell;
+            map
+        },
+    );
+
+    // match 1-4 quad cells with any mix of pairs and triples
+    let quad_sets = quads_by_candidates
+        .iter()
+        .map(|(candidates, cells)| {
+            (
+                *candidates,
+                *cells,
+                // pairs and triples with all candidates
+                triples_by_candidates
+                    .iter()
+                    .filter(|(c, _)| c.is_subset_of(*candidates))
+                    .map(|(_, cells)| *cells)
+                    .union_cells()
+                    | pairs_by_candidates
+                        .iter()
+                        .filter(|(c, _)| c.is_subset_of(*candidates))
+                        .map(|(_, cells)| *cells)
+                        .union_cells(),
+            )
+        })
+        .collect_vec();
+
+    // match 1-4 triple cells with pairs and triples, grouped by the disjoint candidates
+    // e.g. a 123 triple can mix with pairs and triples with one fewer digit as long as
+    // they all share the same extra digit: 14, 24, and 34 pairs with 124, 134 triples, etc.
+    let triple_sets = triples_by_candidates
+        .iter()
+        .map(|(candidates, cells)| {
+            let triples_with_two_common_candidates =
+                triples_by_candidates
+                    .iter()
+                    .fold(HashMap::new(), |mut acc, (ks, cs)| {
+                        let diff = *ks - *candidates;
+                        if let Some(single) = diff.as_single() {
+                            *acc.entry(single).or_insert_with(CellSet::empty) |= *cs;
+                        }
+                        acc
+                    });
+            (
+                *candidates,
+                *cells,
+                // pairs and triples with one fewer candidate, grouped by the extra candidate
+                pairs_by_candidates.iter().fold(
+                    triples_with_two_common_candidates,
+                    |mut acc, (ks, cs)| {
+                        let diff = *ks - *candidates;
+                        if let Some(single) = diff.as_single() {
+                            *acc.entry(single).or_insert_with(CellSet::empty) |= *cs;
+                        }
+                        acc
+                    },
+                ),
+                pairs_by_candidates
+                    .iter()
+                    .filter(|(ks, _)| ks.is_subset_of(*candidates))
+                    .map(|(_, cells)| *cells)
+                    .union_cells(),
+            )
+        })
+        .collect_vec();
 
     // the other bi-value cells that each bi-value cell sees with the same two candidates
     // only tracks the earlier of the two cells
-    let seen_bi_values: HashMap<Cell, CellSet> = board
-        .cell_candidates_with_n_candidates(2)
-        .fold(
-            HashMap::new(),
-            |mut map: HashMap<KnownSet, CellSet>, (cell, candidates)| {
-                *map.entry(candidates).or_default() += cell;
-                map
-            },
-        )
-        .iter()
-        .fold(HashMap::new(), |mut map, (_, cells)| {
-            cells.iter().combinations(2).for_each(|combo| {
-                let (c1, c2) = (combo[0], combo[1]);
-                if c1.sees(c2) {
-                    if c1 < c2 {
-                        *map.entry(c1).or_default() += c2;
-                    } else {
-                        *map.entry(c2).or_default() += c1;
+    let seen_bi_values: HashMap<Cell, CellSet> =
+        pairs_by_candidates
+            .iter()
+            .fold(HashMap::new(), |mut map, (_, cells)| {
+                cells.iter().combinations(2).for_each(|combo| {
+                    let (c1, c2) = (combo[0], combo[1]);
+                    if c1.sees(c2) {
+                        if c1 < c2 {
+                            *map.entry(c1).or_default() += c2;
+                        } else {
+                            *map.entry(c2).or_default() += c1;
+                        }
                     }
-                }
+                });
+                map
             });
-            map
-        });
 
-    'wing: for wing in wing_candidates.into_iter().combinations(4) {
-        let wing = wing.into_iter().union_cells();
+    let bi_values = board.cells_with_n_candidates(2);
+    let mut check_wing = |wing: CellSet| {
+        // println!("wing {}", wing);
         // ignore xy chains
         if (wing & bi_values) == wing {
-            continue;
+            return;
         }
         // ignore naked quads
         if wing.share_row() || wing.share_column() || wing.share_block() {
-            continue;
+            return;
         }
         // ignore naked pairs
         if (wing & bi_values).iter().any(|cell| {
@@ -57,20 +127,20 @@ pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
             }
             false
         }) {
-            continue;
+            return;
         }
 
         let wing_knowns = wing
             .iter()
             .fold(KnownSet::empty(), |set, cell| set | board.candidates(cell));
         if wing_knowns.len() != 4 {
-            continue;
+            return;
         }
         if wing_knowns
             .iter()
             .any(|known| (wing & board.candidate_cells(known)).len() < 2)
         {
-            continue;
+            return;
         }
 
         let mut restricted: HashMap<Known, CellSet> = HashMap::new();
@@ -85,13 +155,13 @@ pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
                 restricted.insert(known, candidates);
             } else {
                 if !non_restricted.is_empty() {
-                    continue 'wing;
+                    return;
                 }
                 non_restricted.insert(known, candidates);
             }
         }
         if non_restricted.is_empty() {
-            continue;
+            return;
         }
 
         let (candidate, cells) = non_restricted.into_iter().next().unwrap();
@@ -101,7 +171,7 @@ pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
                 set & cell.peers()
             });
         if erase.is_empty() {
-            continue;
+            return;
         }
 
         let mut action = Action::new_erase_cells(Strategy::WXYZWing, erase, candidate);
@@ -111,6 +181,52 @@ pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
         }
 
         effects.add_action(action);
+    };
+
+    for (_, quads, subsets) in quad_sets {
+        // 4 quads
+        for quad_combo in quads.iter().combinations(4) {
+            check_wing(quad_combo.iter().copied().union_cells());
+        }
+        // 2..3 quads with 4-n triples and pairs
+        for n in (2..4).rev() {
+            for quad_combo in quads.iter().combinations(n) {
+                let base = quad_combo.iter().copied().union_cells();
+                for others in subsets.iter().combinations(4 - n) {
+                    check_wing(base | others.iter().copied().union_cells());
+                }
+            }
+        }
+        // 1 quad with 3 triples and pairs
+        for quad in quads {
+            for others in subsets.iter().combinations(3) {
+                check_wing(others.iter().copied().union_cells() + quad);
+            }
+        }
+    }
+
+    for (candidates, triples, disjoints, subsets) in triple_sets {
+        // 4 primary triples
+        for triple_combo in triples.iter().combinations(4) {
+            check_wing(triple_combo.iter().copied().union_cells());
+        }
+        // 1..3 primary triples with 4-n secondary triples and pairs
+        for n in (1..4).rev() {
+            for triple_combo in triples.iter().combinations(n) {
+                let base = triple_combo.iter().copied().union_cells();
+                for k in !candidates {
+                    if let Some(disjoint) = disjoints.get(&k) {
+                        for others in (*disjoint | subsets).iter().combinations(4 - n) {
+                            check_wing(base | others.iter().copied().union_cells());
+                        }
+                    }
+                }
+            }
+        }
+
+        // future improvement: split these out from above
+        // 1..3 primary triples with 4-n pairs
+        // 1..2 primary triples with 1..3-n secondary triples and rest as pairs
     }
 
     if effects.has_actions() {
