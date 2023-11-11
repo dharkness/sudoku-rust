@@ -5,9 +5,11 @@ pub use deadly_rectangles::creates_deadly_rectangles;
 pub use reporter::Reporter;
 pub use solver::{Resolution, Solver};
 pub use technique::{NON_PEER_TECHNIQUES, TECHNIQUES};
+pub use timing::Timings;
 
 pub mod algorithms;
 mod deadly_rectangles;
 mod reporter;
 mod solver;
 mod technique;
+mod timing;

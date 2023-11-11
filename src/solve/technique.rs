@@ -21,6 +21,10 @@ impl Technique {
         }
     }
 
+    pub const fn strategy(&self) -> Strategy {
+        self.strategy
+    }
+
     pub const fn difficulty(&self) -> Difficulty {
         self.difficulty
     }

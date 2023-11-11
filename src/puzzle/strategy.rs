@@ -43,18 +43,6 @@ pub enum Strategy {
     /// from every cell in the same row, column or box.
     Peer, // (Known, Cell)
 
-    /// This strategy produces pointing pairs and triples and box/line reductions.
-    IntersectionRemoval,
-    /// A candidate that may only appear in two cells in one segment of a block
-    /// may be removed from the other two segments in the segment's row or column.
-    PointingPair, // (Known, block House, House, (Cell, Cell))
-    /// A candidate that may only appear in three cells one segment of a block
-    /// may be removed from the other two segments in the segment's row or column.
-    PointingTriple, // (Known, block House, House, (Cell, Cell, Cell))
-    /// A candidate that may only appear in one segment of a block
-    /// may be removed from the other cells in the block.
-    BoxLineReduction, // (Known, block House, House)
-
     /// A cell with one candidate remaining may be solved.
     NakedSingle, // (Known, Cell)
     /// A candidate that may only appear in one cell in a house may be solved.
@@ -80,6 +68,18 @@ pub enum Strategy {
     /// Four candidates remaining in four cells in a house
     /// may remove all other candidates in those cells.
     HiddenQuad, // (KnownSet, House, CoordSet)
+
+    /// This strategy produces pointing pairs and triples and box/line reductions.
+    IntersectionRemoval,
+    /// A candidate that may only appear in two cells in one segment of a block
+    /// may be removed from the other two segments in the segment's row or column.
+    PointingPair, // (Known, block House, House, (Cell, Cell))
+    /// A candidate that may only appear in three cells one segment of a block
+    /// may be removed from the other two segments in the segment's row or column.
+    PointingTriple, // (Known, block House, House, (Cell, Cell, Cell))
+    /// A candidate that may only appear in one segment of a block
+    /// may be removed from the other cells in the block.
+    BoxLineReduction, // (Known, block House, House)
 
     XWing,     // (Known, mains HouseSet, crosses HouseSet)
     Swordfish, // (Known, mains HouseSet, crosses HouseSet)

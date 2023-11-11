@@ -11,7 +11,7 @@ use crate::io::{
 };
 use crate::layout::{Cell, Known};
 use crate::puzzle::{Action, Board, Changer, Difficulty, Effects, Options, Strategy};
-use crate::solve::{Reporter, Resolution, Solver};
+use crate::solve::{Reporter, Resolution, Solver, Timings};
 
 #[derive(Debug, Args)]
 pub struct SolveArgs {
@@ -29,11 +29,12 @@ pub fn solve_puzzles(args: SolveArgs) {
     let changer = Changer::new(Options::errors());
     let parser = Parse::packed_with_player(changer);
     let solver = Solver::new(args.check);
+    let mut timings = Timings::new();
 
     match args.puzzles {
         Some(puzzles) => {
             let reporter = DetailedReporter::new();
-            let parser_solver = ParserSolver::new(&parser, &solver, &reporter);
+            let mut parser_solver = ParserSolver::new(&parser, &solver, &reporter, &mut timings);
 
             for puzzle in puzzles {
                 parser_solver.parse_and_solve(&puzzle);
@@ -44,7 +45,7 @@ pub fn solve_puzzles(args: SolveArgs) {
         }
         None => {
             let reporter = CSVReporter::new();
-            let parser_solver = ParserSolver::new(&parser, &solver, &reporter);
+            let mut parser_solver = ParserSolver::new(&parser, &solver, &reporter, &mut timings);
             let stdin = std::io::stdin();
 
             let runtime = Instant::now();
@@ -63,19 +64,24 @@ pub fn solve_puzzles(args: SolveArgs) {
             }
 
             println!(
-                "solved {} of {} puzzles in {} µs",
+                "\nsolved {} of {} puzzles in {} µs\n",
                 format_number(solved),
                 format_number(count),
                 format_runtime(runtime.elapsed())
             );
         }
     }
+
+    timings.print_details();
+    println!();
+    timings.print_totals();
 }
 
 struct ParserSolver<'a> {
     parser: &'a ParsePacked,
     solver: &'a Solver,
     reporter: &'a dyn Reporter,
+    timings: &'a mut Timings,
 }
 
 impl ParserSolver<'_> {
@@ -83,15 +89,17 @@ impl ParserSolver<'_> {
         parser: &'a ParsePacked,
         solver: &'a Solver,
         reporter: &'a dyn Reporter,
+        timings: &'a mut Timings,
     ) -> ParserSolver<'a> {
         ParserSolver {
             parser,
             solver,
             reporter,
+            timings,
         }
     }
 
-    fn parse_and_solve(&self, givens: &str) -> bool {
+    fn parse_and_solve(&mut self, givens: &str) -> bool {
         let runtime = Instant::now();
         let (start, effects, failure) = self.parser.parse(givens);
 
@@ -101,7 +109,7 @@ impl ParserSolver<'_> {
             return false;
         }
 
-        match self.solver.solve(&start, &effects) {
+        match self.solver.solve(&start, &effects, &mut self.timings) {
             Resolution::Canceled(..) => (),
             Resolution::Failed(board, applied, _, action, errors) => self.reporter.failed(
                 givens,
@@ -229,6 +237,7 @@ impl Reporter for DetailedReporter {
         print_known_values(solution);
         println!();
         self.print_counts(counts);
+        println!();
     }
 }
 

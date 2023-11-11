@@ -13,7 +13,7 @@ use crate::io::{
 };
 use crate::layout::CellSet;
 use crate::puzzle::{Board, Changer, Difficulty, Effects, Options};
-use crate::solve::{Resolution, Solver};
+use crate::solve::{Resolution, Solver, Timings};
 
 #[derive(Debug, Args)]
 pub struct FindArgs {
@@ -52,6 +52,7 @@ pub fn find_solutions(args: FindArgs) {
             let solver = Solver::new(false);
             let runtime = Instant::now();
             let mut count = 0;
+            let mut timings = Timings::new();
 
             loop {
                 let pattern = pattern_rx.lock().unwrap().recv();
@@ -61,7 +62,7 @@ pub fn find_solutions(args: FindArgs) {
                 let pattern = pattern.unwrap().to_owned();
 
                 let (start, effects) = board.with_givens(CellSet::new_from_pattern(&pattern));
-                match solver.solve(&start, &effects) {
+                match solver.solve(&start, &effects, &mut timings) {
                     Resolution::Canceled(..) => break,
                     Resolution::Solved(_, actions, difficulty) => {
                         result_tx

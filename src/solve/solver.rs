@@ -1,6 +1,8 @@
+use std::time::Instant;
+
 use crate::io::Cancelable;
 use crate::puzzle::{Action, Board, ChangeResult, Changer, Difficulty, Effects, Options};
-use crate::solve::{find_brute_force, NON_PEER_TECHNIQUES};
+use crate::solve::{find_brute_force, Timings, NON_PEER_TECHNIQUES};
 
 pub enum Resolution {
     /// Returned when the user interrupts the solver
@@ -53,7 +55,7 @@ impl Solver {
         }
     }
 
-    pub fn solve(&self, start: &Board, unapplied: &Effects) -> Resolution {
+    pub fn solve(&self, start: &Board, unapplied: &Effects, timings: &mut Timings) -> Resolution {
         let mut board = *start;
         let mut effects = unapplied.clone();
         let mut applied = Effects::new();
@@ -104,13 +106,17 @@ impl Solver {
                     return Resolution::Canceled(board, applied, difficulty);
                 }
 
+                let runtime = Instant::now();
                 if let Some(moves) = solver.solve(&board) {
+                    timings.add(solver.strategy(), moves.action_count(), runtime.elapsed());
                     if solver.difficulty() > difficulty {
                         difficulty = solver.difficulty()
                     }
                     effects = moves;
                     found = true;
                     break;
+                } else {
+                    timings.add(solver.strategy(), 0, runtime.elapsed());
                 }
             }
 
