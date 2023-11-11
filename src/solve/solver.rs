@@ -55,52 +55,17 @@ impl Solver {
         }
     }
 
-    pub fn solve(&self, start: &Board, unapplied: &Effects, timings: &mut Timings) -> Resolution {
+    pub fn solve(&self, start: &Board, _: &Effects, timings: &mut Timings) -> Resolution {
         let mut board = *start;
-        let mut effects = unapplied.clone();
         let mut applied = Effects::new();
         let mut difficulty = Difficulty::Basic;
 
         loop {
-            while effects.has_actions() {
-                let mut next = Effects::new();
-                for action in effects.actions() {
-                    if self.cancelable.is_canceled() {
-                        return Resolution::Canceled(board, applied, difficulty);
-                    }
-
-                    match self.changer.apply(&board, action) {
-                        ChangeResult::None => (),
-                        ChangeResult::Valid(after, actions) => {
-                            applied.add_action(action.clone());
-                            board = *after;
-                            next.take_actions(actions);
-                        }
-                        ChangeResult::Invalid(before, _, action, errors) => {
-                            if self.check && find_brute_force(start, false, 0, 2).is_solved() {
-                                eprintln!(
-                                    "error: solver caused errors in solvable puzzle: {}",
-                                    start.packed_string()
-                                );
-                            }
-                            return Resolution::Failed(
-                                *before,
-                                applied,
-                                difficulty,
-                                action.clone(),
-                                errors,
-                            );
-                        }
-                    }
-                }
-                effects = next;
-            }
-
             if board.is_fully_solved() {
                 return Resolution::Solved(board, applied, difficulty);
             }
 
-            let mut found = false;
+            let mut action = None;
             for solver in NON_PEER_TECHNIQUES {
                 if self.cancelable.is_canceled() {
                     return Resolution::Canceled(board, applied, difficulty);
@@ -112,15 +77,37 @@ impl Solver {
                     if solver.difficulty() > difficulty {
                         difficulty = solver.difficulty()
                     }
-                    effects = moves;
-                    found = true;
+                    action = Some(moves.actions()[0].clone());
                     break;
                 } else {
                     timings.add(solver.strategy(), 0, runtime.elapsed());
                 }
             }
 
-            if !found {
+            if let Some(action) = action {
+                match self.changer.apply(&board, &action) {
+                    ChangeResult::None => (),
+                    ChangeResult::Valid(after, _) => {
+                        applied.add_action(action);
+                        board = *after;
+                    }
+                    ChangeResult::Invalid(before, _, action, errors) => {
+                        if self.check && find_brute_force(start, false, 0, 2).is_solved() {
+                            eprintln!(
+                                "error: solver caused errors in solvable puzzle: {}",
+                                start.packed_string()
+                            );
+                        }
+                        return Resolution::Failed(
+                            *before,
+                            applied,
+                            difficulty,
+                            action.clone(),
+                            errors,
+                        );
+                    }
+                }
+            } else {
                 return Resolution::Unsolved(board, applied, difficulty);
             }
         }
