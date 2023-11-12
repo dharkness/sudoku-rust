@@ -94,6 +94,16 @@ impl Cell {
         COORDS_IN_HOUSES[self.usize()][Shape::Block.usize()]
     }
 
+    pub fn common_row_or_column(&self, peer: Cell) -> Option<House> {
+        if self.row() == peer.row() {
+            Some(self.row())
+        } else if self.column() == peer.column() {
+            Some(self.column())
+        } else {
+            None
+        }
+    }
+
     pub fn common_houses(&self, peer: Cell) -> Vec<House> {
         [self.row(), self.column(), self.block()]
             .iter()

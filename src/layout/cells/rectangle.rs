@@ -52,7 +52,7 @@ impl Rectangle {
     }
 
     /// Returns a flipped copy to move the origin to the top-left cell.
-    pub fn with_origin(self, origin: Cell) -> Rectangle {
+    pub fn with_origin(&self, origin: Cell) -> Rectangle {
         if origin == self.bottom_right {
             Rectangle {
                 top_left: self.bottom_right,
@@ -81,7 +81,7 @@ impl Rectangle {
                 block_count: self.block_count,
             }
         } else {
-            self
+            *self
         }
     }
 }

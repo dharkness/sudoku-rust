@@ -279,9 +279,14 @@ impl CellSet {
         *self = self.inverted()
     }
 
-    /// Returns true if all cells in this set are all in any single house.
+    /// Returns true if all cells in this set are in any single house.
     pub fn share_any_house(&self) -> bool {
         self.share_row() || self.share_column() || self.share_block()
+    }
+
+    /// Returns true if all cells in this set are in any single row or column.
+    pub fn share_row_or_column(&self) -> bool {
+        self.share_row() || self.share_column()
     }
 
     /// Returns true if all cells in this set are in the same row.
@@ -301,16 +306,41 @@ impl CellSet {
 
     /// Returns true if all cells in this set are in the same `shape` house.
     pub fn share_house(&self, shape: Shape) -> bool {
-        if self.is_empty() {
-            false
-        } else {
-            let house = self.first().unwrap().house(shape);
+        self.common_house(shape).is_some()
+    }
+
+    /// Returns the row or column shared by all cells in this set, if any.
+    pub fn common_row_or_column(self) -> Option<House> {
+        self.common_row().or_else(|| self.common_column())
+    }
+
+    /// Returns the row shared by all cells in this set, if any.
+    pub fn common_row(self) -> Option<House> {
+        self.common_house(Shape::Row)
+    }
+
+    /// Returns the column shared by all cells in this set, if any.
+    pub fn common_column(self) -> Option<House> {
+        self.common_house(Shape::Column)
+    }
+
+    /// Returns the block shared by all cells in this set, if any.
+    pub fn common_block(self) -> Option<House> {
+        self.common_house(Shape::Block)
+    }
+
+    /// Returns the `shape` house shared by all cells in this set, if any.
+    pub fn common_house(mut self, shape: Shape) -> Option<House> {
+        if let Some(first) = self.pop() {
+            let house = first.house(shape);
             for cell in self.iter() {
                 if cell.house(shape) != house {
-                    return false;
+                    return None;
                 }
             }
-            true
+            Some(house)
+        } else {
+            None
         }
     }
 
@@ -661,6 +691,8 @@ impl FusedIterator for BitIter {}
 #[cfg(test)]
 mod tests {
     use crate::layout::cells::cell::cell;
+    use crate::layout::houses::coord::{coord, Coord};
+    use crate::layout::houses::house::{block, col, row};
     use crate::layout::houses::house_set::houses;
     use crate::symbols::EMPTY_SET_STR;
 
@@ -895,24 +927,70 @@ mod tests {
     }
 
     #[test]
-    fn same_row() {
+    fn share_any_house() {
+        assert_eq!(true, cells!("A1 A2 A3").share_any_house());
+        assert_eq!(true, cells!("A1 B1 F1 J1").share_any_house());
+        assert_eq!(true, cells!("A1 A2 C3").share_any_house());
+        assert_eq!(false, cells!("A1 A2 B4").share_any_house());
+        assert_eq!(false, cells!("A1 B1 D3").share_any_house());
+    }
+
+    #[test]
+    fn share_row_or_column() {
+        assert_eq!(true, cells!("A1 A2 A3").share_row_or_column());
+        assert_eq!(true, cells!("A1 B1 F1 J1").share_row_or_column());
+        assert_eq!(false, cells!("A1 A2 C3").share_row_or_column());
+        assert_eq!(false, cells!("A1 B1 C3").share_row_or_column());
+    }
+
+    #[test]
+    fn share_row() {
         assert_eq!(true, cells!("A1 A2 A3").share_row());
         assert_eq!(false, cells!("A1 A2 C3").share_row());
         assert_eq!(false, cells!("A1 C2 C3").share_row());
     }
 
     #[test]
-    fn same_column() {
+    fn share_column() {
         assert_eq!(false, cells!("A1 A2 A3").share_column());
         assert_eq!(false, cells!("A1 A2 C3").share_column());
         assert_eq!(true, cells!("A1 B1 F1 J1").share_column());
     }
 
     #[test]
-    fn same_block() {
+    fn share_block() {
         assert_eq!(true, cells!("A1 A2 A3").share_block());
         assert_eq!(true, cells!("A1 C2 C3").share_block());
         assert_eq!(false, cells!("A1 A4").share_block());
+    }
+
+    #[test]
+    fn common_row_or_column() {
+        assert_eq!(Some(row!(1)), cells!("A1 A2 A3").common_row_or_column());
+        assert_eq!(Some(col!(1)), cells!("A1 B1 F1 J1").common_row_or_column());
+        assert_eq!(None, cells!("A1 A2 C3").common_row_or_column());
+        assert_eq!(None, cells!("A1 B1 C3").common_row_or_column());
+    }
+
+    #[test]
+    fn common_row() {
+        assert_eq!(Some(row!(1)), cells!("A1 A2 A3").common_row());
+        assert_eq!(None, cells!("A1 A2 C3").common_row());
+        assert_eq!(None, cells!("A1 C2 C3").common_row());
+    }
+
+    #[test]
+    fn common_column() {
+        assert_eq!(None, cells!("A1 A2 A3").common_column());
+        assert_eq!(None, cells!("A1 A2 C3").common_column());
+        assert_eq!(Some(col!(1)), cells!("A1 B1 F1 J1").common_column());
+    }
+
+    #[test]
+    fn common_block() {
+        assert_eq!(Some(block!(1)), cells!("A1 A2 A3").common_block());
+        assert_eq!(Some(block!(1)), cells!("A1 C2 C3").common_block());
+        assert_eq!(None, cells!("A1 A4").common_block());
     }
 
     #[test]

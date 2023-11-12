@@ -52,7 +52,7 @@ pub fn solve_puzzles(args: SolveArgs) {
             let mut count = 0;
             let mut solved = 0;
 
-            println!("                   µs NS HS NP NT NQ HP HT HQ PP PT BL XW SC YW ER SF XZ JF SK TS AR XY UR FW WZ BG");
+            println!("                   µs NS HS NP NT NQ HP HT HQ PP PT BL XW SC YW ER SF XZ JF SK TS AR XY UR FW HU WZ BG");
             for puzzle in stdin.lock().lines().map_while(Result::ok) {
                 if cancelable.is_canceled() {
                     break;
@@ -250,11 +250,8 @@ impl CSVReporter {
 
     fn format_counts(&self, counts: &HashMap<Strategy, i32>) -> String {
         format!(
-            "{:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2}",
+            "{:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2}",
             // counts.get(&Strategy::Peer).unwrap_or(0),
-            // counts.get(&Strategy::NakedSingle).unwrap_or(0),
-            // counts.get(&Strategy::HiddenSingle).unwrap_or(0),
-
             counts.get(&Strategy::NakedSingle).unwrap_or(&0),
             counts.get(&Strategy::HiddenSingle).unwrap_or(&0),
 
@@ -283,6 +280,7 @@ impl CSVReporter {
             counts.get(&Strategy::UniqueRectangle).unwrap_or(&0),
             counts.get(&Strategy::Fireworks).unwrap_or(&0),
             counts.get(&Strategy::WXYZWing).unwrap_or(&0),
+            counts.get(&Strategy::HiddenUniqueRectangle).unwrap_or(&0),
             counts.get(&Strategy::Bug).unwrap_or(&0),
         )
     }
@@ -306,17 +304,16 @@ impl Reporter for CSVReporter {
         _givens: &str,
         start: &Board,
         _stopped: &Board,
-        action: &Action,
+        _action: &Action,
         _errors: &Effects,
         runtime: Duration,
         counts: &HashMap<Strategy, i32>,
     ) {
         println!(
-            "           {:>10} {} {} {}",
+            "Invalid    {:>10} {} {}",
             format_runtime(runtime),
             self.format_counts(counts),
-            start.packed_string(),
-            action
+            start.packed_string()
         );
     }
 
@@ -329,7 +326,7 @@ impl Reporter for CSVReporter {
         counts: &HashMap<Strategy, i32>,
     ) {
         println!(
-            "unsolved   {:>10} {} {}",
+            "Unsolved   {:>10} {} {}",
             format_runtime(runtime),
             self.format_counts(counts),
             // givens,

@@ -34,7 +34,7 @@ impl Timings {
     }
 
     pub fn print_details(&self) {
-        println!("Strategy              Called   Found       Total    Call Avg         Avg");
+        println!("Strategy                            Called       Found       Total    Call Avg         Avg");
         for (strategy, found_times) in self.timings.iter().sorted_by(|(a, _), (b, _)| a.cmp(b)) {
             for (found, (count, duration)) in found_times
                 .iter()
@@ -42,7 +42,7 @@ impl Timings {
             {
                 let total = *count * *found;
                 println!(
-                    "{:20} {:>11} {:>11} {:>11} {:>11} {:>11}",
+                    "{:30} {:>11} {:>11} {:>11} {:>11} {:>11}",
                     strategy.label(),
                     format_number(*count as u128),
                     if *found == 0 {
@@ -64,7 +64,7 @@ impl Timings {
 
     pub fn print_totals(&self) {
         println!(
-            "Strategy                  Called       Found       Total    Call Avg         Avg"
+            "Strategy                            Called       Found       Total    Call Avg         Avg"
         );
         for (strategy, (found, count, duration)) in self
             .timings
@@ -83,7 +83,7 @@ impl Timings {
             .sorted_by(|(_, (_, _, a)), (_, (_, _, b))| b.cmp(a))
         {
             println!(
-                "{:20} {:>11} {:>11} {:>11} {:>11} {:>11}",
+                "{:30} {:>11} {:>11} {:>11} {:>11} {:>11}",
                 strategy.label(),
                 format_number(count as u128),
                 if found == 0 {

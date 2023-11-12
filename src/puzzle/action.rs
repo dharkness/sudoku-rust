@@ -272,7 +272,7 @@ impl fmt::Debug for Action {
 
 impl fmt::Display for Action {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:20}", format!("{}", self.strategy))?;
+        write!(f, "{:30}", format!("{}", self.strategy))?;
         if self.is_empty() {
             f.write_char(EMPTY_SET)
         } else {
