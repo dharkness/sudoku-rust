@@ -6,18 +6,18 @@ use super::*;
 pub fn find_unique_rectangles(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    let bi_values =
-        board
-            .cells_with_n_candidates(2)
-            .iter()
-            .fold(HashMap::new(), |mut acc, cell| {
-                acc.entry(board.candidates(cell))
-                    .or_insert(CellSet::empty())
-                    .add(cell);
-                acc
-            });
+    let bi_values_by_candidates = board.cell_candidates_with_n_candidates(2).fold(
+        HashMap::new(),
+        |mut map: HashMap<KnownSet, CellSet>, (cell, candidates)| {
+            *map.entry(candidates).or_default() += cell;
+            map
+        },
+    );
 
-    for (pair, cells) in bi_values.iter().filter(|(_, cells)| cells.len() >= 2) {
+    for (pair, cells) in bi_values_by_candidates
+        .iter()
+        .filter(|(_, cells)| cells.len() >= 2)
+    {
         let mut found_type_ones: HashSet<Rectangle> = HashSet::new();
 
         for corners in cells.iter().combinations(3).map(CellSet::from_iter) {
