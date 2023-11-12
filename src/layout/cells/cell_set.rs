@@ -279,6 +279,11 @@ impl CellSet {
         *self = self.inverted()
     }
 
+    /// Returns true if all cells in this set are all in any single house.
+    pub fn share_any_house(&self) -> bool {
+        self.share_row() || self.share_column() || self.share_block()
+    }
+
     /// Returns true if all cells in this set are in the same row.
     pub fn share_row(&self) -> bool {
         self.share_house(Shape::Row)

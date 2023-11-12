@@ -115,7 +115,7 @@ pub fn find_wxyz_wings(board: &Board, single: bool) -> Option<Effects> {
             return false;
         }
         // ignore naked quads
-        if wing.share_row() || wing.share_column() || wing.share_block() {
+        if wing.share_any_house() {
             return false;
         }
         // ignore naked pairs
