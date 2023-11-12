@@ -410,7 +410,7 @@ pub fn start_player(args: PlayArgs) {
                 if deductions.is_none() {
                     let mut found = Effects::new();
                     TECHNIQUES.iter().for_each(|solver| {
-                        if let Some(actions) = solver.solve(board) {
+                        if let Some(actions) = solver.solve(board, false) {
                             found.take_actions(actions);
                         }
                     });
@@ -567,7 +567,7 @@ pub fn start_player(args: PlayArgs) {
                 let mut any_applied = false;
                 let mut clone = *board;
                 let _ = TECHNIQUES.iter().try_for_each(|solver| {
-                    if let Some(actions) = solver.solve(board) {
+                    if let Some(actions) = solver.solve(board, false) {
                         let mut applied = 0;
                         for action in actions.actions() {
                             match changer.apply(&clone, action) {

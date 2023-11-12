@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use super::naked_tuples;
 use super::*;
 
-pub fn find_unique_rectangles(board: &Board) -> Option<Effects> {
+pub fn find_unique_rectangles(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
     let bi_values =
@@ -22,14 +22,17 @@ pub fn find_unique_rectangles(board: &Board) -> Option<Effects> {
 
         for corners in cells.iter().combinations(3).map(CellSet::from_iter) {
             if let Ok(rectangle) = Rectangle::try_from(corners) {
-                check_type_one(
+                if check_type_one(
                     board,
+                    single,
                     corners,
                     rectangle,
                     *pair,
                     &mut found_type_ones,
                     &mut effects,
-                );
+                ) {
+                    return Some(effects);
+                }
             }
         }
 
@@ -37,27 +40,43 @@ pub fn find_unique_rectangles(board: &Board) -> Option<Effects> {
             let (first, second) = corners.as_pair().unwrap();
 
             if first.row() == second.row() {
-                check_neighbors(
+                if check_neighbors(
                     board,
+                    single,
                     *pair,
                     first,
                     second,
                     Shape::Row,
                     &found_type_ones,
                     &mut effects,
-                );
+                ) {
+                    return Some(effects);
+                }
             } else if first.column() == second.column() {
-                check_neighbors(
+                if check_neighbors(
                     board,
+                    single,
                     *pair,
                     first,
                     second,
                     Shape::Column,
                     &found_type_ones,
                     &mut effects,
-                );
+                ) {
+                    return Some(effects);
+                }
             } else {
-                check_diagonals(board, *pair, first, second, &found_type_ones, &mut effects);
+                if check_diagonals(
+                    board,
+                    single,
+                    *pair,
+                    first,
+                    second,
+                    &found_type_ones,
+                    &mut effects,
+                ) {
+                    return Some(effects);
+                }
             }
         }
     }
@@ -71,20 +90,21 @@ pub fn find_unique_rectangles(board: &Board) -> Option<Effects> {
 
 fn check_type_one(
     board: &Board,
+    single: bool,
     corners: CellSet,
     rectangle: Rectangle,
     pair: KnownSet,
     found_type_ones: &mut HashSet<Rectangle>,
     effects: &mut Effects,
-) {
+) -> bool {
     if rectangle.block_count != 2 || found_type_ones.contains(&rectangle) {
-        return;
+        return false;
     }
 
     let fourth = (rectangle.cells - corners).as_single().unwrap();
     let candidates = board.candidates(fourth);
     if !candidates.has_all(pair) {
-        return;
+        return false;
     }
 
     found_type_ones.insert(rectangle);
@@ -93,18 +113,19 @@ fn check_type_one(
     action.clue_cells_for_knowns(Verdict::Primary, corners, pair);
     action.clue_cell_for_knowns(Verdict::Secondary, fourth, candidates - pair);
 
-    effects.add_action(action);
+    effects.add_action(action) && single
 }
 
 fn check_neighbors(
     board: &Board,
+    single: bool,
     pair: KnownSet,
     floor_left: Cell,
     floor_right: Cell,
     shape: Shape,
     found_type_ones: &HashSet<Rectangle>,
     effects: &mut Effects,
-) {
+) -> bool {
     let floor_left_block = floor_left.block();
     let houses = if floor_left_block == floor_right.block() {
         HouseSet::full(shape) - floor_left_block.houses(shape)
@@ -117,25 +138,34 @@ fn check_neighbors(
             Candidate::try_from_neighbors(board, pair, floor_left, floor_right, house)
         {
             if !found_type_ones.contains(&candidate.rectangle) {
-                candidate.check(board, effects);
+                if candidate.check(board, single, effects) {
+                    return true;
+                }
             }
         }
     }
+
+    false
 }
 
 fn check_diagonals(
     board: &Board,
+    single: bool,
     pair: KnownSet,
     top: Cell,
     bottom: Cell,
     found_type_ones: &HashSet<Rectangle>,
     effects: &mut Effects,
-) {
+) -> bool {
     if let Ok(candidate) = Candidate::try_from_diagonals(board, pair, top, bottom) {
         if !found_type_ones.contains(&candidate.rectangle) {
-            candidate.check(board, effects);
+            if candidate.check(board, single, effects) {
+                return true;
+            }
         }
     }
+
+    false
 }
 
 struct Candidate {
@@ -289,25 +319,35 @@ impl Candidate {
         })
     }
 
-    fn check(&self, board: &Board, effects: &mut Effects) {
+    fn check(&self, board: &Board, single: bool, effects: &mut Effects) -> bool {
         if self.diagonal {
             // type 5 is related to type 1, and type 4 destroys the unique rectangle
-            self.check_type_five(board, effects);
+            if self.check_type_five(board, effects) && single {
+                return true;
+            }
         }
-        self.check_type_two(board, effects);
-        self.check_type_three(board, effects);
-        self.check_type_four(board, effects);
+        if self.check_type_two(board, effects) && single {
+            return true;
+        }
+        if self.check_type_three(board, effects) && single {
+            return true;
+        }
+        if self.check_type_four(board, effects) && single {
+            return true;
+        }
+
+        false
     }
 
-    fn check_type_two(&self, board: &Board, effects: &mut Effects) {
+    fn check_type_two(&self, board: &Board, effects: &mut Effects) -> bool {
         if self.roof_left_extras.len() != 1 || self.roof_left_extras != self.roof_right_extras {
-            return;
+            return false;
         }
 
         let extra = self.roof_left_extras.as_single().unwrap();
         let cells = board.candidate_cells(extra) & self.roof_left.peers() & self.roof_right.peers();
         if cells.is_empty() {
-            return;
+            return false;
         }
 
         let mut action = Action::new(Strategy::UniqueRectangle);
@@ -315,12 +355,13 @@ impl Candidate {
         action.clue_cells_for_knowns(Verdict::Primary, self.rectangle.cells, self.pair);
         action.clue_cells_for_known(Verdict::Secondary, self.roof, extra);
         // println!("type 2 {} - {}", self.rectangle, action);
-        effects.add_action(action);
+
+        effects.add_action(action)
     }
 
-    fn check_type_three(&self, board: &Board, effects: &mut Effects) {
+    fn check_type_three(&self, board: &Board, effects: &mut Effects) -> bool {
         if !(2..=4).contains(&self.roof_extras.len()) {
-            return;
+            return false;
         }
 
         let mut action = Action::new(Strategy::UniqueRectangle);
@@ -380,10 +421,10 @@ impl Candidate {
         }
 
         // println!("type 3 {} - {}", self.rectangle, action);
-        effects.add_action(action);
+        effects.add_action(action)
     }
 
-    fn check_type_four(&self, board: &Board, effects: &mut Effects) {
+    fn check_type_four(&self, board: &Board, effects: &mut Effects) -> bool {
         for shape in Shape::iter() {
             let house = self.roof_left.house(shape);
             if house != self.roof_right.house(shape) {
@@ -402,18 +443,22 @@ impl Candidate {
             } else {
                 (self.pair2, self.pair1)
             };
+
             let mut action = Action::new(Strategy::UniqueRectangle);
             action.erase_cells(self.roof, erase);
             action.clue_cells_for_knowns(Verdict::Primary, self.floor, self.pair);
             action.clue_cells_for_known(Verdict::Secondary, self.roof, required);
 
             // println!("type 4 {} - {}", self.rectangle, action);
-            effects.add_action(action);
-            return;
+            if effects.add_action(action) {
+                return true;
+            }
         }
+
+        false
     }
 
-    fn check_type_five(&self, board: &Board, effects: &mut Effects) {
+    fn check_type_five(&self, board: &Board, effects: &mut Effects) -> bool {
         let mut erase = None;
 
         for (shape, pair_check, pair_erase) in [
@@ -438,7 +483,9 @@ impl Candidate {
             action.clue_cells_for_knowns(Verdict::Primary, self.floor, self.pair - erase);
 
             // println!("type 5 {} - {}", self.rectangle, action);
-            effects.add_action(action);
+            effects.add_action(action)
+        } else {
+            false
         }
     }
 }
@@ -470,7 +517,7 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        if let Some(got) = find_unique_rectangles(&board) {
+        if let Some(got) = find_unique_rectangles(&board, true) {
             let mut action =
                 Action::new_erase_knowns(Strategy::UniqueRectangle, cell!("D1"), knowns!("2 9"));
             action.clue_cells_for_knowns(Verdict::Primary, cells!("D9 F1 F9"), knowns!("2 9"));
@@ -490,7 +537,7 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        if let Some(got) = find_unique_rectangles(&board) {
+        if let Some(got) = find_unique_rectangles(&board, true) {
             let mut action =
                 Action::new_erase_cells(Strategy::UniqueRectangle, cells!("A3 C6"), known!("7"));
             action.clue_cells_for_knowns(Verdict::Primary, cells!("A5 A6 H5 H6"), knowns!("1 5"));
@@ -510,7 +557,7 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        if let Some(got) = find_unique_rectangles(&board) {
+        if let Some(got) = find_unique_rectangles(&board, true) {
             let mut action =
                 Action::new_erase_cells(Strategy::UniqueRectangle, cells!("A9 C9 G7"), known!("6"));
             action.clue_cells_for_knowns(Verdict::Primary, cells!("B7 B9 H7 H9"), knowns!("2 9"));
@@ -530,7 +577,7 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        if let Some(got) = find_unique_rectangles(&board) {
+        if let Some(got) = find_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::UniqueRectangle);
             action.erase_knowns(cell!("H8"), knowns!("4 9"));
             action.erase_knowns(cell!("J8"), knowns!("6 9"));
@@ -554,7 +601,7 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        if let Some(got) = find_unique_rectangles(&board) {
+        if let Some(got) = find_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::UniqueRectangle);
             action.erase_cells(cells!("H1 H2"), known!("9"));
             action.clue_cells_for_knowns(Verdict::Primary, cells!("A1 A2"), knowns!("7 9"));
@@ -588,7 +635,7 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        if let Some(got) = find_unique_rectangles(&board) {
+        if let Some(got) = find_unique_rectangles(&board, true) {
             let mut action =
                 Action::new_erase_cells(Strategy::UniqueRectangle, cells!("E6 F1"), known!("2"));
             action.clue_cells_for_known(Verdict::Primary, cells!("E1 F6"), known!("2"));

@@ -72,7 +72,7 @@ impl Solver {
                 }
 
                 let runtime = Instant::now();
-                if let Some(moves) = solver.solve(&board) {
+                if let Some(moves) = solver.solve(&board, true) {
                     timings.add(solver.strategy(), moves.action_count(), runtime.elapsed());
                     if solver.difficulty() > difficulty {
                         difficulty = solver.difficulty()

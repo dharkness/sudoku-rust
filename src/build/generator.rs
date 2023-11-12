@@ -63,7 +63,7 @@ impl Generator {
                 }
             };
 
-            if let Some(effects) = find_intersection_removals(&clone) {
+            if let Some(effects) = find_intersection_removals(&clone, false) {
                 if effects.apply_all(&mut clone).is_some() {
                     continue;
                 }

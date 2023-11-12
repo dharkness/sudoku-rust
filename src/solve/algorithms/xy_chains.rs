@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use super::*;
 
-pub fn find_xy_chains(board: &Board) -> Option<Effects> {
+pub fn find_xy_chains(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
     let bi_values = board.cells_with_n_candidates(2);
@@ -52,7 +52,9 @@ pub fn find_xy_chains(board: &Board) -> Option<Effects> {
             }
         }
 
-        found.resolve(&mut effects)
+        if found.resolve(single, &mut effects) {
+            return Some(effects);
+        }
     }
 
     if effects.has_actions() {
@@ -339,7 +341,7 @@ impl Found {
         add_candidate(chain, &mut self.chains);
     }
 
-    fn resolve(&self, effects: &mut Effects) {
+    fn resolve(&self, single: bool, effects: &mut Effects) -> bool {
         let mut remaining = self.erases;
         for chain in self.chains.iter().sorted_by(|left, right| {
             left.len
@@ -356,13 +358,18 @@ impl Found {
                 action.clue_cell_for_known(Verdict::Tertiary, cell, next.known);
                 link = next.tail.as_ref();
             }
-            effects.add_action(action);
+
+            if effects.add_action(action) && single {
+                return true;
+            }
 
             remaining -= chain.erases;
             if remaining.is_empty() {
                 break;
             }
         }
+
+        false
     }
 }
 
@@ -408,7 +415,7 @@ mod tests {
             "441181i402i4k4080h0g20g10884418411024c0c03o4100gs421g4p4o4410h09q403o030o6om091184o42go040p0og20o040031g0508g2g214a40ha409403020411403g108100g8188880g412011g402g4",
         );
 
-        if let Some(got) = find_xy_chains(&board) {
+        if let Some(got) = find_xy_chains(&board, true) {
             let mut action = Action::new(Strategy::XYChain);
             action.erase(cell!("C4"), known!("9"));
             action.clue_cells_for_known(Verdict::Secondary, cells!("B7 E5"), known!("2"));

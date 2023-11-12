@@ -80,9 +80,12 @@ impl Effects {
         &self.actions
     }
 
-    pub fn add_action(&mut self, action: Action) {
-        if !action.is_empty() {
+    pub fn add_action(&mut self, action: Action) -> bool {
+        if action.is_empty() {
+            false
+        } else {
             self.actions.push(action);
+            true
         }
     }
 

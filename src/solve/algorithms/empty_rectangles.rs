@@ -1,6 +1,6 @@
 use super::*;
 
-pub fn find_empty_rectangles(board: &Board) -> Option<Effects> {
+pub fn find_empty_rectangles(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
     for known in Known::iter() {
@@ -44,7 +44,9 @@ pub fn find_empty_rectangles(board: &Board) -> Option<Effects> {
                                 action.clue_cells_for_known(Verdict::Primary, cells, known);
                                 action.clue_cell_for_known(Verdict::Secondary, pivot, known);
 
-                                effects.add_action(action);
+                                if effects.add_action(action) && single {
+                                    return Some(effects);
+                                }
                             }
                         }
                     }
@@ -94,7 +96,7 @@ mod tests {
             "441181i402i4k4080h0g20g10884418411024c0c03o4100gs421g4p4o4410h09q403o030o6om0911a4o42go040p0og20o040031g0508g2g214a40ha409403020411403g108140g8188880g412411i402g4",
         );
 
-        if let Some(got) = find_empty_rectangles(&board) {
+        if let Some(got) = find_empty_rectangles(&board, true) {
             let mut action = Action::new(Strategy::EmptyRectangle);
             action.erase(cell!("J5"), known!("2"));
             action.clue_cells_for_known(Verdict::Primary, cells!("H7 J7 J9"), known!("2"));

@@ -110,8 +110,9 @@ impl Changer {
                 }
             }
 
+            // FIXME why only intersection removals and not naked/hidden singles?
             if self.options.solve_intersection_removals && next.is_empty() {
-                if let Some(effects) = find_intersection_removals(&good) {
+                if let Some(effects) = find_intersection_removals(&good, false) {
                     next = effects;
                 }
             }

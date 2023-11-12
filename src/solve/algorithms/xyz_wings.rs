@@ -1,6 +1,6 @@
 use super::*;
 
-pub fn find_xyz_wings(board: &Board) -> Option<Effects> {
+pub fn find_xyz_wings(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
     // for each tri-value cell
@@ -23,47 +23,50 @@ pub fn find_xyz_wings(board: &Board) -> Option<Effects> {
         return None;
     }
 
-    tri_values.iter().for_each(|pivot| {
+    for pivot in tri_values {
         // let (k1, k2) = board.candidates(cell).as_pair().unwrap();
         let pivot_peers = pivot.peers();
-        (pivot_peers & bi_values)
+        for pair in (pivot_peers & bi_values)
             .iter()
             .combinations(2)
             .map(|pair| pair.iter().copied().union_cells())
-            .for_each(|pair| {
-                let (c1, c2) = pair.as_pair().expect("cell pair");
-                let candidates = pivot_peers & c1.peers() & c2.peers();
-                if candidates.len() != 2 {
-                    // degenerate naked triple
-                    return;
-                }
+        {
+            let (c1, c2) = pair.as_pair().expect("cell pair");
+            let candidates = pivot_peers & c1.peers() & c2.peers();
+            if candidates.len() != 2 {
+                // degenerate naked triple
+                continue;
+            }
 
-                let ks = board.candidates(pivot);
-                let ks1 = board.candidates(c1);
-                let ks2 = board.candidates(c2);
-                if ks1 | ks2 != ks {
-                    // degenerate naked pair or totally unrelated candidates
-                    return;
-                }
+            let ks = board.candidates(pivot);
+            let ks1 = board.candidates(c1);
+            let ks2 = board.candidates(c2);
+            if ks1 | ks2 != ks {
+                // degenerate naked pair or totally unrelated candidates
+                continue;
+            }
 
-                let k = (ks1 & ks2).as_single().expect("one candidate in common");
-                if log {
-                    println!(
-                        "{}-{}: {}-{} {}-{} - {}",
-                        pivot, ks, c1, ks1, c2, ks2, candidates
-                    )
-                }
+            let k = (ks1 & ks2).as_single().expect("one candidate in common");
+            if log {
+                println!(
+                    "{}-{}: {}-{} {}-{} - {}",
+                    pivot, ks, c1, ks1, c2, ks2, candidates
+                )
+            }
 
-                let mut action = Action::new(Strategy::XYZWing);
-                action.erase_cells(candidates & board.candidate_cells(k), k);
-                action.clue_cells_for_known(Verdict::Secondary, pair + pivot, k);
-                action.clue_cell_for_knowns(Verdict::Primary, pivot, ks1 - k);
-                action.clue_cell_for_knowns(Verdict::Tertiary, pivot, ks2 - k);
-                action.clue_cell_for_knowns(Verdict::Tertiary, c1, ks1 - k);
-                action.clue_cell_for_knowns(Verdict::Primary, c2, ks2 - k);
-                effects.add_action(action);
-            });
-    });
+            let mut action = Action::new(Strategy::XYZWing);
+            action.erase_cells(candidates & board.candidate_cells(k), k);
+            action.clue_cells_for_known(Verdict::Secondary, pair + pivot, k);
+            action.clue_cell_for_knowns(Verdict::Primary, pivot, ks1 - k);
+            action.clue_cell_for_knowns(Verdict::Primary, pivot, ks2 - k);
+            action.clue_cell_for_knowns(Verdict::Primary, c1, ks1 - k);
+            action.clue_cell_for_knowns(Verdict::Primary, c2, ks2 - k);
+
+            if effects.add_action(action) && single {
+                return Some(effects);
+            }
+        }
+    }
 
     if effects.has_actions() {
         Some(effects)
@@ -90,7 +93,7 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        if let Some(got) = find_xyz_wings(&board) {
+        if let Some(got) = find_xyz_wings(&board, true) {
             assert_eq!(1, got.actions().len());
 
             let mut action = Action::new(Strategy::XYZWing);

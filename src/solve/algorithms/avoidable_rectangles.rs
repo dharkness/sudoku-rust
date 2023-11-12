@@ -2,27 +2,28 @@ use super::*;
 
 // http://sudopedia.enjoysudoku.com/Avoidable_Rectangle.html
 // http://forum.enjoysudoku.com/puzzle-with-uniqueness-type-3-t3073-30.html
-pub fn find_avoidable_rectangles(board: &Board) -> Option<Effects> {
+pub fn find_avoidable_rectangles(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
     let candidates = board.solved();
 
     // type 1
-    Rectangle::iter()
+    for (r, c, k) in Rectangle::iter()
         .map(|r| (r, r.cells - candidates))
         .filter_map(|(r, cs)| cs.as_single().map(|c| (r.with_origin(c), c)))
         .filter(|(r, _)| board.value(r.top_right) == board.value(r.bottom_left))
         .filter_map(|(r, c)| board.value(r.bottom_right).known().map(|k| (r, c, k)))
         .filter(|(_, c, k)| board.candidates(*c).has(*k))
-        .for_each(|(r, c, k)| {
-            let mut action = Action::new_erase(Strategy::AvoidableRectangle, c, k);
-            board
-                .knowns_iter(r.cells & candidates)
-                .for_each(|(cell, known)| {
-                    action.clue_cell_for_known(Verdict::Secondary, cell, known)
-                });
-            effects.add_action(action);
-        });
+    {
+        let mut action = Action::new_erase(Strategy::AvoidableRectangle, c, k);
+        board
+            .knowns_iter(r.cells & candidates)
+            .for_each(|(cell, known)| action.clue_cell_for_known(Verdict::Secondary, cell, known));
+
+        if effects.add_action(action) && single {
+            return Some(effects);
+        }
+    }
 
     for rect in Rectangle::iter() {
         if rect.cells.has_any(board.givens()) {
@@ -66,7 +67,9 @@ pub fn find_avoidable_rectangles(board: &Board) -> Option<Effects> {
                     action.erase_cells(board.house_candidate_cells(house, k) - unsolved, k);
                 }
 
-                effects.add_action(action);
+                if effects.add_action(action) && single {
+                    return Some(effects);
+                }
             } else {
                 // type 3 - naked tuple
                 for house in houses {
@@ -109,7 +112,9 @@ pub fn find_avoidable_rectangles(board: &Board) -> Option<Effects> {
                     }
                 }
 
-                effects.add_action(action);
+                if effects.add_action(action) && single {
+                    return Some(effects);
+                }
 
                 // degenerates should create actions
                 // normally, when looking for a naked triple, finding two cells
@@ -148,7 +153,7 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        if let Some(got) = find_avoidable_rectangles(&board) {
+        if let Some(got) = find_avoidable_rectangles(&board, true) {
             let mut action = Action::new(Strategy::AvoidableRectangle);
             action.erase(cell!("B9"), known!("9"));
             action.clue_cells_for_known(Verdict::Secondary, cells!("A1"), known!("9"));
@@ -169,7 +174,7 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        if let Some(got) = find_avoidable_rectangles(&board) {
+        if let Some(got) = find_avoidable_rectangles(&board, true) {
             let mut action = Action::new(Strategy::AvoidableRectangle);
             action.erase(cell!("B9"), known!("9"));
             action.clue_cells_for_known(Verdict::Secondary, cells!("A1"), known!("9"));
@@ -190,7 +195,7 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        if let Some(got) = find_avoidable_rectangles(&board) {
+        if let Some(got) = find_avoidable_rectangles(&board, true) {
             let mut action = Action::new(Strategy::AvoidableRectangle);
             action.erase_knowns(cell!("H1"), knowns!("4 5"));
             action.clue_cells_for_knowns(Verdict::Secondary, cells!("A1"), knowns!("5 9"));

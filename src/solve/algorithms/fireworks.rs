@@ -1,7 +1,7 @@
 use super::hidden_tuples::is_degenerate;
 use super::*;
 
-pub fn find_fireworks(board: &Board) -> Option<Effects> {
+pub fn find_fireworks(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
     for pivot in board.unknowns() {
@@ -69,7 +69,9 @@ pub fn find_fireworks(board: &Board) -> Option<Effects> {
                     action.clue_cell_for_knowns(Verdict::Secondary, cell, triple & knowns);
                 });
 
-                effects.add_action(action);
+                if effects.add_action(action) && single {
+                    return Some(effects);
+                }
             }
         }
     }
@@ -100,7 +102,7 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        if let Some(got) = find_fireworks(&board) {
+        if let Some(got) = find_fireworks(&board, true) {
             let mut action = Action::new(Strategy::Fireworks);
             action.erase_knowns(cell!("C4"), knowns!("4 5 6"));
             action.clue_cells_for_known(Verdict::Secondary, cells!("C4 F4"), known!("3"));
@@ -122,6 +124,6 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        assert_eq!(None, find_fireworks(&board));
+        assert_eq!(None, find_fireworks(&board, true));
     }
 }

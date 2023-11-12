@@ -2,103 +2,106 @@ use std::collections::HashMap;
 
 use super::*;
 
-pub fn find_singles_chains(board: &Board) -> Option<Effects> {
+pub fn find_singles_chains(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
     let ignore = board.cells_with_n_candidates(1);
 
-    Known::iter()
+    for (known, possibles) in Known::iter()
         .map(|known| (known, board.candidate_cells(known) - ignore))
         .filter(|(_, candidates)| !candidates.is_empty())
-        .for_each(|(known, possibles)| {
-            let mut nodes = CellSet::empty();
-            let mut edges: HashMap<Cell, CellSet> = HashMap::new();
+    {
+        let mut nodes = CellSet::empty();
+        let mut edges: HashMap<Cell, CellSet> = HashMap::new();
 
-            House::iter()
-                .map(|house| board.house_candidate_cells(house, known))
-                .filter(|cells| cells.len() == 2)
-                .for_each(|cells| {
-                    // println!("house {}, cells {}", house, cells);
-                    nodes |= cells;
+        for cells in House::iter()
+            .map(|house| board.house_candidate_cells(house, known))
+            .filter(|cells| cells.len() == 2)
+        {
+            // println!("house {}, cells {}", house, cells);
+            nodes |= cells;
 
-                    let pair = cells.as_pair().unwrap();
-                    let (first, second) = pair;
-                    *edges.entry(first).or_default() += second;
-                    *edges.entry(second).or_default() += first;
+            let pair = cells.as_pair().unwrap();
+            let (first, second) = pair;
+            *edges.entry(first).or_default() += second;
+            *edges.entry(second).or_default() += first;
+        }
+
+        let candidates = possibles
+            & nodes
+                .iter()
+                .combinations(2)
+                .fold(CellSet::empty(), |acc, pair| {
+                    acc | (pair[0].peers() & pair[1].peers())
                 });
 
-            let candidates = possibles
-                & nodes
-                    .iter()
-                    .combinations(2)
-                    .fold(CellSet::empty(), |acc, pair| {
-                        acc | (pair[0].peers() & pair[1].peers())
+        let mut chains: Vec<Chain> = Vec::new();
+        let mut cell_chains: HashMap<Cell, (usize, usize)> = HashMap::new();
+
+        for candidate in candidates {
+            let sees = nodes & candidate.peers();
+
+            let mut chain = Chain::new(candidate);
+            let mut stack = vec![sees];
+            let mut shortest = cell_chains
+                .get(&candidate)
+                .map_or(usize::MAX, |(_, length)| *length);
+
+            while !stack.is_empty() {
+                let pool = stack.last_mut().unwrap();
+                if pool.is_empty() || chain.nodes.len() + 1 >= shortest {
+                    if !chain.nodes.is_empty() {
+                        chain.pop();
+                    }
+                    stack.pop();
+                    continue;
+                }
+
+                let node = pool.pop().unwrap();
+                if node == candidate || chain.has(node) {
+                    continue;
+                }
+
+                chain.push(node);
+                if sees[node] && chain.is_mismatched() {
+                    if chain.all_nodes_in_same_block() {
+                        // degenerate hidden pair
+                        cell_chains.remove(&candidate);
+                        break;
+                    }
+
+                    shortest = chain.nodes.len();
+                    chains.push(chain.clone());
+                    (candidates & chain.sees()).iter().for_each(|cell| {
+                        cell_chains.insert(cell, (chains.len() - 1, chain.len()));
                     });
 
-            let mut chains: Vec<Chain> = Vec::new();
-            let mut cell_chains: HashMap<Cell, (usize, usize)> = HashMap::new();
-
-            candidates.iter().for_each(|candidate| {
-                let sees = nodes & candidate.peers();
-
-                let mut chain = Chain::new(candidate);
-                let mut stack = vec![sees];
-                let mut shortest = cell_chains
-                    .get(&candidate)
-                    .map_or(usize::MAX, |(_, length)| *length);
-
-                while !stack.is_empty() {
-                    let pool = stack.last_mut().unwrap();
-                    if pool.is_empty() || chain.nodes.len() + 1 >= shortest {
-                        if !chain.nodes.is_empty() {
-                            chain.pop();
-                        }
-                        stack.pop();
-                        continue;
-                    }
-
-                    let node = pool.pop().unwrap();
-                    if node == candidate || chain.has(node) {
-                        continue;
-                    }
-
-                    chain.push(node);
-                    if sees[node] && chain.is_mismatched() {
-                        if chain.all_nodes_in_same_block() {
-                            // degenerate hidden pair
-                            cell_chains.remove(&candidate);
-                            break;
-                        }
-
-                        shortest = chain.nodes.len();
-                        chains.push(chain.clone());
-                        (candidates & chain.sees()).iter().for_each(|cell| {
-                            cell_chains.insert(cell, (chains.len() - 1, chain.len()));
-                        });
-
-                        chain.pop();
-                        continue;
-                    }
-
-                    let next = edges[&node] - chain.nodes - candidate;
-                    if !next.is_empty() {
-                        stack.push(next);
-                    } else {
-                        chain.pop();
-                    }
+                    chain.pop();
+                    continue;
                 }
-            });
 
-            let mut grouped: HashMap<usize, CellSet> = HashMap::new();
-            cell_chains.iter().for_each(|(cell, (index, _))| {
-                *grouped.entry(*index).or_default() += *cell;
-            });
+                let next = edges[&node] - chain.nodes - candidate;
+                if !next.is_empty() {
+                    stack.push(next);
+                } else {
+                    chain.pop();
+                }
+            }
+        }
 
-            grouped.into_iter().for_each(|(_, cells)| {
-                let mut action = Action::new(Strategy::SinglesChain);
-                action.erase_cells(cells, known);
-                effects.add_action(action);
-            });
+        let mut grouped: HashMap<usize, CellSet> = HashMap::new();
+        cell_chains.iter().for_each(|(cell, (index, _))| {
+            *grouped.entry(*index).or_default() += *cell;
         });
+
+        for (_, cells) in grouped {
+            let mut action = Action::new(Strategy::SinglesChain);
+            action.erase_cells(cells, known);
+
+            if effects.add_action(action) && single {
+                return Some(effects);
+            }
+        }
+    }
 
     if effects.has_actions() {
         Some(effects)

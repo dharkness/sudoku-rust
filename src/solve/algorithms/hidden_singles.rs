@@ -1,6 +1,6 @@
 use super::*;
 
-pub fn find_hidden_singles(board: &Board) -> Option<Effects> {
+pub fn find_hidden_singles(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
     for (cell, knowns) in board.unknown_iter() {
@@ -14,7 +14,9 @@ pub fn find_hidden_singles(board: &Board) -> Option<Effects> {
                         known,
                     );
 
-                    effects.add_action(action);
+                    if effects.add_action(action) && single {
+                        return Some(effects);
+                    }
                 }
             }
         }

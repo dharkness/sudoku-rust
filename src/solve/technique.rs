@@ -33,12 +33,12 @@ impl Technique {
         self.label
     }
 
-    pub fn solve(&self, board: &Board) -> Option<Effects> {
-        (self.solve)(board)
+    pub fn solve(&self, board: &Board, single: bool) -> Option<Effects> {
+        (self.solve)(board, single)
     }
 }
 
-type TechniqueFunc = fn(&Board) -> Option<Effects>;
+type TechniqueFunc = fn(board: &Board, single: bool) -> Option<Effects>;
 
 /// All techniques implemented by this solver.
 #[rustfmt::skip]

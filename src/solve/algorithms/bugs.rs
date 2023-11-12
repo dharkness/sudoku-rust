@@ -1,6 +1,6 @@
 use super::*;
 
-pub fn find_bugs(board: &Board) -> Option<Effects> {
+pub fn find_bugs(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
     let pairs = board.cells_with_n_candidates(2);
@@ -37,7 +37,10 @@ pub fn find_bugs(board: &Board) -> Option<Effects> {
             triple.peers() & board.candidate_cells(solution),
             solution,
         );
-        effects.add_action(action);
+
+        if effects.add_action(action) && single {
+            return Some(effects);
+        }
     }
 
     if effects.has_actions() {
@@ -63,10 +66,13 @@ mod tests {
             "418121030511090hg10i110kg109410681210ag10c81210h06411181210341g1050h1109g10o0o2111038105411105410h8109g121030s0o9018032141g1840c4190180hg12103842103g105418111090h",
         );
 
-        let mut action = Action::new_set(Strategy::Bug, cell!("G1"), known!("3"));
-        action.clue_cells_for_known(Verdict::Secondary, cells!("C1 G2 G4 H1"), known!("3"));
+        if let Some(got) = find_bugs(&board, true) {
+            let mut action = Action::new_set(Strategy::Bug, cell!("G1"), known!("3"));
+            action.clue_cells_for_known(Verdict::Secondary, cells!("C1 G2 G4 H1"), known!("3"));
 
-        let effects = find_bugs(&board).unwrap();
-        assert_eq!(action, effects.actions()[0]);
+            assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
+        } else {
+            panic!("not found");
+        }
     }
 }

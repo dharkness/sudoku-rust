@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use super::*;
 
-pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
+pub fn find_wxyz_wings(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
     let pairs_by_candidates = board.cell_candidates_with_n_candidates(2).fold(
@@ -108,15 +108,15 @@ pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
             });
 
     let bi_values = board.cells_with_n_candidates(2);
-    let mut check_wing = |wing: CellSet| {
+    let mut check_wing = |wing: CellSet| -> bool {
         // println!("wing {}", wing);
         // ignore xy chains
         if (wing & bi_values) == wing {
-            return;
+            return false;
         }
         // ignore naked quads
         if wing.share_row() || wing.share_column() || wing.share_block() {
-            return;
+            return false;
         }
         // ignore naked pairs
         if (wing & bi_values).iter().any(|cell| {
@@ -127,20 +127,20 @@ pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
             }
             false
         }) {
-            return;
+            return false;
         }
 
         let wing_knowns = wing
             .iter()
             .fold(KnownSet::empty(), |set, cell| set | board.candidates(cell));
         if wing_knowns.len() != 4 {
-            return;
+            return false;
         }
         if wing_knowns
             .iter()
             .any(|known| (wing & board.candidate_cells(known)).len() < 2)
         {
-            return;
+            return false;
         }
 
         let mut restricted: HashMap<Known, CellSet> = HashMap::new();
@@ -155,13 +155,13 @@ pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
                 restricted.insert(known, candidates);
             } else {
                 if !non_restricted.is_empty() {
-                    return;
+                    return false;
                 }
                 non_restricted.insert(known, candidates);
             }
         }
         if non_restricted.is_empty() {
-            return;
+            return false;
         }
 
         let (candidate, cells) = non_restricted.into_iter().next().unwrap();
@@ -171,7 +171,7 @@ pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
                 set & cell.peers()
             });
         if erase.is_empty() {
-            return;
+            return false;
         }
 
         let mut action = Action::new_erase_cells(Strategy::WXYZWing, erase, candidate);
@@ -180,27 +180,33 @@ pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
             action.clue_cells_for_known(Verdict::Primary, cells, known);
         }
 
-        effects.add_action(action);
+        effects.add_action(action)
     };
 
     for (_, quads, subsets) in quad_sets {
         // 4 quads
         for quad_combo in quads.iter().combinations(4) {
-            check_wing(quad_combo.iter().copied().union_cells());
+            if check_wing(quad_combo.iter().copied().union_cells()) && single {
+                return Some(effects);
+            }
         }
         // 2..3 quads with 4-n triples and pairs
         for n in (2..4).rev() {
             for quad_combo in quads.iter().combinations(n) {
                 let base = quad_combo.iter().copied().union_cells();
                 for others in subsets.iter().combinations(4 - n) {
-                    check_wing(base | others.iter().copied().union_cells());
+                    if check_wing(base | others.iter().copied().union_cells()) && single {
+                        return Some(effects);
+                    }
                 }
             }
         }
         // 1 quad with 3 triples and pairs
         for quad in quads {
             for others in subsets.iter().combinations(3) {
-                check_wing(others.iter().copied().union_cells() + quad);
+                if check_wing(others.iter().copied().union_cells() + quad) && single {
+                    return Some(effects);
+                }
             }
         }
     }
@@ -208,7 +214,9 @@ pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
     for (candidates, triples, disjoints, subsets) in triple_sets {
         // 4 primary triples
         for triple_combo in triples.iter().combinations(4) {
-            check_wing(triple_combo.iter().copied().union_cells());
+            if check_wing(triple_combo.iter().copied().union_cells()) && single {
+                return Some(effects);
+            }
         }
         // 1..3 primary triples with 4-n secondary triples and pairs
         for n in (1..4).rev() {
@@ -217,7 +225,9 @@ pub fn find_wxyz_wings(board: &Board) -> Option<Effects> {
                 for k in !candidates {
                     if let Some(disjoint) = disjoints.get(&k) {
                         for others in (*disjoint | subsets).iter().combinations(4 - n) {
-                            check_wing(base | others.iter().copied().union_cells());
+                            if check_wing(base | others.iter().copied().union_cells()) && single {
+                                return Some(effects);
+                            }
                         }
                     }
                 }
@@ -254,7 +264,7 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        if let Some(got) = find_wxyz_wings(&board) {
+        if let Some(got) = find_wxyz_wings(&board, true) {
             assert_eq!(1, got.actions().len());
 
             let mut action = Action::new(Strategy::WXYZWing);
@@ -279,7 +289,7 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        if let Some(got) = find_wxyz_wings(&board) {
+        if let Some(got) = find_wxyz_wings(&board, true) {
             assert_eq!(1, got.actions().len());
 
             let mut action = Action::new(Strategy::WXYZWing);
@@ -304,7 +314,7 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        assert_eq!(None, find_wxyz_wings(&board));
+        assert_eq!(None, find_wxyz_wings(&board, true));
     }
 
     #[test]
@@ -316,7 +326,7 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        assert_eq!(None, find_wxyz_wings(&board));
+        assert_eq!(None, find_wxyz_wings(&board, true));
     }
 
     #[test]
@@ -328,6 +338,6 @@ mod tests {
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
-        assert_eq!(None, find_wxyz_wings(&board));
+        assert_eq!(None, find_wxyz_wings(&board, true));
     }
 }

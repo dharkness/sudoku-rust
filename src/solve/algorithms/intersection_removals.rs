@@ -24,13 +24,16 @@ use super::*;
 /// H ······88·
 /// J 8·8··8···  ←-- ... reduce box 7, removing 8 from cells (J1 J3)
 /// ```
-pub fn find_intersection_removals(board: &Board) -> Option<Effects> {
+pub fn find_intersection_removals(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    House::blocks_iter().for_each(|block| {
-        check_intersection(board, block, block.rows(), &mut effects);
-        check_intersection(board, block, block.columns(), &mut effects);
-    });
+    for block in House::blocks_iter() {
+        if check_intersection(board, single, block, block.rows(), &mut effects)
+            || check_intersection(board, single, block, block.columns(), &mut effects)
+        {
+            break;
+        }
+    }
 
     if effects.has_actions() {
         Some(effects)
@@ -39,7 +42,13 @@ pub fn find_intersection_removals(board: &Board) -> Option<Effects> {
     }
 }
 
-fn check_intersection(board: &Board, block: House, houses: HouseSet, effects: &mut Effects) {
+fn check_intersection(
+    board: &Board,
+    single: bool,
+    block: House,
+    houses: HouseSet,
+    effects: &mut Effects,
+) -> bool {
     for known in Known::iter() {
         for house in houses.iter() {
             let block_cells = block.cells();
@@ -73,7 +82,10 @@ fn check_intersection(board: &Board, block: House, houses: HouseSet, effects: &m
                             line_cells - board.knowns(),
                             known,
                         );
-                        effects.add_action(action);
+
+                        if effects.add_action(action) && single {
+                            return true;
+                        }
                     }
                 }
             } else if line_candidates[known] {
@@ -95,11 +107,16 @@ fn check_intersection(board: &Board, block: House, houses: HouseSet, effects: &m
                         block_cells - intersection_cells - board.knowns(),
                         known,
                     );
-                    effects.add_action(action);
+
+                    if effects.add_action(action) && single {
+                        return true;
+                    }
                 }
             }
         }
     }
+
+    false
 }
 
 #[cfg(test)]
@@ -126,7 +143,7 @@ mod tests {
             ",
         );
 
-        let found = find_intersection_removals(&board).unwrap_or(Effects::new());
+        let found = find_intersection_removals(&board, false).unwrap_or(Effects::new());
         assert_eq!(cells!("B8 B9"), found.erases_from_cells(known!("1")));
         assert_eq!(cells!(""), found.erases_from_cells(known!("2")));
         assert_eq!(cells!("D5 E5 F5"), found.erases_from_cells(known!("3")));

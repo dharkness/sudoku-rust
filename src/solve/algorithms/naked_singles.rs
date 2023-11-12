@@ -1,6 +1,6 @@
 use super::*;
 
-pub fn find_naked_singles(board: &Board) -> Option<Effects> {
+pub fn find_naked_singles(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
     for (cell, knowns) in board.cell_candidates_with_n_candidates(1) {
@@ -8,7 +8,9 @@ pub fn find_naked_singles(board: &Board) -> Option<Effects> {
         let mut action = Action::new_set(Strategy::NakedSingle, cell, known);
         action.clue_cell_for_knowns(Verdict::Related, cell, KnownSet::full() - known);
 
-        effects.add_action(action);
+        if effects.add_action(action) && single {
+            return Some(effects);
+        }
     }
 
     if effects.has_actions() {

@@ -109,7 +109,7 @@ impl ParserSolver<'_> {
             return false;
         }
 
-        match self.solver.solve(&start, &effects, &mut self.timings) {
+        match self.solver.solve(&start, &effects, self.timings) {
             Resolution::Canceled(..) => (),
             Resolution::Failed(board, applied, _, action, errors) => self.reporter.failed(
                 givens,
