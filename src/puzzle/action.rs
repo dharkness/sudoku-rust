@@ -193,6 +193,36 @@ impl Action {
             })
     }
 
+    pub fn collect_verdicts(&self) -> HashMap<Cell, HashMap<Known, Verdict>> {
+        let mut verdicts = self.clues.collect();
+        for (cell, knowns) in &self.erase {
+            let map = verdicts.entry(*cell).or_default();
+            for known in *knowns {
+                map.insert(known, Verdict::Erase);
+            }
+        }
+        for (cell, known) in &self.set {
+            verdicts
+                .entry(*cell)
+                .or_default()
+                .insert(*known, Verdict::Set);
+        }
+        verdicts
+    }
+
+    pub fn collect_verdicts_for_known(&self, known: Known) -> HashMap<Cell, Verdict> {
+        let mut verdicts = self.clues.collect_for_known(known);
+        for (cell, knowns) in &self.erase {
+            if knowns.has(known) {
+                verdicts.insert(*cell, Verdict::Erase);
+            }
+        }
+        for (cell, _) in self.set.iter().filter(|(_, k)| **k == known) {
+            verdicts.insert(*cell, Verdict::Set);
+        }
+        verdicts
+    }
+
     pub fn apply(&self, board: &mut Board, effects: &mut Effects) -> Change {
         let mut change = Change::None;
 

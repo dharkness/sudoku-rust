@@ -2,7 +2,9 @@
 //!
 //! See <https://www.w3.org/TR/xml-entity-names/025.html>
 
-use colored::Colorize;
+use std::collections::HashMap;
+
+use itertools::Itertools;
 
 use crate::layout::{Cell, House, Known};
 use crate::puzzle::{Action, Board, Verdict};
@@ -27,14 +29,14 @@ pub fn print_givens(board: &Board) {
 }
 
 pub fn write_givens(board: &Board) -> Vec<String> {
-    write_single_value(|cell| {
+    write_single_value(|cell, line: &mut String| {
         let value = board.value(cell);
         if value.is_unknown() {
-            ' '
+            line.push(' ');
         } else if board.is_given(cell) {
-            value.label()
+            line.push(value.label());
         } else {
-            MISSING
+            line.push(MISSING);
         }
     })
 }
@@ -46,12 +48,12 @@ pub fn print_known_values(board: &Board) {
 }
 
 pub fn write_known_values(board: &Board) -> Vec<String> {
-    write_single_value(|cell| {
+    write_single_value(|cell, line: &mut String| {
         let value = board.value(cell);
         if value.is_unknown() {
-            ' '
+            line.push(' ');
         } else {
-            value.label()
+            line.push(value.label());
         }
     })
 }
@@ -63,17 +65,39 @@ pub fn print_candidate(board: &Board, candidate: Known) {
 }
 
 pub fn write_candidate(board: &Board, candidate: Known) -> Vec<String> {
-    write_single_value(|cell| {
+    write_single_value(|cell, line: &mut String| {
         if board.is_candidate(cell, candidate) {
-            GIVEN
+            line.push(GIVEN);
         } else {
             let value = board.value(cell);
             if value.is_unknown() {
-                ' '
+                line.push(' ');
             } else if value == candidate.value() {
-                value.label()
+                line.push(value.label());
             } else {
-                ' '
+                line.push(' ');
+            }
+        }
+    })
+}
+
+pub fn write_candidate_with_highlight(
+    board: &Board,
+    candidate: Known,
+    verdicts: HashMap<Cell, Verdict>,
+) -> Vec<String> {
+    write_single_value(|cell, line: &mut String| {
+        let verdict = verdicts.get(&cell).unwrap_or(&Verdict::None);
+        if board.is_candidate(cell, candidate) {
+            line.push_str(verdict.color_char(GIVEN).as_str());
+        } else {
+            let value = board.value(cell);
+            if value.is_unknown() {
+                line.push(' ');
+            } else if value == candidate.value() {
+                line.push_str(verdict.color_char(value.label()).as_str());
+            } else {
+                line.push(' ');
             }
         }
     })
@@ -101,7 +125,7 @@ pub fn add_single_value_labels(grid: Vec<String>) -> Vec<String> {
     lines
 }
 
-pub fn write_single_value(get_char: impl Fn(Cell) -> char) -> Vec<String> {
+pub fn write_single_value(append: impl Fn(Cell, &mut String)) -> Vec<String> {
     let mut lines = Vec::new();
 
     lines.push("┍───────┬───────┬───────┐".to_owned());
@@ -116,7 +140,7 @@ pub fn write_single_value(get_char: impl Fn(Cell) -> char) -> Vec<String> {
         let mut line = String::from('│');
         row.cells().iter().for_each(|cell| {
             line.push(' ');
-            line.push(get_char(cell));
+            append(cell, &mut line);
             if cell.column().is_block_right() {
                 line.push_str(" │");
             }
@@ -221,101 +245,51 @@ pub fn write_candidates(board: &Board) -> Vec<String> {
     lines
 }
 
-pub fn write_candidates_with_clues(board: &Board, action: &Action) -> Vec<String> {
+pub fn write_candidates_with_highlight(
+    board: &Board,
+    verdicts: HashMap<Cell, HashMap<Known, Verdict>>,
+) -> Vec<String> {
     let mut lines = Vec::new();
-    let cell_known_colors = action.clues().collect();
 
     lines.push(
         "┍───────────────────────┬───────────────────────┬───────────────────────┐".to_string(),
     );
-    House::rows_iter().for_each(|row| {
+    for row in House::rows_iter() {
         let mut cell_lines = [String::from("│ "), String::from("│ "), String::from("│ ")];
-        House::columns_iter().for_each(|column| {
+        for column in House::columns_iter() {
             let cell = Cell::from_row_column(row, column);
             let value = board.value(cell);
             let candidates = board.candidates(cell);
-            if !value {
-                for known in Known::iter() {
-                    let line = known.usize() / 3;
-                    let mut char = MISSING;
-                    if candidates[known] {
-                        char = known.label();
-                    }
-                    let mut color: Option<Verdict> = None;
-                    if action.sets(cell, known) {
-                        color = Some(Verdict::Set);
-                    } else if action.erases(cell, known) {
-                        color = Some(Verdict::Erase);
-                    } else if let Some(map) = cell_known_colors.get(&cell) {
-                        color = map.get(&known).cloned();
-                    }
-                    if let Some(color) = color {
-                        let mut label = char.to_string().blink().bold();
-                        match color {
-                            Verdict::Set => label = label.bright_green(),
-                            Verdict::Erase => label = label.bright_yellow(),
-                            Verdict::Primary => label = label.bright_purple(),
-                            Verdict::Secondary => label = label.bright_cyan(),
-                            Verdict::Tertiary => label = label.bright_red(),
-                            _ => (),
-                        }
-                        cell_lines[line].push_str(label.to_string().as_str());
-                    } else {
-                        cell_lines[line].push(char);
-                    }
-                    cell_lines[line].push(' ');
+            if let Some(known) = value.known() {
+                let verdict = verdicts
+                    .get(&cell)
+                    .and_then(|map| map.get(&known))
+                    .unwrap_or(&Verdict::None);
+                cell_lines[0].push_str("      ");
+                cell_lines[1].push_str(&format!(
+                    "  {}   ",
+                    verdict.color_char(known.label()).as_str()
+                ));
+                if board.is_given(cell) {
+                    cell_lines[2]
+                        .push_str(&format!("  {}   ", verdict.color_char(MISSING).as_str()));
+                } else {
+                    cell_lines[2].push_str("      ");
                 }
             } else {
-                cell_lines[0].push_str("      ");
-                let known = value.known().unwrap();
-                let mut color: Option<Verdict> = None;
-                if action.sets(cell, known) {
-                    color = Some(Verdict::Set);
-                } else if action.erases(cell, known) {
-                    color = Some(Verdict::Erase);
-                } else if let Some(map) = cell_known_colors.get(&cell) {
-                    color = map.get(&known).cloned();
-                }
-
-                if let Some(color) = color {
-                    let mut label = value.to_string().blink().bold();
-                    let mut missing = MISSING.to_string().blink().bold();
-                    match color {
-                        Verdict::Set => {
-                            label = label.bright_green();
-                            missing = missing.bright_green()
-                        }
-                        Verdict::Erase => {
-                            label = label.bright_yellow();
-                            missing = missing.bright_yellow()
-                        }
-                        Verdict::Primary => {
-                            label = label.bright_purple();
-                            missing = missing.bright_purple()
-                        }
-                        Verdict::Secondary => {
-                            label = label.bright_cyan();
-                            missing = missing.bright_cyan()
-                        }
-                        Verdict::Tertiary => {
-                            label = label.bright_red();
-                            missing = missing.bright_red()
-                        }
-                        _ => (),
-                    }
-                    cell_lines[1].push_str(&format!("  {}   ", label.to_string().as_str()));
-                    if board.is_given(cell) {
-                        cell_lines[2].push_str(&format!("  {}   ", missing.to_string().as_str()));
+                for known in Known::iter() {
+                    let line = known.usize() / 3;
+                    let label = if candidates[known] {
+                        known.label()
                     } else {
-                        cell_lines[2].push_str("      ");
-                    }
-                } else {
-                    cell_lines[1].push_str(&format!("  {}   ", value));
-                    if board.is_given(cell) {
-                        cell_lines[2].push_str(&format!("  {}   ", MISSING));
-                    } else {
-                        cell_lines[2].push_str("      ");
-                    }
+                        MISSING
+                    };
+                    let verdict = verdicts
+                        .get(&cell)
+                        .and_then(|map| map.get(&known))
+                        .unwrap_or(&Verdict::None);
+                    cell_lines[line].push_str(verdict.color_char(label).as_str());
+                    cell_lines[line].push(' ');
                 }
             }
             if column.is_right() {
@@ -325,7 +299,7 @@ pub fn write_candidates_with_clues(board: &Board, action: &Action) -> Vec<String
             } else {
                 cell_lines.iter_mut().for_each(|line| line.push_str("  "));
             }
-        });
+        }
         cell_lines.into_iter().for_each(|line| lines.push(line));
         if row.is_block_bottom() {
             if !row.is_bottom() {
@@ -340,7 +314,7 @@ pub fn write_candidates_with_clues(board: &Board, action: &Action) -> Vec<String
                     .to_owned(),
             );
         }
-    });
+    }
     lines.push(
         "└───────────────────────┴───────────────────────┴───────────────────────┘".to_owned(),
     );
@@ -349,17 +323,27 @@ pub fn write_candidates_with_clues(board: &Board, action: &Action) -> Vec<String
 }
 
 pub fn print_all_and_single_candidates(board: &Board) {
-    actually_print_all_and_single_candidates(board, write_candidates(board));
+    actually_print_all_and_single_candidates(
+        write_candidates(board),
+        Known::iter()
+            .map(|k| write_candidate(board, k))
+            .collect_vec(),
+    );
 }
 
 pub fn print_all_and_single_candidates_with_highlight(board: &Board, action: &Action) {
-    actually_print_all_and_single_candidates(board, write_candidates_with_clues(board, action));
+    actually_print_all_and_single_candidates(
+        write_candidates_with_highlight(board, action.collect_verdicts()),
+        Known::iter()
+            .map(|k| write_candidate_with_highlight(board, k, action.collect_verdicts_for_known(k)))
+            .collect_vec(),
+    );
 }
 
-fn actually_print_all_and_single_candidates(board: &Board, grid: Vec<String>) {
+fn actually_print_all_and_single_candidates(grid: Vec<String>, candidate_grids: Vec<Vec<String>>) {
     let mut columns = [Vec::new(), Vec::new(), Vec::new()];
 
-    for (i, grid) in Known::iter().map(|k| write_candidate(board, k)).enumerate() {
+    for (i, grid) in candidate_grids.iter().enumerate() {
         columns[i % 3].extend(grid);
     }
 

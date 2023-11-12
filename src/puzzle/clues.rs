@@ -3,11 +3,15 @@ use std::collections::HashMap;
 use std::fmt;
 use std::fmt::Write;
 
+use colored::Colorize;
+
 use crate::layout::{Cell, CellSet, Known, KnownSet};
 use crate::symbols::EMPTY_SET;
 
-#[derive(Clone, Copy, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub enum Verdict {
+    #[default]
+    None,
     Set,
     Erase,
     Related,
@@ -16,9 +20,27 @@ pub enum Verdict {
     Tertiary,
 }
 
+impl Verdict {
+    pub fn color_char(self, c: char) -> String {
+        self.color(c.to_string())
+    }
+
+    pub fn color(self, str: String) -> String {
+        match self {
+            Self::None => str,
+            Self::Set => str.bright_green().bold().blink().to_string(),
+            Self::Erase => str.bright_yellow().bold().blink().to_string(),
+            Self::Related => str.bright_blue().bold().blink().to_string(),
+            Self::Primary => str.bright_purple().bold().blink().to_string(),
+            Self::Secondary => str.bright_cyan().bold().blink().to_string(),
+            Self::Tertiary => str.bright_red().bold().blink().to_string(),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Clue {
-    color: Verdict,
+    verdict: Verdict,
     known: Known,
     cells: CellSet,
 }
@@ -39,12 +61,12 @@ impl Clues {
 
     pub fn clue_cells_for_known(&mut self, color: Verdict, cells: CellSet, known: Known) {
         let clue = Clue {
-            color,
+            verdict: color,
             known,
             cells,
         };
         match self.clues.binary_search_by(|clue| {
-            match color.partial_cmp(&clue.color) {
+            match color.partial_cmp(&clue.verdict) {
                 Some(Ordering::Equal) => known.partial_cmp(&clue.known),
                 result => result,
             }
@@ -76,10 +98,24 @@ impl Clues {
     pub fn collect(&self) -> HashMap<Cell, HashMap<Known, Verdict>> {
         self.clues.iter().fold(HashMap::new(), |mut map, clue| {
             clue.cells.iter().for_each(|cell| {
-                map.entry(cell).or_default().insert(clue.known, clue.color);
+                map.entry(cell)
+                    .or_default()
+                    .insert(clue.known, clue.verdict);
             });
             map
         })
+    }
+
+    pub fn collect_for_known(&self, known: Known) -> HashMap<Cell, Verdict> {
+        self.clues.iter().filter(|clue| clue.known == known).fold(
+            HashMap::new(),
+            |mut map, clue| {
+                clue.cells.iter().for_each(|cell| {
+                    map.insert(cell, clue.verdict);
+                });
+                map
+            },
+        )
     }
 }
 
@@ -91,7 +127,7 @@ impl fmt::Display for Clues {
             let mut first = true;
             let mut prev_color = Verdict::Secondary;
             for Clue {
-                color,
+                verdict: color,
                 known,
                 cells,
             } in &self.clues
