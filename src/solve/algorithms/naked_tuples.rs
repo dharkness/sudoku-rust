@@ -25,7 +25,7 @@ fn find_naked_tuples(
         for candidates in house_cells
             .iter()
             .map(|cell| (cell, board.candidates(cell)))
-            .filter(|(_, candidates)| 2 <= candidates.len() && candidates.len() <= size)
+            .filter(|(_, candidates)| (2..=size).contains(&candidates.len()))
             .combinations(size)
         {
             let known_sets = candidates.iter().map(|(_, ks)| *ks).collect_vec();

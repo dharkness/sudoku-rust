@@ -23,9 +23,10 @@ pub fn find_hidden_tuples(
     let mut effects = Effects::new();
 
     for house in House::iter() {
+        let house_cells = house.cells();
         for candidates in Known::iter()
-            .map(|k| (k, house.cells() & board.candidate_cells(k)))
-            .filter(|(_, candidates)| 2 <= candidates.len() && candidates.len() <= size)
+            .map(|k| (k, house_cells & board.candidate_cells(k)))
+            .filter(|(_, cells)| (2..=size).contains(&cells.len()))
             .combinations(size)
         {
             let cell_sets = candidates.iter().map(|(_, cs)| *cs).collect_vec();
@@ -50,7 +51,7 @@ pub fn find_hidden_tuples(
                     k,
                 );
             });
-            (house.cells() - tuple_cells).iter().for_each(|c| {
+            (house_cells - tuple_cells).iter().for_each(|c| {
                 action.clue_cell_for_knowns(Verdict::Related, c, tuple_knowns);
             });
 
