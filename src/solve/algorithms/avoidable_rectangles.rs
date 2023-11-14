@@ -5,11 +5,13 @@ use super::*;
 pub fn find_avoidable_rectangles(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    let candidates = board.solved();
+    let givens = board.givens();
+    let solved = board.solved();
 
     // type 1
     for (r, c, k) in Rectangle::iter()
-        .map(|r| (r, r.cells - candidates))
+        .filter(|r| !r.cells.has_any(givens))
+        .map(|r| (r, r.cells - solved))
         .filter_map(|(r, cs)| cs.as_single().map(|c| (r.with_origin(c), c)))
         .filter(|(r, _)| board.value(r.top_right) == board.value(r.bottom_left))
         .filter_map(|(r, c)| board.value(r.bottom_right).known().map(|k| (r, c, k)))
@@ -17,8 +19,8 @@ pub fn find_avoidable_rectangles(board: &Board, single: bool) -> Option<Effects>
     {
         let mut action = Action::new_erase(Strategy::AvoidableRectangle, c, k);
         board
-            .knowns_iter(r.cells & candidates)
-            .for_each(|(cell, known)| action.clue_cell_for_known(Verdict::Secondary, cell, known));
+            .knowns_iter(r.cells & solved)
+            .for_each(|(cell, known)| action.clue_cell_for_known(Verdict::Primary, cell, known));
 
         if effects.add_action(action) && single {
             return Some(effects);
@@ -26,7 +28,7 @@ pub fn find_avoidable_rectangles(board: &Board, single: bool) -> Option<Effects>
     }
 
     for rect in Rectangle::iter() {
-        if rect.cells.has_any(board.givens()) {
+        if rect.cells.has_any(givens) {
             continue;
         }
 
@@ -46,8 +48,8 @@ pub fn find_avoidable_rectangles(board: &Board, single: bool) -> Option<Effects>
                 if !(ks1.has(k4) && ks2.has(k3)) {
                     continue;
                 }
-                action.clue_cell_for_known(Verdict::Tertiary, c3, k3);
-                action.clue_cell_for_known(Verdict::Tertiary, c4, k4);
+                action.clue_cell_for_known(Verdict::Primary, c3, k3);
+                action.clue_cell_for_known(Verdict::Primary, c4, k4);
             } else {
                 continue;
             }
@@ -58,7 +60,7 @@ pub fn find_avoidable_rectangles(board: &Board, single: bool) -> Option<Effects>
 
             unsolved.iter().for_each(|c| {
                 let cs = board.candidates(c);
-                action.clue_cell_for_knowns(Verdict::Tertiary, c, cs & solved);
+                action.clue_cell_for_knowns(Verdict::Primary, c, cs & solved);
                 action.clue_cell_for_knowns(Verdict::Secondary, c, cs - solved);
             });
             if let Some(k) = pseudo.knowns.as_single() {
@@ -156,8 +158,8 @@ mod tests {
         if let Some(got) = find_avoidable_rectangles(&board, true) {
             let mut action = Action::new(Strategy::AvoidableRectangle);
             action.erase(cell!("B9"), known!("9"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("A1"), known!("9"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("A9 B1"), known!("7"));
+            action.clue_cells_for_known(Verdict::Primary, cells!("A1"), known!("9"));
+            action.clue_cells_for_known(Verdict::Primary, cells!("A9 B1"), known!("7"));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
@@ -169,16 +171,17 @@ mod tests {
     fn type_2() {
         let parser = Parse::wiki().stop_on_error();
         let (board, effects, failed) = parser.parse(
-            "g0110g08a4a402a04040210211o00h0588g8040881i041031g3ghg0h0250k0h409211481300478cgbga0g01o0281g138033k34411s1s098g30ag02g09g4404308gj005bg4108033g024105ag09b09gg13g",
+            "21hg0540gg03800oh8kg09l0048120gg0ih2oggio218gg180521414426620i090k11g18008g6g28111412g0m2610810hg221g40840060341091g041gi080i0okikq0g841o802110co4h4p02102o8410c0h",
         );
         assert_eq!(None, failed);
         assert!(!effects.has_errors());
 
         if let Some(got) = find_avoidable_rectangles(&board, true) {
             let mut action = Action::new(Strategy::AvoidableRectangle);
-            action.erase(cell!("B9"), known!("9"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("A1"), known!("9"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("A9 B1"), known!("7"));
+            action.erase(cell!("E9"), known!("2"));
+            action.clue_cells_for_known(Verdict::Primary, cells!("F9 H7"), known!("1"));
+            action.clue_cells_for_known(Verdict::Primary, cells!("F7 H9"), known!("3"));
+            action.clue_cells_for_known(Verdict::Secondary, cells!("F9 H9"), known!("2"));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
@@ -202,8 +205,8 @@ mod tests {
             action.clue_cells_for_known(Verdict::Secondary, cells!("C1"), known!("5"));
             action.clue_cells_for_knowns(Verdict::Secondary, cells!("D1"), knowns!("4 9"));
             action.clue_cells_for_knowns(Verdict::Secondary, cells!("G1"), knowns!("4 5"));
-            action.clue_cells_for_known(Verdict::Tertiary, cells!("A1 C5"), known!("7"));
-            action.clue_cells_for_known(Verdict::Tertiary, cells!("A5 C1"), known!("6"));
+            action.clue_cells_for_known(Verdict::Primary, cells!("A1 C5"), known!("7"));
+            action.clue_cells_for_known(Verdict::Primary, cells!("A5 C1"), known!("6"));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
