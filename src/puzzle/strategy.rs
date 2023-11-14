@@ -94,10 +94,11 @@ pub enum Strategy {
     XYZWing,            // (Known, pivot Cell, arms (Cell, Cell))
     WXYZWing,           // (Known, pivot Cell, arms (Cell, Cell, Cell))
 
-    XYChain,               // (Known, Vec<Cell>)
-    UniqueRectangle,       // (KnownSet, Cell, Cell, Cell, Cell)
-    Fireworks,             // (KnownSet, Cell, Cell, Cell)
-    HiddenUniqueRectangle, // (KnownSet, Cell, Cell, Cell, Cell)
+    XYChain,                 // (Known, Vec<Cell>)
+    UniqueRectangle,         // (KnownSet, Cell, Cell, Cell, Cell)
+    Fireworks,               // (KnownSet, Cell, Cell, Cell)
+    ExtendedUniqueRectangle, // (KnownSet, Cell, Cell, Cell, Cell, Cell, Cell)
+    HiddenUniqueRectangle,   // (KnownSet, Cell, Cell, Cell, Cell)
 
     EmptyRectangle, // (Known, Block, Row, Column, Cell) - CellSet instead of three houses
 
@@ -141,6 +142,7 @@ impl Strategy {
             Self::XYChain => Difficulty::Diabolical,
             Self::UniqueRectangle => Difficulty::Diabolical,
             Self::Fireworks => Difficulty::Diabolical,
+            Self::ExtendedUniqueRectangle => Difficulty::Diabolical,
             Self::HiddenUniqueRectangle => Difficulty::Diabolical,
             Self::WXYZWing => Difficulty::Diabolical,
 
@@ -180,6 +182,7 @@ impl Strategy {
             Self::XYChain => "XY-Chain",
             Self::UniqueRectangle => "Unique Rectangle",
             Self::Fireworks => "Fireworks",
+            Self::ExtendedUniqueRectangle => "Extended Unique Rectangle",
             Self::HiddenUniqueRectangle => "Hidden Unique Rectangle",
             Self::EmptyRectangle => "Empty Rectangle",
             Self::BruteForce => "Brute Force",
