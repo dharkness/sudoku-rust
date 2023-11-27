@@ -102,7 +102,7 @@ pub fn find(board: &Board, single: bool, full: bool) -> Option<Effects> {
 
 /// When three corners contain only the pair, the pair may be removed from the fourth corner.
 ///
-/// ```
+/// ```text
 ///    1   2   3     4   5   6
 ///   ··· ··· ··· | ··· ··· ···
 /// A ··· ·5· ··· | ··· ·5· ···
@@ -412,7 +412,7 @@ impl Candidate {
     /// Two neighbors share the bi-value pair while the other two share one additional candidate.
     /// The candidate may be removed from all cells that see both neighbors that share it.
     ///
-    /// ```
+    /// ```text
     ///    1   2   3     4   5   6     7   8   9
     ///   ··· ··· ··· | ··· ··· ··· | ··· ··· ···
     /// A ··· ·5· ··· | ··· ··· ··· | ··· ·5· ···
@@ -453,7 +453,7 @@ impl Candidate {
     /// This also applies to naked triples and quads with three and four additional candidates,
     /// respectively.
     ///
-    /// ```
+    /// ```text
     ///    1   2   3     4   5   6     7   8   9
     ///   ··· ··· ··· | ··· ··· ··· | ··· 12· ·2·
     /// A ··· ·5· ··· | ··· ··· ··· | ··· ·5· 4··
@@ -535,7 +535,7 @@ impl Candidate {
     /// When one of the pair candidates is locked in the two non-bi-value neighbors,
     /// the other pair candidate may be removed from them.
     ///
-    /// ```
+    /// ```text
     ///    1   2   3     4   5   6     7   8   9
     ///   ··· ··· ··· | ··· ··· ··· | ··· ··· ···
     /// A ··· ·5· ··· | ··· ··· ··· | ··· ·5· ···
@@ -589,7 +589,7 @@ impl Candidate {
     /// This happens when either candidate is locked in both opposite sides in any houses.
     /// The left side could be locked in the column while the right is locked in the block, etc.
     ///
-    /// ```
+    /// ```text
     ///    1   2   3     4   5   6     7   8   9
     ///   ··· ··· ··· | ··· ··· ··· | ··· ·2· ···
     /// A ··· ·5· ··· | ··· ··· ··· | ··· 45· ···
