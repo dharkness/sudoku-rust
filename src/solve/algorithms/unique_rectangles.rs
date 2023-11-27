@@ -4,7 +4,8 @@ use super::naked_tuples;
 use super::*;
 
 pub fn find_unique_rectangles(board: &Board, single: bool) -> Option<Effects> {
-    let mut effects = Effects::new();
+    let mut full = Effects::new();
+    let mut almost = Effects::new();
 
     let bi_values_by_candidates = board.cell_candidates_with_n_candidates(2).fold(
         HashMap::new(),
@@ -29,9 +30,10 @@ pub fn find_unique_rectangles(board: &Board, single: bool) -> Option<Effects> {
                     rectangle,
                     *pair,
                     &mut found_type_ones,
-                    &mut effects,
+                    &mut full,
+                    &mut almost,
                 ) {
-                    return Some(effects);
+                    return Some(full);
                 }
             }
         }
@@ -48,9 +50,10 @@ pub fn find_unique_rectangles(board: &Board, single: bool) -> Option<Effects> {
                     second,
                     Shape::Row,
                     &found_type_ones,
-                    &mut effects,
+                    &mut full,
+                    &mut almost,
                 ) {
-                    return Some(effects);
+                    return Some(full);
                 }
             } else if first.column() == second.column() {
                 if check_neighbors(
@@ -61,9 +64,10 @@ pub fn find_unique_rectangles(board: &Board, single: bool) -> Option<Effects> {
                     second,
                     Shape::Column,
                     &found_type_ones,
-                    &mut effects,
+                    &mut full,
+                    &mut almost,
                 ) {
-                    return Some(effects);
+                    return Some(full);
                 }
             } else {
                 if check_diagonals(
@@ -73,16 +77,24 @@ pub fn find_unique_rectangles(board: &Board, single: bool) -> Option<Effects> {
                     first,
                     second,
                     &found_type_ones,
-                    &mut effects,
+                    &mut full,
+                    &mut almost,
                 ) {
-                    return Some(effects);
+                    return Some(full);
                 }
             }
         }
     }
 
-    if effects.has_actions() {
-        Some(effects)
+    full.take_actions(almost);
+    if full.has_actions() {
+        if single && full.action_count() > 1 {
+            let mut effect = Effects::new();
+            effect.add_action(full.actions()[0].clone());
+            Some(effect)
+        } else {
+            Some(full)
+        }
     } else {
         None
     }
@@ -107,7 +119,8 @@ fn check_type_one(
     rectangle: Rectangle,
     pair: KnownSet,
     found_type_ones: &mut HashSet<Rectangle>,
-    effects: &mut Effects,
+    full: &mut Effects,
+    almost: &mut Effects,
 ) -> bool {
     if rectangle.block_count != 2 || found_type_ones.contains(&rectangle) {
         return false;
@@ -130,7 +143,12 @@ fn check_type_one(
     action.clue_cells_for_knowns(Verdict::Primary, corners, pair);
     action.clue_cell_for_knowns(Verdict::Secondary, fourth, candidates - pair);
 
-    effects.add_action(action) && single
+    if erase.len() == 2 {
+        full.add_action(action) && single
+    } else {
+        almost.add_action(action);
+        false
+    }
 }
 
 fn check_neighbors(
@@ -141,7 +159,8 @@ fn check_neighbors(
     floor_right: Cell,
     shape: Shape,
     found_type_ones: &HashSet<Rectangle>,
-    effects: &mut Effects,
+    full: &mut Effects,
+    almost: &mut Effects,
 ) -> bool {
     let floor_left_block = floor_left.block();
     let houses = if floor_left_block == floor_right.block() {
@@ -155,7 +174,7 @@ fn check_neighbors(
             Candidate::try_from_neighbors(board, pair, floor_left, floor_right, house)
         {
             if !found_type_ones.contains(&candidate.rectangle) {
-                if candidate.check(board, single, effects) {
+                if candidate.check(board, single, full, almost) {
                     return true;
                 }
             }
@@ -172,11 +191,12 @@ fn check_diagonals(
     top: Cell,
     bottom: Cell,
     found_type_ones: &HashSet<Rectangle>,
-    effects: &mut Effects,
+    full: &mut Effects,
+    almost: &mut Effects,
 ) -> bool {
     if let Ok(candidate) = Candidate::try_from_diagonals(board, pair, top, bottom) {
         if !found_type_ones.contains(&candidate.rectangle) {
-            if candidate.check(board, single, effects) {
+            if candidate.check(board, single, full, almost) {
                 return true;
             }
         }
@@ -200,7 +220,6 @@ struct Candidate {
     pub floor_right: Cell,
 
     pub roof: CellSet,
-    pub roof_has_any: bool,
     pub roof_has_both: bool,
     pub roof_extras: KnownSet,
     pub roof_left: Cell,
@@ -288,7 +307,6 @@ impl Candidate {
             floor_left,
             floor_right,
             roof: CellSet::from_iter([roof_left, roof_right]),
-            roof_has_any: roof_common_candidates.has_any(pair),
             roof_has_both: roof_common_candidates.has_all(pair),
             roof_extras: roof_left_extras | roof_right_extras,
             roof_left,
@@ -358,7 +376,6 @@ impl Candidate {
             floor_left,
             floor_right,
             roof,
-            roof_has_any: roof_candidates.has_any(pair),
             roof_has_both: roof_candidates.has_all(pair),
             roof_extras: roof_left_extras | roof_right_extras,
             roof_left,
@@ -377,18 +394,18 @@ impl Candidate {
         action.clue_cell_for_knowns(Verdict::Primary, self.roof_right, self.roof_right_pair);
     }
 
-    fn check(&self, board: &Board, single: bool, effects: &mut Effects) -> bool {
+    fn check(&self, board: &Board, single: bool, full: &mut Effects, almost: &mut Effects) -> bool {
         // type 5 is related to type 1, and type 4 destroys the unique rectangle
-        if self.diagonal && self.check_type_five(board, effects) && single {
+        if self.diagonal && self.check_type_five(board, full, almost) && single {
             return true;
         }
-        if self.check_type_two(board, effects) && single {
+        if self.check_type_two(board, full, almost) && single {
             return true;
         }
-        if !self.diagonal && self.check_type_three(board, effects) && single {
+        if !self.diagonal && self.check_type_three(board, full, almost) && single {
             return true;
         }
-        if !self.diagonal && self.check_type_four(board, effects) && single {
+        if !self.diagonal && self.check_type_four(board, full, almost) && single {
             return true;
         }
 
@@ -408,7 +425,7 @@ impl Candidate {
     /// B ··· ·5· ··· | ··· ··· ··· | ··· ·5· ···  ←-- 2 must appear in cell B2 or B8,
     ///   ··· ··9 ··· | ··· ··· ··· | ··· ··9 ···      and so it may be removed from cells B1 and B5
     /// ```
-    fn check_type_two(&self, board: &Board, effects: &mut Effects) -> bool {
+    fn check_type_two(&self, board: &Board, full: &mut Effects, almost: &mut Effects) -> bool {
         if self.roof_left_extras != self.roof_right_extras || self.roof_left_extras.len() != 1 {
             return false;
         }
@@ -427,9 +444,14 @@ impl Candidate {
         action.erase_cells(cells, extra);
         self.add_clues_for_all_corner_cells(&mut action);
         action.clue_cells_for_known(Verdict::Secondary, self.roof, extra);
-        // println!("type 2 {} - {}", self.rectangle, action);
 
-        effects.add_action(action)
+        // println!("type 2 {} - {}", self.rectangle, action);
+        if self.roof_has_both {
+            full.add_action(action)
+        } else {
+            almost.add_action(action);
+            false
+        }
     }
 
     /// When the two non-bi-value neighbors share one or two additional candidates,
@@ -449,7 +471,7 @@ impl Candidate {
     /// B ··· ·5· ··· | ··· ··· ··· | 4·· ·5· ···      with pseudo-cell AB8, and so (1 2)
     ///   ··· ··9 ··· | ··· ··· ··· | 7·· ··9 ···      may be removed from cells A9 and B7
     /// ```
-    fn check_type_three(&self, board: &Board, effects: &mut Effects) -> bool {
+    fn check_type_three(&self, board: &Board, full: &mut Effects, almost: &mut Effects) -> bool {
         if !(2..=4).contains(&self.roof_extras.len()) {
             return false;
         }
@@ -515,7 +537,12 @@ impl Candidate {
         }
 
         // println!("type 3 {} - {}", self.rectangle, action);
-        effects.add_action(action)
+        if self.roof_has_both {
+            full.add_action(action)
+        } else {
+            almost.add_action(action);
+            false
+        }
     }
 
     /// When one of the pair candidates is locked in the two non-bi-value neighbors,
@@ -531,7 +558,7 @@ impl Candidate {
     /// B ··· ·5· ··· | ·5· ·5· ··· | ··· 45· ···  ←-- 9 must appear in B2 or B8, so 5 may be removed
     ///   ··· ··9 ··· | ··· ··· ··· | ··· ··9 ···      from them to avoid the deadly rectangle
     /// ```
-    fn check_type_four(&self, board: &Board, effects: &mut Effects) -> bool {
+    fn check_type_four(&self, board: &Board, full: &mut Effects, almost: &mut Effects) -> bool {
         for shape in Shape::iter() {
             let house = self.roof_left.house(shape);
             if house != self.roof_right.house(shape) {
@@ -561,8 +588,12 @@ impl Candidate {
             action.clue_cells_for_known(Verdict::Secondary, self.roof, required);
 
             // println!("type 4 {} - {}", self.rectangle, action);
-            if effects.add_action(action) {
-                return true;
+            if self.roof_has_both {
+                if full.add_action(action) {
+                    return true;
+                }
+            } else {
+                almost.add_action(action);
             }
         }
 
@@ -585,7 +616,7 @@ impl Candidate {
     /// B ··· 45· ··· | ··· ··· ··· | ··· ·5· ···  ←-- 5 must appear in cells A2 or A8 and also in B2 or B8,
     ///   ··· ··9 ··· | ··· ··· ··9 | ··9 ··9 ···      and so 9 may be removed from cells A2 and B8
     /// ```
-    fn check_type_five(&self, board: &Board, effects: &mut Effects) -> bool {
+    fn check_type_five(&self, board: &Board, full: &mut Effects, almost: &mut Effects) -> bool {
         let mut keep = None;
 
         let sides = vec![
@@ -624,10 +655,16 @@ impl Candidate {
             action.clue_cells_for_known(Verdict::Primary, self.floor, keep);
 
             // println!("type 5 {} - {}", self.rectangle, action);
-            effects.add_action(action)
-        } else {
-            false
+            if self.roof_has_both {
+                if full.add_action(action) {
+                    return true;
+                }
+            } else {
+                almost.add_action(action);
+            }
         }
+
+        false
     }
 }
 
