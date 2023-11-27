@@ -23,7 +23,7 @@ pub use peers::find_peers;
 pub use singles_chains::find_singles_chains;
 pub use skyscrapers::find_skyscrapers;
 pub use two_string_kites::find_two_string_kites;
-pub use unique_rectangles::find_unique_rectangles;
+pub use unique_rectangles::{find_almost_unique_rectangles, find_unique_rectangles};
 pub use wxyz_wings::find_wxyz_wings;
 pub use xy_chains::find_xy_chains;
 pub use xyz_wings::find_xyz_wings;
