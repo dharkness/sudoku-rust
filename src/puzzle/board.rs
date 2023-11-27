@@ -137,6 +137,11 @@ impl Board {
         self.knowns
     }
 
+    /// Returns the set of all cells solved with the known, including givens.
+    pub const fn known_cells(&self, known: Known) -> CellSet {
+        self.solved_cells_by_known[known.usize()]
+    }
+
     /// Returns an iterator of all known cells with their digit, including givens.
     pub fn known_iter(&self) -> impl Iterator<Item = (Cell, Known)> + '_ {
         self.knowns
@@ -178,6 +183,16 @@ impl Board {
         self.givens
     }
 
+    /// Returns the set of all cells given the known.
+    pub fn given_cells(&self, known: Known) -> CellSet {
+        self.givens & self.solved_cells_by_known[known.usize()]
+    }
+
+    /// Returns true if the cell could not have been solved by the known due to a peer with the given.
+    pub fn blocked_by_given(&self, cell: Cell, known: Known) -> bool {
+        !(cell.peers() & self.givens & self.solved_cells_by_known[known.usize()]).is_empty()
+    }
+
     /// Returns true if every cell on the board has a digit.
     pub const fn is_fully_solved(&self) -> bool {
         self.knowns.is_full()
@@ -194,8 +209,13 @@ impl Board {
     }
 
     /// Returns the set of all solved cells, excluding givens.
-    pub const fn solved(&self) -> CellSet {
-        self.knowns.minus(self.givens)
+    pub fn solved(&self) -> CellSet {
+        self.knowns - self.givens
+    }
+
+    /// Returns the set of all cells solved with the known, excluding givens.
+    pub fn solved_cells(&self, known: Known) -> CellSet {
+        self.solved_cells_by_known[known.usize()] - self.givens
     }
 
     /// Returns true if every cell in the house has a digit.

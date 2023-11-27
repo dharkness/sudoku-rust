@@ -96,6 +96,7 @@ pub enum Strategy {
 
     XYChain,                 // (Known, Vec<Cell>)
     UniqueRectangle,         // (KnownSet, Cell, Cell, Cell, Cell)
+    AlmostUniqueRectangle,   // (KnownSet, Cell, Cell, Cell, Cell)
     Fireworks,               // (KnownSet, Cell, Cell, Cell)
     ExtendedUniqueRectangle, // (KnownSet, Cell, Cell, Cell, Cell, Cell, Cell)
     HiddenUniqueRectangle,   // (KnownSet, Cell, Cell, Cell, Cell)
@@ -141,6 +142,7 @@ impl Strategy {
             Self::Skyscraper => Difficulty::Diabolical,
             Self::XYChain => Difficulty::Diabolical,
             Self::UniqueRectangle => Difficulty::Diabolical,
+            Self::AlmostUniqueRectangle => Difficulty::Diabolical,
             Self::Fireworks => Difficulty::Diabolical,
             Self::ExtendedUniqueRectangle => Difficulty::Diabolical,
             Self::HiddenUniqueRectangle => Difficulty::Diabolical,
@@ -181,6 +183,7 @@ impl Strategy {
             Self::WXYZWing => "WXYZ-Wing",
             Self::XYChain => "XY-Chain",
             Self::UniqueRectangle => "Unique Rectangle",
+            Self::AlmostUniqueRectangle => "Almost Unique Rectangle",
             Self::Fireworks => "Fireworks",
             Self::ExtendedUniqueRectangle => "Extended Unique Rectangle",
             Self::HiddenUniqueRectangle => "Hidden Unique Rectangle",
