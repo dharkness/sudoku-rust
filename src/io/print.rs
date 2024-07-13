@@ -1,6 +1,4 @@
 //! Provides functions for printing the state of a puzzle to the console.
-//!
-//! See <https://www.w3.org/TR/xml-entity-names/025.html>
 
 use std::collections::HashMap;
 
@@ -12,12 +10,12 @@ use crate::symbols::{GIVEN, MISSING};
 
 // Unicode line characters: https://www.w3.org/TR/xml-entity-names/025.html
 //
-// thin:   ┌ ─ ┐ └ ┘ ├ ┤ ┬ ┴ ┼
+// thin:   ┌ ─ ┐ │ └ ┘ ├ ┤ ┬ ┴ ┼
 //
-// think:  ┏ ━ ┓ ┗ ┛ ┣ ┫ ┳ ┻ ╋
+// thick:  ┏ ━ ┓ ┃ ┗ ┛ ┣ ┫ ┳ ┻ ╋
 // combo:  ┠ ┨ ┯ ┷ ┿ ╂
 //
-// double: ╔ ═ ╗ ╚ ╝ ╠ ╣ ╦ ╩ ╬
+// double: ╔ ═ ╗ ║ ╚ ╝ ╠ ╣ ╦ ╩ ╬
 // combo:  ╟ ╢ ╧ ╤ ╪ ╫
 //
 // dashed: ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ╌ ╍ ╎ ╏
