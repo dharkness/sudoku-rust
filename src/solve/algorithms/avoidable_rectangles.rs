@@ -139,10 +139,7 @@ pub fn find_avoidable_rectangles(board: &Board, single: bool) -> Option<Effects>
 #[cfg(test)]
 mod tests {
     use crate::io::{Parse, Parser};
-    use crate::layout::cells::cell::cell;
-    use crate::layout::cells::cell_set::cells;
-    use crate::layout::values::known::known;
-    use crate::layout::values::known_set::knowns;
+    use crate::*;
 
     use super::*;
 
@@ -157,9 +154,9 @@ mod tests {
 
         if let Some(got) = find_avoidable_rectangles(&board, true) {
             let mut action = Action::new(Strategy::AvoidableRectangle);
-            action.erase(cell!("B9"), known!("9"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("A1"), known!("9"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("A9 B1"), known!("7"));
+            action.erase(cell!(B9), known!(9));
+            action.clue_cells_for_known(Verdict::Primary, cells![A1], known!(9));
+            action.clue_cells_for_known(Verdict::Primary, cells![A9 B1], known!(7));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
@@ -178,10 +175,10 @@ mod tests {
 
         if let Some(got) = find_avoidable_rectangles(&board, true) {
             let mut action = Action::new(Strategy::AvoidableRectangle);
-            action.erase(cell!("E9"), known!("2"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("F9 H7"), known!("1"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("F7 H9"), known!("3"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("F9 H9"), known!("2"));
+            action.erase(cell!(E9), known!(2));
+            action.clue_cells_for_known(Verdict::Primary, cells![F9 H7], known!(1));
+            action.clue_cells_for_known(Verdict::Primary, cells![F7 H9], known!(3));
+            action.clue_cells_for_known(Verdict::Secondary, cells![F9 H9], known!(2));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
@@ -200,13 +197,25 @@ mod tests {
 
         if let Some(got) = find_avoidable_rectangles(&board, true) {
             let mut action = Action::new(Strategy::AvoidableRectangle);
-            action.erase_knowns(cell!("H1"), knowns!("4 5"));
-            action.clue_cells_for_knowns(Verdict::Secondary, cells!("A1"), knowns!("5 9"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("C1"), known!("5"));
-            action.clue_cells_for_knowns(Verdict::Secondary, cells!("D1"), knowns!("4 9"));
-            action.clue_cells_for_knowns(Verdict::Secondary, cells!("G1"), knowns!("4 5"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("A1 C5"), known!("7"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("A5 C1"), known!("6"));
+            action.erase_knowns(cell!(H1), knowns![4 5]);
+            action.clue_cells_for_knowns(
+                Verdict::Secondary,
+                CellSet::from(cell!(A1)),
+                knowns![5 9],
+            );
+            action.clue_cells_for_known(Verdict::Secondary, cells![C1], known!(5));
+            action.clue_cells_for_knowns(
+                Verdict::Secondary,
+                CellSet::from(cell!(D1)),
+                knowns![4 9],
+            );
+            action.clue_cells_for_knowns(
+                Verdict::Secondary,
+                CellSet::from(cell!(G1)),
+                knowns![4 5],
+            );
+            action.clue_cells_for_known(Verdict::Primary, cells![A1 C5], known!(7));
+            action.clue_cells_for_known(Verdict::Primary, cells![A5 C1], known!(6));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

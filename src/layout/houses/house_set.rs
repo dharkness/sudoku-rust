@@ -4,6 +4,9 @@ use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Not, Sub, SubAssign,
 };
 
+use crate::io::ordinal_suffix;
+use crate::layout::houses::coord_set::CoordIteratorUnion;
+use crate::layout::houses::house::HouseError;
 use crate::layout::CellSet;
 use crate::symbols::EMPTY_SET;
 
@@ -17,7 +20,49 @@ pub struct HouseSet {
     coords: CoordSet,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum HouseSetError {
+    InvalidHouse { position: usize, error: HouseError },
+}
+
+impl fmt::Display for HouseSetError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            HouseSetError::InvalidHouse { position, error } => {
+                write!(f, "{} ({}{})", error, position, ordinal_suffix(*position))
+            }
+        }
+    }
+}
+
+impl std::error::Error for HouseSetError {}
+
 impl HouseSet {
+    pub const fn new(shape: Shape, coords: CoordSet) -> Self {
+        Self { shape, coords }
+    }
+
+    pub fn try_from_with_shape(shape: Shape, labels: &str) -> Result<Self, HouseSetError> {
+        let cleaned = labels.replace([' ', ','], "");
+        if cleaned.is_empty() {
+            return Ok(Self::new(shape, CoordSet::empty()));
+        }
+
+        let coords: Vec<Coord> = cleaned
+            .chars()
+            .enumerate()
+            .map(|(index, ch)| {
+                let position = index + 1;
+                Coord::try_from(ch).map_err(|error| HouseSetError::InvalidHouse {
+                    position,
+                    error: HouseError::InvalidCoord { shape, error },
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(Self::new(shape, coords.into_iter().union_coords()))
+    }
+
     pub const fn empty(shape: Shape) -> Self {
         Self {
             shape,
@@ -29,20 +74,6 @@ impl HouseSet {
         Self {
             shape,
             coords: CoordSet::full(),
-        }
-    }
-
-    pub const fn from_bits(shape: Shape, bits: u16) -> Self {
-        HouseSet {
-            shape,
-            coords: CoordSet::new(bits),
-        }
-    }
-
-    pub const fn from_labels(shape: Shape, labels: &str) -> Self {
-        HouseSet {
-            shape,
-            coords: CoordSet::from_labels(labels),
         }
     }
 
@@ -123,12 +154,12 @@ impl HouseSet {
 
     pub fn with(&self, house: House) -> Self {
         if self.shape != house.shape() {
-            panic!("Cannot add {} to {} set", house, self.shape);
+            panic!("cannot add {} to {} set", house, self.shape);
         }
         self.with_coord(house.coord())
     }
 
-    pub fn with_coord(&self, coord: Coord) -> Self {
+    pub const fn with_coord(&self, coord: Coord) -> Self {
         Self {
             shape: self.shape,
             coords: self.coords.with(coord),
@@ -137,7 +168,7 @@ impl HouseSet {
 
     pub fn add(&mut self, house: House) {
         if self.shape != house.shape() {
-            panic!("Cannot add {} to {} set", house, self.shape);
+            panic!("cannot add {} to {} set", house, self.shape);
         }
         self.add_coord(house.coord());
     }
@@ -148,7 +179,7 @@ impl HouseSet {
 
     pub fn without(&self, house: House) -> Self {
         if self.shape != house.shape() {
-            panic!("Cannot remove {} from {} set", house, self.shape);
+            panic!("cannot remove {} from {} set", house, self.shape);
         }
         self.without_coord(house.coord())
     }
@@ -162,7 +193,7 @@ impl HouseSet {
 
     pub fn remove(&mut self, house: House) {
         if self.shape != house.shape() {
-            panic!("Cannot remove {} from {} set", house, self.shape);
+            panic!("cannot remove {} from {} set", house, self.shape);
         }
         self.remove_coord(house.coord());
     }
@@ -190,7 +221,7 @@ impl HouseSet {
 
     pub fn union(&self, set: Self) -> Self {
         if self.shape != set.shape() {
-            panic!("Cannot compare {} and {} sets", self.shape, set.shape);
+            panic!("cannot compare {} and {} sets", self.shape, set.shape);
         }
         if self.coords == set.coords {
             *self
@@ -208,7 +239,7 @@ impl HouseSet {
 
     pub fn intersect(&self, set: Self) -> Self {
         if self.shape != set.shape() {
-            panic!("Cannot compare {} and {} sets", self.shape, set.shape);
+            panic!("cannot compare {} and {} sets", self.shape, set.shape);
         }
         if self.coords == set.coords {
             *self
@@ -226,7 +257,7 @@ impl HouseSet {
 
     pub fn minus(&self, set: Self) -> Self {
         if self.shape != set.shape() {
-            panic!("Cannot compare {} and {} sets", self.shape, set.shape);
+            panic!("cannot compare {} and {} sets", self.shape, set.shape);
         }
         if self.coords == set.coords {
             Self::empty(self.shape)
@@ -271,12 +302,6 @@ impl From<House> for HouseSet {
             shape: house.shape(),
             coords: CoordSet::from_coord(house.coord()),
         }
-    }
-}
-
-impl From<&str> for HouseSet {
-    fn from(labels: &str) -> Self {
-        labels.split(' ').map(House::from).union_houses()
     }
 }
 
@@ -520,36 +545,93 @@ impl fmt::Debug for HouseSet {
     }
 }
 
-#[allow(unused_macros)]
-macro_rules! houses {
-    ($labels:expr) => {{
-        HouseSet::from($labels)
-    }};
-}
-
-#[allow(unused_macros)]
+/// Creates a [`HouseSet`] of rows from coordinate labels
+/// from top to bottom, starting at A or 1.
+///
+/// # Examples
+///
+/// ```
+/// use sudoku_rust::rows;
+///
+/// let empty = rows![];
+/// let set = rows![A C G];
+/// let set = rows![1 3 7];
+/// ```
+///
+/// # Panics
+///
+/// Panics if any coordinate is invalid.
+#[macro_export]
 macro_rules! rows {
-    ($coords:literal) => {
-        HouseSet::from_coords(Shape::Row, $coords)
+    () => {
+        HouseSet::new(Shape::Row, CoordSet::empty())
+    };
+
+    ($($tokens:tt)+) => {
+        match HouseSet::try_from_with_shape(Shape::Row, stringify!($($tokens)+)) {
+            Ok(set) => set,
+            Err(e) => panic!("rows![{}]: {}", stringify!($($tokens)+), e),
+        }
     };
 }
 
-#[allow(unused_macros)]
+/// Creates a [`HouseSet`] of columns from coordinate labels
+/// from left to right, starting at 1.
+///
+/// # Examples
+///
+/// ```
+/// use sudoku_rust::cols;
+///
+/// let empty = cols![];
+/// let set = cols![1 3 7];
+/// ```
+///
+/// # Panics
+///
+/// Panics if any coordinate is invalid.
+#[macro_export]
 macro_rules! cols {
-    ($labels:literal) => {
-        HouseSet::from_coords(Shape::Column, $labels)
+    () => {
+        HouseSet::new(Shape::Column, CoordSet::empty())
+    };
+
+    ($($tokens:tt)+) => {
+        match HouseSet::try_from_with_shape(Shape::Column, stringify!($($tokens)+)) {
+            Ok(set) => set,
+            Err(e) => panic!("cols![{}]: {}", stringify!($($tokens)+), e),
+        }
     };
 }
 
-#[allow(unused_macros)]
+/// Creates a [`HouseSet`] of blocks from coordinate labels
+/// from top to bottom, left to right, and starting at 1.
+///
+/// # Examples
+///
+/// ```
+/// use sudoku_rust::blocks;
+///
+/// let empty = blocks![];
+/// let set = blocks![1 5 9];
+/// ```
+///
+/// # Panics
+///
+/// Panics if any coordinate is invalid.
+#[macro_export]
 macro_rules! blocks {
-    ($labels:literal) => {
-        HouseSet::from_coords(Shape::Block, $labels)
+    () => {
+        HouseSet::new(Shape::Block, CoordSet::empty())
+    };
+
+    ($($tokens:tt)+) => {
+        match HouseSet::try_from_with_shape(Shape::Block, stringify!($($tokens)+)) {
+            Ok(set) => set,
+            Err(e) => panic!("blocks![{}]: {}", stringify!($($tokens)+), e),
+        }
     };
 }
-
-#[allow(unused_imports)]
-pub(crate) use {blocks, cols, houses, rows};
 
 pub struct Iter {
     shape: Shape,
@@ -574,6 +656,8 @@ impl FusedIterator for Iter {}
 
 #[cfg(test)]
 mod tests {
+    use crate::*;
+
     use super::*;
 
     #[test]
@@ -600,37 +684,31 @@ mod tests {
     fn as_pair_returns_none_if_not_pair() {
         assert!(HouseSet::empty(Shape::Row).as_pair().is_none());
         assert!(HouseSet::full(Shape::Row).as_pair().is_none());
-        assert!(HouseSet::from("R2 R4 R8").as_pair().is_none());
+        assert!(rows![B D H].as_pair().is_none());
     }
 
     #[test]
     fn as_pair_returns_pair() {
-        assert_eq!(
-            (House::from("R2"), House::from("R8")),
-            HouseSet::from("R2 R8").as_pair().unwrap()
-        );
-        assert_eq!(
-            (House::from("R4"), House::from("R7")),
-            HouseSet::from("R7 R4").as_pair().unwrap()
-        );
+        assert_eq!((row!(B), row!(H)), rows![B H].as_pair().unwrap());
+        assert_eq!((row!(D), row!(G)), rows![G D].as_pair().unwrap());
     }
 
     #[test]
     fn as_triple_returns_none_if_not_triple() {
         assert!(HouseSet::empty(Shape::Row).as_triple().is_none());
         assert!(HouseSet::full(Shape::Row).as_triple().is_none());
-        assert!(HouseSet::from("C2 C4 C7 C9").as_triple().is_none());
+        assert!(cols![2 4 7 9].as_triple().is_none());
     }
 
     #[test]
     fn as_triple_returns_triple() {
         assert_eq!(
-            (House::from("C1"), House::from("C2"), House::from("C4")),
-            HouseSet::from("C1 C2 C4").as_triple().unwrap()
+            (col!(1), col!(2), col!(4)),
+            cols![1 2 4].as_triple().unwrap()
         );
         assert_eq!(
-            (House::from("C1"), House::from("C2"), House::from("C4")),
-            HouseSet::from("C4 C1 C2").as_triple().unwrap()
+            (col!(1), col!(2), col!(4)),
+            cols![4 1 2].as_triple().unwrap()
         );
     }
 }

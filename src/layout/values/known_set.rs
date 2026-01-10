@@ -4,6 +4,8 @@ use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Not, Sub, SubAssign,
 };
 
+use crate::io::ordinal_suffix;
+use crate::layout::values::known::KnownError;
 use crate::symbols::{EMPTY_SET, MISSING};
 
 use super::Known;
@@ -14,6 +16,27 @@ type Size = u8;
 /// A set of knowns implemented using a bit field.
 #[derive(Clone, Copy, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct KnownSet(Bits);
+
+/// Errors that can occur when parsing a known set.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum KnownSetError {
+    InvalidKnown {
+        position: usize, // 1-based position in the list of knowns
+        error: KnownError,
+    },
+}
+
+impl fmt::Display for KnownSetError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            KnownSetError::InvalidKnown { position, error } => {
+                write!(f, "{} ({}{})", error, position, ordinal_suffix(*position))
+            }
+        }
+    }
+}
+
+impl std::error::Error for KnownSetError {}
 
 const ALL_KNOWNS: std::ops::Range<Size> = 0..Known::COUNT;
 const ALL_SET: Bits = (1 << Known::COUNT) - 1;
@@ -193,12 +216,36 @@ impl KnownSet {
     }
 }
 
-impl From<&str> for KnownSet {
-    fn from(labels: &str) -> Self {
-        labels
+impl TryFrom<&str> for KnownSet {
+    type Error = KnownSetError;
+
+    fn try_from(values: &str) -> Result<Self, Self::Error> {
+        if values.is_empty() {
+            return Ok(Self::empty());
+        }
+
+        let cleaned = values.replace([' ', ','], "");
+
+        let knowns: Vec<Known> = cleaned
             .chars()
-            .filter_map(|c| Known::try_from(c).ok())
-            .union_knowns()
+            .enumerate()
+            .map(|(index, ch)| {
+                Known::try_from(ch).map_err(|error| KnownSetError::InvalidKnown {
+                    position: index + 1,
+                    error,
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(knowns.into_iter().union_knowns())
+    }
+}
+
+impl TryFrom<String> for KnownSet {
+    type Error = KnownSetError;
+
+    fn try_from(values: String) -> Result<Self, Self::Error> {
+        Self::try_from(values.as_str())
     }
 }
 
@@ -396,15 +443,58 @@ impl fmt::Debug for KnownSet {
     }
 }
 
-#[allow(unused_macros)]
-macro_rules! knowns {
-    ($s:expr) => {{
-        KnownSet::from($s)
-    }};
+/// Creates a [`KnownSet`] containing all 9 knowns.
+///
+/// This is equivalent to calling [`KnownSet::full()`] but provides
+/// consistent macro syntax when used alongside [`knowns!`].
+///
+/// # Examples
+///
+/// ```
+/// # use sudoku_rust::{KnownSet, all_knowns};
+/// let all = all_knowns!();
+/// assert_eq!(81, all.len());
+/// ```
+#[macro_export]
+macro_rules! all_knowns {
+    () => {
+        KnownSet::full()
+    };
 }
 
-#[allow(unused_imports)]
-pub(crate) use knowns;
+/// Creates a [`KnownSet`] from known value digits.
+///
+/// Compile-time convenience that panics on invalid input.
+/// For runtime parsing with error handling, use [`KnownSet::try_from`].
+///
+/// # Examples
+///
+/// ```
+/// use sudoku_rust::knowns;
+///
+/// let empty = knowns![];
+/// let set = knowns![1 2 3];
+/// let set = knowns![5 9];
+/// ```
+///
+/// # Panics
+///
+/// Panics if any value is invalid. See [`KnownSet::try_from`] for valid formats.
+#[macro_export]
+macro_rules! knowns {
+    () => {
+        KnownSet::empty()
+    };
+
+    ($($tokens:tt)+) => {
+        match KnownSet::try_from(stringify!($($tokens)+)) {
+            Ok(set) => set,
+            Err(e) => {
+                panic!("knowns![{}]: {}", stringify!($($tokens)+), e)
+            }
+        }
+    };
+}
 
 pub struct Iter {
     bits: Bits,
@@ -428,14 +518,14 @@ impl FusedIterator for Iter {}
 
 #[cfg(test)]
 mod tests {
-    use crate::layout::values::known::known;
     use crate::symbols::EMPTY_SET_STR;
+    use crate::*;
 
     use super::*;
 
     #[test]
     fn empty_returns_an_empty_set() {
-        let set = KnownSet::empty();
+        let set = knowns![];
 
         assert!(set.is_empty());
         assert_eq!(0, set.len());
@@ -446,7 +536,7 @@ mod tests {
 
     #[test]
     fn full_returns_a_full_set() {
-        let set = KnownSet::full();
+        let set = all_knowns![];
 
         assert!(!set.is_empty());
         assert_eq!(9, set.len());
@@ -468,130 +558,130 @@ mod tests {
 
     #[test]
     fn as_pair_returns_none_if_not_pair() {
-        assert!(KnownSet::empty().as_pair().is_none());
-        assert!(KnownSet::full().as_pair().is_none());
-        assert!(KnownSet::from("2 5 8 9").as_pair().is_none());
+        assert!(knowns![].as_pair().is_none());
+        assert!(all_knowns![].as_pair().is_none());
+        assert!(knowns![2 5 8 9].as_pair().is_none());
     }
 
     #[test]
     fn as_pair_returns_pair() {
         assert_eq!(
             (Known::new(2), Known::new(5)),
-            KnownSet::from("2 5").as_pair().unwrap()
+            knowns![2 5].as_pair().unwrap()
         );
         assert_eq!(
             (Known::new(1), Known::new(9)),
-            KnownSet::from("9 1").as_pair().unwrap()
+            knowns![9 1].as_pair().unwrap()
         );
     }
 
     #[test]
     fn as_triple_returns_none_if_not_triple() {
-        assert!(KnownSet::empty().as_triple().is_none());
-        assert!(KnownSet::full().as_triple().is_none());
-        assert!(KnownSet::from("2 5 8 9").as_triple().is_none());
+        assert!(knowns![].as_triple().is_none());
+        assert!(all_knowns![].as_triple().is_none());
+        assert!(knowns![2 5 8 9].as_triple().is_none());
     }
 
     #[test]
     fn as_triple_returns_triple() {
         assert_eq!(
             (Known::new(2), Known::new(5), Known::new(8)),
-            KnownSet::from("2 5 8").as_triple().unwrap()
+            knowns![2 5 8].as_triple().unwrap()
         );
         assert_eq!(
             (Known::new(1), Known::new(5), Known::new(9)),
-            KnownSet::from("9 5 1").as_triple().unwrap()
+            knowns![9 5 1].as_triple().unwrap()
         );
     }
 
     #[test]
     fn add_returns_the_same_set_when_the_known_is_present() {
-        let set = knowns!("2 5 8 9");
+        let set = knowns![2 5 8 9];
 
-        let got = set + known!("5");
+        let got = set + known!(5);
         assert_eq!(set, got);
     }
 
     #[test]
     fn add_returns_a_new_set_when_the_known_is_not_present() {
-        let set = knowns!("2 5 8 9");
+        let set = knowns![2 5 8 9];
 
-        let got = set + known!("6");
+        let got = set + known!(6);
         assert_ne!(set, got);
-        assert!(got[known!("6")]);
+        assert!(got[known!(6)]);
     }
 
     #[test]
     fn sub_returns_the_same_set_when_the_known_is_not_present() {
-        let set = KnownSet::from("2 5 8 9");
+        let set = knowns![2 5 8 9];
 
-        let got = set - known!("6");
+        let got = set - known!(6);
         assert_eq!(set, got);
     }
 
     #[test]
     fn sub_returns_the_same_set_when_the_known_is_present() {
-        let set = KnownSet::from("2 5 8 9");
+        let set = knowns![2 5 8 9];
 
-        let got = set - known!("5");
+        let got = set - known!(5);
         assert_ne!(set, got);
-        assert!(!got[known!("5")]);
+        assert!(!got[known!(5)]);
     }
 
     #[test]
     fn not_returns_an_inverted_set() {
-        assert_eq!(KnownSet::full(), !KnownSet::empty());
-        assert_eq!(KnownSet::empty(), !KnownSet::full());
+        assert_eq!(all_knowns![], !knowns![]);
+        assert_eq!(knowns![], !all_knowns![]);
 
-        assert_eq!(KnownSet::from("2 5 8 9"), !KnownSet::from("1 3 4 6 7"));
+        assert_eq!(knowns![2 5 8 9], !knowns![1 3 4 6 7]);
     }
 
     #[test]
     fn unions() {
-        assert_eq!(KnownSet::empty(), KnownSet::empty() | KnownSet::empty());
-        assert_eq!(KnownSet::full(), KnownSet::full() | KnownSet::empty());
-        assert_eq!(KnownSet::full(), KnownSet::empty() | KnownSet::full());
-        assert_eq!(KnownSet::full(), KnownSet::full() | KnownSet::full());
+        assert_eq!(knowns![], knowns![] | knowns![]);
+        assert_eq!(all_knowns![], all_knowns![] | knowns![]);
+        assert_eq!(all_knowns![], knowns![] | all_knowns![]);
+        assert_eq!(all_knowns![], all_knowns![] | all_knowns![]);
 
-        let mut set = KnownSet::empty();
-        set |= KnownSet::full();
+        let mut set = knowns![];
+        set |= all_knowns![];
         assert!(set.is_full());
     }
 
     #[test]
     fn intersections() {
-        assert_eq!(KnownSet::empty(), KnownSet::empty() & KnownSet::empty());
-        assert_eq!(KnownSet::empty(), KnownSet::full() & KnownSet::empty());
-        assert_eq!(KnownSet::empty(), KnownSet::empty() & KnownSet::full());
-        assert_eq!(KnownSet::full(), KnownSet::full() & KnownSet::full());
+        assert_eq!(knowns![], knowns![] & knowns![]);
+        assert_eq!(knowns![], all_knowns![] & knowns![]);
+        assert_eq!(knowns![], knowns![] & all_knowns![]);
+        assert_eq!(all_knowns![], all_knowns![] & all_knowns![]);
 
-        let mut set = KnownSet::full();
-        set &= KnownSet::empty();
+        let mut set = all_knowns![];
+        set &= knowns![];
         assert!(set.is_empty());
     }
 
     #[test]
     fn differences() {
-        assert_eq!(KnownSet::empty(), KnownSet::empty() - KnownSet::empty());
-        assert_eq!(KnownSet::full(), KnownSet::full() - KnownSet::empty());
-        assert_eq!(KnownSet::empty(), KnownSet::empty() - KnownSet::full());
-        assert_eq!(KnownSet::empty(), KnownSet::full() - KnownSet::full());
+        assert_eq!(knowns![], knowns![] - knowns![]);
+        assert_eq!(all_knowns![], all_knowns![] - knowns![]);
+        assert_eq!(knowns![], knowns![] - all_knowns![]);
+        assert_eq!(knowns![], all_knowns![] - all_knowns![]);
 
-        let mut set = KnownSet::full();
-        set -= KnownSet::full();
+        let mut set = all_knowns![];
+        set -= all_knowns![];
         assert!(set.is_empty());
     }
 
     #[test]
     fn strings() {
-        let mut set = KnownSet::empty();
+        let mut set = knowns![];
 
         assert_eq!(EMPTY_SET_STR, set.to_string());
 
-        set += known!("4");
-        set += known!("2");
-        set += known!("6");
-        set += known!("9");
+        set += known!(4);
+        set += known!(2);
+        set += known!(6);
+        set += known!(9);
 
         assert_eq!("(·2·4·6··9)", set.to_string());
     }

@@ -249,9 +249,7 @@ pub fn find_wxyz_wings(board: &Board, single: bool) -> Option<Effects> {
 #[cfg(test)]
 mod tests {
     use crate::io::{Parse, Parser};
-    use crate::layout::cells::cell::cell;
-    use crate::layout::cells::cell_set::cells;
-    use crate::layout::values::known::known;
+    use crate::*;
 
     use super::*;
 
@@ -268,11 +266,11 @@ mod tests {
             assert_eq!(1, got.actions().len());
 
             let mut action = Action::new(Strategy::WXYZWing);
-            action.erase(cell!("D2"), known!("9"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("D3 D4 D6 F1"), known!("9"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("D3 F1"), known!("1"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("D3 D6"), known!("2"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("D3 D4 D6"), known!("5"));
+            action.erase(cell!(D2), known!(9));
+            action.clue_cells_for_known(Verdict::Secondary, cells![D3 D4 D6 F1], known!(9));
+            action.clue_cells_for_known(Verdict::Primary, cells![D3 F1], known!(1));
+            action.clue_cells_for_known(Verdict::Primary, cells![D3 D6], known!(2));
+            action.clue_cells_for_known(Verdict::Primary, cells![D3 D4 D6], known!(5));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
@@ -293,11 +291,11 @@ mod tests {
             assert_eq!(1, got.actions().len());
 
             let mut action = Action::new(Strategy::WXYZWing);
-            action.erase_cells(cells!("F6 G5 J5"), known!("5"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("E5 G6 J6"), known!("5"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("D6 J6"), known!("6"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("D6 G6"), known!("2"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("D6 E5"), known!("9"));
+            action.erase_cells(cells![F6 G5 J5], known!(5));
+            action.clue_cells_for_known(Verdict::Secondary, cells![E5 G6 J6], known!(5));
+            action.clue_cells_for_known(Verdict::Primary, cells![D6 J6], known!(6));
+            action.clue_cells_for_known(Verdict::Primary, cells![D6 G6], known!(2));
+            action.clue_cells_for_known(Verdict::Primary, cells![D6 E5], known!(9));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

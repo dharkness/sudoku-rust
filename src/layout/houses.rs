@@ -10,7 +10,7 @@ pub mod house;
 pub mod house_set;
 pub mod shape;
 
-pub use coord::Coord;
+pub use coord::{Coord, CoordError};
 pub use coord_set::CoordSet;
 pub use house::{House, HouseIter};
 pub use house_set::{

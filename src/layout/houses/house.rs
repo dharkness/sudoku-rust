@@ -2,10 +2,9 @@ use std::cmp::Ordering;
 use std::fmt;
 use std::ops::{Add, Neg};
 
-use crate::layout::houses::house_set::{blocks, cols, rows};
-use crate::layout::{Cell, CellSet, Coord};
+use crate::layout::{Cell, CellSet, Coord, CoordSet};
 
-use super::{HouseSet, Iter, Shape};
+use super::{CoordError, HouseSet, Iter, Shape};
 
 /// One of the nine rows, columns, or blocks on the board.
 #[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq)]
@@ -13,6 +12,23 @@ pub struct House {
     shape: Shape,
     coord: Coord,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum HouseError {
+    InvalidCoord { shape: Shape, error: CoordError },
+}
+
+impl fmt::Display for HouseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            HouseError::InvalidCoord { shape, error } => {
+                write!(f, "{} for {}", error, shape.code_label())
+            }
+        }
+    }
+}
+
+impl std::error::Error for HouseError {}
 
 impl House {
     pub const COUNT: u8 = 9;
@@ -55,6 +71,13 @@ impl House {
 
     pub const fn block(coord: Coord) -> Self {
         BLOCKS[coord.usize()]
+    }
+
+    pub fn try_from_with_shape(shape: Shape, label: &str) -> Result<Self, HouseError> {
+        Ok(Self::new(
+            shape,
+            Coord::try_from(label).map_err(|error| HouseError::InvalidCoord { shape, error })?,
+        ))
     }
 
     pub const fn new(shape: Shape, coord: Coord) -> Self {
@@ -147,7 +170,7 @@ impl House {
             Shape::Column => cells.iter().fold(HouseSet::empty(Shape::Row), |acc, cell| {
                 acc + cell.row_coord()
             }),
-            Shape::Block => panic!("Blocks do not have crossing houses"),
+            Shape::Block => panic!("blocks do not have crossing houses"),
         }
     }
 
@@ -198,31 +221,6 @@ impl House {
 
     pub fn block_iter(&self) -> Iter {
         self.blocks().iter()
-    }
-}
-
-impl From<&str> for House {
-    fn from(label: &str) -> Self {
-        if label.len() != 2 {
-            panic!(
-                "Invalid house: \"{}\"; must be (R | C | B) and a digit",
-                label
-            );
-        }
-        let mut chars = label.chars();
-        let shape = chars.next().unwrap();
-        if shape != 'R' && shape != 'C' && shape != 'B' {
-            panic!("Invalid house shape: \"{}\"; must be (R | C | B)", label);
-        }
-        let coord = chars.next().unwrap() as u8 - b'1';
-        if coord > 9 {
-            panic!("Invalid house coord: \"{}\"; must be 1-9", label);
-        }
-
-        Self {
-            shape: Shape::from(shape),
-            coord: Coord::from(coord),
-        }
     }
 }
 
@@ -335,30 +333,77 @@ impl ExactSizeIterator for HousesIter {
     }
 }
 
-#[allow(unused_macros)]
+/// Creates a row [`House`] from a coordinate label.
+///
+/// # Examples
+///
+/// ```
+/// use sudoku_rust::row;
+///
+/// let r = row!(1);
+/// let r = row!(A);
+/// ```
+///
+/// # Panics
+///
+/// Panics if the coordinate is invalid.
+#[macro_export]
 macro_rules! row {
-    ($c:expr) => {
-        House::row(coord!($c))
+    ($coord:tt) => {
+        match House::try_from_with_shape(Shape::Row, stringify!($coord)) {
+            Ok(h) => h,
+            Err(e) => panic!("row![{}]: {}", stringify!($coord), e),
+        }
     };
 }
 
-// column! is a built-in macro :(
-#[allow(unused_macros)]
+/// Creates a column [`House`] from a coordinate label.
+///
+/// # Examples
+///
+/// ```
+/// use sudoku_rust::col;
+///
+/// let c = col!(1);
+/// let c = col!(A);
+/// ```
+///
+/// # Panics
+///
+/// Panics if the coordinate is invalid.
+#[macro_export]
 macro_rules! col {
-    ($c:expr) => {
-        House::column(coord!($c))
+    ($coord:tt) => {
+        match House::try_from_with_shape(Shape::Column, stringify!($coord)) {
+            Ok(h) => h,
+            Err(e) => panic!("col![{}]: {}", stringify!($coord), e),
+        }
     };
 }
 
-#[allow(unused_macros)]
+/// Creates a block [`House`] from a coordinate label.
+///
+/// # Examples
+///
+/// ```
+/// use sudoku_rust::block;
+///
+/// let b = block!(1);
+/// let b = block!(5);
+/// ```
+///
+/// # Panics
+///
+/// Panics if the coordinate is invalid.
+#[macro_export]
 macro_rules! block {
-    ($c:expr) => {
-        House::block(coord!($c))
+    ($coord:tt) => {
+        match House::try_from_with_shape(Shape::Block, stringify!($coord)) {
+            Ok(h) => h,
+            Err(e) => panic!("block![{}]: {}", stringify!($coord), e),
+        }
     };
 }
-
-#[allow(unused_imports)]
-pub(crate) use {block, col, row};
 
 #[rustfmt::skip]
 pub const LABELS: [[&str; 9]; 3] = [
@@ -435,89 +480,100 @@ pub const INTERSECTIONS: [[[[CellSet; 9]; 3]; 9]; 3] = {
 };
 
 const ROW_ROWS: [HouseSet; 9] = [
-    rows!(1),
-    rows!(2),
-    rows!(3),
-    rows!(4),
-    rows!(5),
-    rows!(6),
-    rows!(7),
-    rows!(8),
-    rows!(9),
+    HouseSet::new(Shape::Row, CoordSet::from_digit(1)),
+    HouseSet::new(Shape::Row, CoordSet::from_digit(2)),
+    HouseSet::new(Shape::Row, CoordSet::from_digit(3)),
+    HouseSet::new(Shape::Row, CoordSet::from_digit(4)),
+    HouseSet::new(Shape::Row, CoordSet::from_digit(5)),
+    HouseSet::new(Shape::Row, CoordSet::from_digit(6)),
+    HouseSet::new(Shape::Row, CoordSet::from_digit(7)),
+    HouseSet::new(Shape::Row, CoordSet::from_digit(8)),
+    HouseSet::new(Shape::Row, CoordSet::from_digit(9)),
 ];
 
 const COLUMN_ROWS: [HouseSet; 9] = [House::all_rows(); 9];
 
 #[rustfmt::skip]
 const BLOCK_ROWS: [HouseSet; 9] = [
-    rows!(123), rows!(123), rows!(123),
-    rows!(456), rows!(456), rows!(456),
-    rows!(789), rows!(789), rows!(789),
+    HouseSet::new(Shape::Row, CoordSet::new_triple(1, 2, 3)),
+    HouseSet::new(Shape::Row, CoordSet::new_triple(1, 2, 3)),
+    HouseSet::new(Shape::Row, CoordSet::new_triple(1, 2, 3)),
+    HouseSet::new(Shape::Row, CoordSet::new_triple(4, 5, 6)),
+    HouseSet::new(Shape::Row, CoordSet::new_triple(4, 5, 6)),
+    HouseSet::new(Shape::Row, CoordSet::new_triple(4, 5, 6)),
+    HouseSet::new(Shape::Row, CoordSet::new_triple(7, 8, 9)),
+    HouseSet::new(Shape::Row, CoordSet::new_triple(7, 8, 9)),
+    HouseSet::new(Shape::Row, CoordSet::new_triple(7, 8, 9)),
 ];
 
 const ROW_COLUMNS: [HouseSet; 9] = [House::all_columns(); 9];
 
 const COLUMN_COLUMNS: [HouseSet; 9] = [
-    cols!(1),
-    cols!(2),
-    cols!(3),
-    cols!(4),
-    cols!(5),
-    cols!(6),
-    cols!(7),
-    cols!(8),
-    cols!(9),
+    HouseSet::new(Shape::Column, CoordSet::from_digit(1)),
+    HouseSet::new(Shape::Column, CoordSet::from_digit(2)),
+    HouseSet::new(Shape::Column, CoordSet::from_digit(3)),
+    HouseSet::new(Shape::Column, CoordSet::from_digit(4)),
+    HouseSet::new(Shape::Column, CoordSet::from_digit(5)),
+    HouseSet::new(Shape::Column, CoordSet::from_digit(6)),
+    HouseSet::new(Shape::Column, CoordSet::from_digit(7)),
+    HouseSet::new(Shape::Column, CoordSet::from_digit(8)),
+    HouseSet::new(Shape::Column, CoordSet::from_digit(9)),
 ];
 
 #[rustfmt::skip]
 const BLOCK_COLUMNS: [HouseSet; 9] = [
-    cols!(123), cols!(456), cols!(789),
-    cols!(123), cols!(456), cols!(789),
-    cols!(123), cols!(456), cols!(789),
+    HouseSet::new(Shape::Column, CoordSet::new_triple(1, 2, 3)),
+    HouseSet::new(Shape::Column, CoordSet::new_triple(4, 5, 6)),
+    HouseSet::new(Shape::Column, CoordSet::new_triple(7, 8, 9)),
+    HouseSet::new(Shape::Column, CoordSet::new_triple(1, 2, 3)),
+    HouseSet::new(Shape::Column, CoordSet::new_triple(4, 5, 6)),
+    HouseSet::new(Shape::Column, CoordSet::new_triple(7, 8, 9)),
+    HouseSet::new(Shape::Column, CoordSet::new_triple(1, 2, 3)),
+    HouseSet::new(Shape::Column, CoordSet::new_triple(4, 5, 6)),
+    HouseSet::new(Shape::Column, CoordSet::new_triple(7, 8, 9)),
 ];
 
 const ROW_BLOCKS: [HouseSet; 9] = [
-    blocks!(123),
-    blocks!(123),
-    blocks!(123),
-    blocks!(456),
-    blocks!(456),
-    blocks!(456),
-    blocks!(789),
-    blocks!(789),
-    blocks!(789),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(1, 2, 3)),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(1, 2, 3)),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(1, 2, 3)),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(4, 5, 6)),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(4, 5, 6)),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(4, 5, 6)),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(7, 8, 9)),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(7, 8, 9)),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(7, 8, 9)),
 ];
 
 const COLUMN_BLOCKS: [HouseSet; 9] = [
-    blocks!(147),
-    blocks!(147),
-    blocks!(147),
-    blocks!(258),
-    blocks!(258),
-    blocks!(258),
-    blocks!(369),
-    blocks!(369),
-    blocks!(369),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(1, 4, 7)),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(1, 4, 7)),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(1, 4, 7)),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(2, 5, 8)),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(2, 5, 8)),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(2, 5, 8)),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(3, 6, 9)),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(3, 6, 9)),
+    HouseSet::new(Shape::Block, CoordSet::new_triple(3, 6, 9)),
 ];
 
 const BLOCK_BLOCKS: [HouseSet; 9] = [
-    blocks!(1),
-    blocks!(2),
-    blocks!(3),
-    blocks!(4),
-    blocks!(5),
-    blocks!(6),
-    blocks!(7),
-    blocks!(8),
-    blocks!(9),
+    HouseSet::new(Shape::Block, CoordSet::from_digit(1)),
+    HouseSet::new(Shape::Block, CoordSet::from_digit(2)),
+    HouseSet::new(Shape::Block, CoordSet::from_digit(3)),
+    HouseSet::new(Shape::Block, CoordSet::from_digit(4)),
+    HouseSet::new(Shape::Block, CoordSet::from_digit(5)),
+    HouseSet::new(Shape::Block, CoordSet::from_digit(6)),
+    HouseSet::new(Shape::Block, CoordSet::from_digit(7)),
+    HouseSet::new(Shape::Block, CoordSet::from_digit(8)),
+    HouseSet::new(Shape::Block, CoordSet::from_digit(9)),
 ];
 
 #[cfg(test)]
 mod tests {
+    use crate::*;
+
     use super::*;
-    use crate::layout::cells::cell_set::cells;
-    use crate::layout::houses::coord::coord;
-    use crate::layout::houses::house_set::houses;
 
     #[test]
     fn houses() {
@@ -532,11 +588,14 @@ mod tests {
                 assert_eq!(Coord::new(i as u8), house.coord());
                 assert_eq!(i, house.usize());
                 if !matches!(houses.shape(), Shape::Row) {
-                    assert_eq!(format!("{} {}", houses.shape(), i + 1), house.label());
+                    assert_eq!(
+                        format!("{} {}", houses.shape().label(), i + 1),
+                        house.label()
+                    );
                 }
 
                 let mut house_cells = CellSet::empty();
-                (0..9).for_each(|c| {
+                (1..=9).for_each(|c| {
                     let cell = house.cell(c.into());
                     assert_eq!(house, cell.house(houses.shape()));
                     house_cells += cell
@@ -552,64 +611,62 @@ mod tests {
 
     #[test]
     fn intersect() {
-        assert_eq!(cells!("A1 A2 A3"), row!(1).intersect(block!(1)));
-        assert_eq!(cells!("A1 A2 A3"), row!(1).intersect(block!(1)));
+        assert_eq!(cells![A1 A2 A3], row!(A).intersect(block!(1)));
+        assert_eq!(cells![A1 A2 A3], row!(A).intersect(block!(1)));
     }
 
     #[test]
     fn row_cells() {
-        assert_eq!(cells!("A1 A2 A3 A4 A5 A6 A7 A8 A9"), row!(1).cells());
-        assert_eq!(cells!("B1 B2 B3 B4 B5 B6 B7 B8 B9"), row!(2).cells());
-        assert_eq!(cells!("C1 C2 C3 C4 C5 C6 C7 C8 C9"), row!(3).cells());
-        assert_eq!(cells!("D1 D2 D3 D4 D5 D6 D7 D8 D9"), row!(4).cells());
-        assert_eq!(cells!("E1 E2 E3 E4 E5 E6 E7 E8 E9"), row!(5).cells());
-        assert_eq!(cells!("F1 F2 F3 F4 F5 F6 F7 F8 F9"), row!(6).cells());
-        assert_eq!(cells!("G1 G2 G3 G4 G5 G6 G7 G8 G9"), row!(7).cells());
-        assert_eq!(cells!("H1 H2 H3 H4 H5 H6 H7 H8 H9"), row!(8).cells());
-        assert_eq!(cells!("J1 J2 J3 J4 J5 J6 J7 J8 J9"), row!(9).cells());
+        assert_eq!(cells![A1 A2 A3 A4 A5 A6 A7 A8 A9], row!(A).cells());
+        assert_eq!(cells![B1 B2 B3 B4 B5 B6 B7 B8 B9], row!(B).cells());
+        assert_eq!(cells![C1 C2 C3 C4 C5 C6 C7 C8 C9], row!(C).cells());
+        assert_eq!(cells![D1 D2 D3 D4 D5 D6 D7 D8 D9], row!(D).cells());
+        assert_eq!(cells![E1 E2 E3 E4 E5 E6 E7 E8 E9], row!(E).cells());
+        assert_eq!(cells![F1 F2 F3 F4 F5 F6 F7 F8 F9], row!(F).cells());
+        assert_eq!(cells![G1 G2 G3 G4 G5 G6 G7 G8 G9], row!(G).cells());
+        assert_eq!(cells![H1 H2 H3 H4 H5 H6 H7 H8 H9], row!(H).cells());
+        assert_eq!(cells![J1 J2 J3 J4 J5 J6 J7 J8 J9], row!(J).cells());
     }
 
     #[test]
     fn column_cells() {
-        assert_eq!(cells!("A1 B1 C1 D1 E1 F1 G1 H1 J1"), col!(1).cells());
-        assert_eq!(cells!("A2 B2 C2 D2 E2 F2 G2 H2 J2"), col!(2).cells());
-        assert_eq!(cells!("A3 B3 C3 D3 E3 F3 G3 H3 J3"), col!(3).cells());
-        assert_eq!(cells!("A4 B4 C4 D4 E4 F4 G4 H4 J4"), col!(4).cells());
-        assert_eq!(cells!("A5 B5 C5 D5 E5 F5 G5 H5 J5"), col!(5).cells());
-        assert_eq!(cells!("A6 B6 C6 D6 E6 F6 G6 H6 J6"), col!(6).cells());
-        assert_eq!(cells!("A7 B7 C7 D7 E7 F7 G7 H7 J7"), col!(7).cells());
-        assert_eq!(cells!("A8 B8 C8 D8 E8 F8 G8 H8 J8"), col!(8).cells());
-        assert_eq!(cells!("A9 B9 C9 D9 E9 F9 G9 H9 J9"), col!(9).cells());
+        assert_eq!(cells![A1 B1 C1 D1 E1 F1 G1 H1 J1], col!(1).cells());
+        assert_eq!(cells![A2 B2 C2 D2 E2 F2 G2 H2 J2], col!(2).cells());
+        assert_eq!(cells![A3 B3 C3 D3 E3 F3 G3 H3 J3], col!(3).cells());
+        assert_eq!(cells![A4 B4 C4 D4 E4 F4 G4 H4 J4], col!(4).cells());
+        assert_eq!(cells![A5 B5 C5 D5 E5 F5 G5 H5 J5], col!(5).cells());
+        assert_eq!(cells![A6 B6 C6 D6 E6 F6 G6 H6 J6], col!(6).cells());
+        assert_eq!(cells![A7 B7 C7 D7 E7 F7 G7 H7 J7], col!(7).cells());
+        assert_eq!(cells![A8 B8 C8 D8 E8 F8 G8 H8 J8], col!(8).cells());
+        assert_eq!(cells![A9 B9 C9 D9 E9 F9 G9 H9 J9], col!(9).cells());
     }
 
     #[test]
     fn block_cells() {
-        assert_eq!(cells!("A1 A2 A3 B1 B2 B3 C1 C2 C3"), block!(1).cells());
-        assert_eq!(cells!("A4 A5 A6 B4 B5 B6 C4 C5 C6"), block!(2).cells());
-        assert_eq!(cells!("A7 A8 A9 B7 B8 B9 C7 C8 C9"), block!(3).cells());
-        assert_eq!(cells!("D1 D2 D3 E1 E2 E3 F1 F2 F3"), block!(4).cells());
-        assert_eq!(cells!("D4 D5 D6 E4 E5 E6 F4 F5 F6"), block!(5).cells());
-        assert_eq!(cells!("D7 D8 D9 E7 E8 E9 F7 F8 F9"), block!(6).cells());
-        assert_eq!(cells!("G1 G2 G3 H1 H2 H3 J1 J2 J3"), block!(7).cells());
-        assert_eq!(cells!("G4 G5 G6 H4 H5 H6 J4 J5 J6"), block!(8).cells());
-        assert_eq!(cells!("G7 G8 G9 H7 H8 H9 J7 J8 J9"), block!(9).cells());
+        assert_eq!(cells![A1 A2 A3 B1 B2 B3 C1 C2 C3], block!(1).cells());
+        assert_eq!(cells![A4 A5 A6 B4 B5 B6 C4 C5 C6], block!(2).cells());
+        assert_eq!(cells![A7 A8 A9 B7 B8 B9 C7 C8 C9], block!(3).cells());
+        assert_eq!(cells![D1 D2 D3 E1 E2 E3 F1 F2 F3], block!(4).cells());
+        assert_eq!(cells![D4 D5 D6 E4 E5 E6 F4 F5 F6], block!(5).cells());
+        assert_eq!(cells![D7 D8 D9 E7 E8 E9 F7 F8 F9], block!(6).cells());
+        assert_eq!(cells![G1 G2 G3 H1 H2 H3 J1 J2 J3], block!(7).cells());
+        assert_eq!(cells![G4 G5 G6 H4 H5 H6 J4 J5 J6], block!(8).cells());
+        assert_eq!(cells![G7 G8 G9 H7 H8 H9 J7 J8 J9], block!(9).cells());
     }
 
     #[test]
     fn columns_cross_rows() {
-        let main = row!(2);
-        let cells = cells!("B1 B2");
-        let got = main.crossing_houses(cells);
+        let main = row!(B);
+        let cells = cells![B1 B2];
 
-        assert_eq!(houses!("C1 C2"), got);
+        assert_eq!(cols![1 2], main.crossing_houses(cells));
     }
 
     #[test]
     fn rows_cross_columns() {
         let main = col!(6);
-        let cells = cells!("C6 F6");
-        let got = main.crossing_houses(cells);
+        let cells = cells![C6 F6];
 
-        assert_eq!(houses!("R3 R6"), got);
+        assert_eq!(rows![C F], main.crossing_houses(cells));
     }
 }

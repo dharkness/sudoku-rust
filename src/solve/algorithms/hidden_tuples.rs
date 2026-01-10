@@ -80,10 +80,8 @@ pub fn is_degenerate(cell_sets: &[CellSet], size: usize, smaller_size: usize) ->
 
 #[cfg(test)]
 mod tests {
-    use crate::layout::cells::cell::cell;
-    use crate::layout::cells::cell_set::cells;
-    use crate::layout::values::known_set::knowns;
     use crate::layout::Cell;
+    use crate::*;
 
     use super::*;
 
@@ -92,19 +90,19 @@ mod tests {
         let mut board = Board::new();
         let mut effects = Effects::new();
 
-        let cells = cells!("A1 A2 A4 A5 A6 A8 A9");
-        let knowns = knowns!("1 2");
+        let cells = cells![A1 A2 A4 A5 A6 A8 A9];
+        let knowns = knowns![1 2];
         board.remove_candidates_from_cells(cells, knowns, &mut effects);
 
         find_hidden_pairs(&board, false)
             .unwrap()
             .apply_all(&mut board);
 
-        assert_eq!(knowns, board.candidates(cell!("A3")));
-        assert_eq!(knowns, board.candidates(cell!("A7")));
-        assert_eq!(!knowns, board.candidates(cell!("A2")));
-        assert_eq!(!knowns, board.candidates(cell!("A6")));
-        assert_eq!(!knowns, board.candidates(cell!("A9")));
+        assert_eq!(knowns, board.candidates(cell!(A3)));
+        assert_eq!(knowns, board.candidates(cell!(A7)));
+        assert_eq!(!knowns, board.candidates(cell!(A2)));
+        assert_eq!(!knowns, board.candidates(cell!(A6)));
+        assert_eq!(!knowns, board.candidates(cell!(A9)));
     }
 
     #[test]
@@ -112,20 +110,20 @@ mod tests {
         let mut board = Board::new();
         let mut effects = Effects::new();
 
-        let cells = cells!("A1 A2 A4 A6 A8 A9");
-        let knowns = knowns!("1 2 3");
+        let cells = cells![A1 A2 A4 A6 A8 A9];
+        let knowns = knowns![1 2 3];
         board.remove_candidates_from_cells(cells, knowns, &mut effects);
 
         find_hidden_triples(&board, false)
             .unwrap()
             .apply_all(&mut board);
 
-        assert_eq!(knowns, board.candidates(cell!("A3")));
-        assert_eq!(knowns, board.candidates(cell!("A5")));
-        assert_eq!(knowns, board.candidates(cell!("A7")));
-        assert_eq!(!knowns, board.candidates(cell!("A2")));
-        assert_eq!(!knowns, board.candidates(cell!("A6")));
-        assert_eq!(!knowns, board.candidates(cell!("A9")));
+        assert_eq!(knowns, board.candidates(cell!(A3)));
+        assert_eq!(knowns, board.candidates(cell!(A5)));
+        assert_eq!(knowns, board.candidates(cell!(A7)));
+        assert_eq!(!knowns, board.candidates(cell!(A2)));
+        assert_eq!(!knowns, board.candidates(cell!(A6)));
+        assert_eq!(!knowns, board.candidates(cell!(A9)));
     }
 
     #[test]
@@ -133,20 +131,20 @@ mod tests {
         let mut board = Board::new();
         let mut effects = Effects::new();
 
-        let cells = cells!("A2 A4 A6 A8 A9");
-        let knowns = knowns!("1 2 3 4");
+        let cells = cells![A2 A4 A6 A8 A9];
+        let knowns = knowns![1 2 3 4];
         board.remove_candidates_from_cells(cells, knowns, &mut effects);
 
         find_hidden_quads(&board, false)
             .unwrap()
             .apply_all(&mut board);
 
-        assert_eq!(knowns, board.candidates(cell!("A1")));
-        assert_eq!(knowns, board.candidates(cell!("A3")));
-        assert_eq!(knowns, board.candidates(cell!("A5")));
-        assert_eq!(knowns, board.candidates(cell!("A7")));
-        assert_eq!(!knowns, board.candidates(cell!("A2")));
-        assert_eq!(!knowns, board.candidates(cell!("A6")));
-        assert_eq!(!knowns, board.candidates(cell!("A9")));
+        assert_eq!(knowns, board.candidates(cell!(A1)));
+        assert_eq!(knowns, board.candidates(cell!(A3)));
+        assert_eq!(knowns, board.candidates(cell!(A5)));
+        assert_eq!(knowns, board.candidates(cell!(A7)));
+        assert_eq!(!knowns, board.candidates(cell!(A2)));
+        assert_eq!(!knowns, board.candidates(cell!(A6)));
+        assert_eq!(!knowns, board.candidates(cell!(A9)));
     }
 }

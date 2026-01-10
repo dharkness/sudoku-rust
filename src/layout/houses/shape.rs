@@ -40,6 +40,14 @@ impl Shape {
         }
     }
 
+    pub const fn code_label(&self) -> &str {
+        match self {
+            Shape::Row => "row",
+            Shape::Column => "column",
+            Shape::Block => "block",
+        }
+    }
+
     pub const fn is_row(&self) -> bool {
         matches!(self, Shape::Row)
     }
@@ -75,20 +83,20 @@ impl From<char> for Shape {
             'R' => Shape::Row,
             'C' => Shape::Column,
             'B' => Shape::Block,
-            _ => panic!("Invalid shape type: {}", index),
+            _ => panic!("invalid shape type: {}", index),
         }
     }
 }
 
 impl fmt::Display for Shape {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.label())
+        write!(f, "{}", self.code_label())
     }
 }
 
 impl fmt::Debug for Shape {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.label())
+        write!(f, "{}", self.code_label())
     }
 }
 

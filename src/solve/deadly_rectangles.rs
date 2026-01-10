@@ -68,9 +68,10 @@ pub fn creates_deadly_rectangles(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::layout::values::known::known;
     use crate::puzzle::Effects;
+    use crate::*;
+
+    use super::*;
 
     #[test]
     fn find() {
@@ -92,14 +93,14 @@ mod tests {
             let mut board = Board::new();
             let mut effects = Effects::new();
 
-            board.set_known(tl, known!("1"), &mut effects);
+            board.set_known(tl, known!(1), &mut effects);
             if givens {
-                board.set_given(tr, known!("2"), &mut effects);
+                board.set_given(tr, known!(2), &mut effects);
             } else {
-                board.set_known(tr, known!("2"), &mut effects);
+                board.set_known(tr, known!(2), &mut effects);
             }
-            board.set_known(br, known!("1"), &mut effects);
-            board.set_known(bl, known!("2"), &mut effects);
+            board.set_known(br, known!(1), &mut effects);
+            board.set_known(bl, known!(2), &mut effects);
 
             let found = find_deadly_rectangles(&board);
             if givens {

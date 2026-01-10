@@ -4,9 +4,10 @@ use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Not, Sub, SubAssign,
 };
 
+use crate::io::ordinal_suffix;
 use crate::symbols::{EMPTY_SET, MISSING};
 
-use super::Coord;
+use super::{Coord, CoordError};
 
 type Bits = u16;
 type Size = u8;
@@ -14,6 +15,23 @@ type Size = u8;
 /// A set of coordinates in a [`House`][`super::House`] implemented using a bit field.
 #[derive(Clone, Copy, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct CoordSet(Bits);
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CoordSetError {
+    InvalidCoord { position: usize, error: CoordError },
+}
+
+impl fmt::Display for CoordSetError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            CoordSetError::InvalidCoord { position, error } => {
+                write!(f, "{} ({}{})", error, position, ordinal_suffix(*position))
+            }
+        }
+    }
+}
+
+impl std::error::Error for CoordSetError {}
 
 const ALL_SET: Bits = (1 << Coord::COUNT) - 1;
 
@@ -31,8 +49,24 @@ impl CoordSet {
         Self(bits)
     }
 
+    pub const fn new_triple(first: u8, second: u8, third: u8) -> Self {
+        Self(
+            Coord::from_digit(first).bit()
+                | Coord::from_digit(second).bit()
+                | Coord::from_digit(third).bit(),
+        )
+    }
+
     pub const fn from_coord(coord: Coord) -> Self {
         Self(coord.bit())
+    }
+
+    pub const fn from_digit(digit: u8) -> Self {
+        Self::from_coord(Coord::from_digit(digit))
+    }
+
+    pub const fn from_index(index: u32) -> Self {
+        Self::from_coord(Coord::from_index(index))
     }
 
     pub const fn from_labels(labels: &str) -> Self {
@@ -130,16 +164,20 @@ impl CoordSet {
         Self::new(self.0 | coord.bit())
     }
 
+    pub const fn with_coord(&self, index: u8) -> Self {
+        Self::new(self.0 | Coord::new(index).bit())
+    }
+
     pub fn add(&mut self, coord: Coord) {
         self.0 |= coord.bit();
     }
 
     pub const fn without(&self, coord: Coord) -> Self {
-        Self::new(self.0 & !(coord.bit()))
+        Self::new(self.0 & !coord.bit())
     }
 
     pub fn remove(&mut self, coord: Coord) {
-        self.0 &= !(coord.bit());
+        self.0 &= !coord.bit();
     }
 
     pub const fn first(&self) -> Option<Coord> {
@@ -217,17 +255,37 @@ impl CoordSet {
     }
 }
 
-impl From<&str> for CoordSet {
-    //noinspection RsTypeCheck
-    fn from(labels: &str) -> Self {
-        labels.split(' ').map(Coord::from).union_coords()
+impl TryFrom<&str> for CoordSet {
+    type Error = CoordSetError;
+
+    fn try_from(labels: &str) -> Result<Self, Self::Error> {
+        if labels.is_empty() {
+            return Ok(Self::empty());
+        }
+
+        let coords: Vec<Coord> = labels
+            .replace([' ', ','], "")
+            .chars()
+            .enumerate()
+            .map(|(index, ch)| {
+                Coord::try_from(ch.to_string().as_str()).map_err(|error| {
+                    CoordSetError::InvalidCoord {
+                        position: index + 1,
+                        error,
+                    }
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(coords.into_iter().union_coords())
     }
 }
 
-impl From<i32> for CoordSet {
-    //noinspection RsTypeCheck
-    fn from(coords: i32) -> Self {
-        Self::from_coords(coords)
+impl TryFrom<String> for CoordSet {
+    type Error = CoordSetError;
+
+    fn try_from(labels: String) -> Result<Self, Self::Error> {
+        Self::try_from(labels.as_str())
     }
 }
 
@@ -329,6 +387,14 @@ impl Add<Coord> for CoordSet {
     }
 }
 
+impl Add<u8> for CoordSet {
+    type Output = Self;
+
+    fn add(self, rhs: u8) -> Self {
+        self.with_coord(rhs)
+    }
+}
+
 impl AddAssign<Coord> for CoordSet {
     fn add_assign(&mut self, rhs: Coord) {
         self.add(rhs)
@@ -425,15 +491,40 @@ impl fmt::Debug for CoordSet {
     }
 }
 
-#[allow(unused_macros)]
+/// Creates a [`CoordSet`] from coordinate labels.
+///
+/// Compile-time convenience that panics on invalid input.
+/// For runtime parsing with error handling, use [`CoordSet::try_from`].
+///
+/// # Examples
+///
+/// ```
+/// use sudoku_rust::coords;
+///
+/// let empty = coords![];
+/// let rows = coords![A B C];
+/// let cols = coords![1 2 3];
+/// let mixed = coords![A 5 J];
+/// ```
+///
+/// # Panics
+///
+/// Panics if any coordinate is invalid. See [`CoordSet::try_from`] for valid formats.
+#[macro_export]
 macro_rules! coords {
-    ($s:expr) => {{
-        CoordSet::from($s)
-    }};
-}
+    () => {
+        CoordSet::empty()
+    };
 
-#[allow(unused_imports)]
-pub(crate) use coords;
+    ($($tokens:tt)+) => {
+        match CoordSet::try_from(stringify!($($tokens)+)) {
+            Ok(set) => set,
+            Err(e) => {
+                panic!("coords![{}]: {}", stringify!($($tokens)+), e)
+            }
+        }
+    };
+}
 
 pub struct Iter {
     bits: Bits,
@@ -457,8 +548,8 @@ impl FusedIterator for Iter {}
 
 #[cfg(test)]
 mod tests {
-    use crate::layout::houses::coord::coord;
     use crate::symbols::EMPTY_SET_STR;
+    use crate::*;
 
     use super::*;
 
@@ -469,7 +560,7 @@ mod tests {
         assert!(set.is_empty());
         assert_eq!(0, set.len());
         for i in 1..=9 {
-            assert!(!set[coord!(i)]);
+            assert!(!set[Coord::from_digit(i)]);
         }
     }
 
@@ -480,7 +571,7 @@ mod tests {
         assert!(!set.is_empty());
         assert_eq!(9, set.len());
         for i in 1..=9 {
-            assert!(set[coord!(i)]);
+            assert!(set[Coord::from_digit(i)]);
         }
     }
 
@@ -491,7 +582,7 @@ mod tests {
         assert!(!set.is_empty());
         assert_eq!(5, set.len());
         for i in 1..=9 {
-            assert_eq!(i % 2 == 1, set[coord!(i)]);
+            assert_eq!(i % 2 == 1, set[Coord::from_digit(i)]);
         }
     }
 
@@ -499,18 +590,18 @@ mod tests {
     fn as_pair_returns_none_if_not_pair() {
         assert!(CoordSet::empty().as_pair().is_none());
         assert!(CoordSet::full().as_pair().is_none());
-        assert!(CoordSet::from("2 5 8 9").as_pair().is_none());
+        assert!(coords![2 5 8 9].as_pair().is_none());
     }
 
     #[test]
     fn as_pair_returns_pair() {
         assert_eq!(
             (Coord::from_digit(2), Coord::from_digit(5)),
-            CoordSet::from("2 5").as_pair().unwrap()
+            coords![2 5].as_pair().unwrap()
         );
         assert_eq!(
             (Coord::from_digit(1), Coord::from_digit(9)),
-            CoordSet::from("9 1").as_pair().unwrap()
+            coords![9 1].as_pair().unwrap()
         );
     }
 
@@ -518,7 +609,7 @@ mod tests {
     fn as_triple_returns_none_if_not_triple() {
         assert!(CoordSet::empty().as_triple().is_none());
         assert!(CoordSet::full().as_triple().is_none());
-        assert!(CoordSet::from("2 5 8 9").as_triple().is_none());
+        assert!(coords![2 5 8 9].as_triple().is_none());
     }
 
     #[test]
@@ -529,7 +620,7 @@ mod tests {
                 Coord::from_digit(5),
                 Coord::from_digit(8)
             ),
-            CoordSet::from("2 5 8").as_triple().unwrap()
+            coords![2 5 8].as_triple().unwrap()
         );
         assert_eq!(
             (
@@ -537,13 +628,13 @@ mod tests {
                 Coord::from_digit(5),
                 Coord::from_digit(9)
             ),
-            CoordSet::from("9 5 1").as_triple().unwrap()
+            coords![9 5 1].as_triple().unwrap()
         );
     }
 
     #[test]
     fn add_returns_the_same_set_when_the_coord_is_present() {
-        let set = coords!("2 5 8 9");
+        let set = coords![2 5 8 9];
 
         let got = set + coord!(5);
         assert_eq!(set, got);
@@ -551,7 +642,7 @@ mod tests {
 
     #[test]
     fn add_returns_a_new_set_when_the_coord_is_not_present() {
-        let set = coords!("2 5 8 9");
+        let set = coords![2 5 8 9];
 
         let got = set + coord!(6);
         assert_ne!(set, got);
@@ -560,7 +651,7 @@ mod tests {
 
     #[test]
     fn sub_returns_the_same_set_when_the_coord_is_not_present() {
-        let set = CoordSet::from("2 5 8 9");
+        let set = coords![2 5 8 9];
 
         let got = set - coord!(6);
         assert_eq!(set, got);
@@ -568,7 +659,7 @@ mod tests {
 
     #[test]
     fn sub_returns_the_same_set_when_the_coord_is_present() {
-        let set = CoordSet::from("2 5 8 9");
+        let set = coords![2 5 8 9];
 
         let got = set - coord!(5);
         assert_ne!(set, got);
@@ -580,7 +671,7 @@ mod tests {
         assert_eq!(CoordSet::full(), !CoordSet::empty());
         assert_eq!(CoordSet::empty(), !CoordSet::full());
 
-        assert_eq!(CoordSet::from("2 5 8 9"), !CoordSet::from("1 3 4 6 7"));
+        assert_eq!(coords![2 5 8 9], !coords![1 3 4 6 7]);
     }
 
     #[test]

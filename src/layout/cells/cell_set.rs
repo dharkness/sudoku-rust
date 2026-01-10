@@ -9,6 +9,8 @@ use std::ops::{
     Add, AddAssign, BitAnd, BitAndAssign, BitOr, BitOrAssign, Index, Not, Sub, SubAssign,
 };
 
+use crate::io::ordinal_suffix;
+use crate::layout::cells::cell::CellError;
 use crate::layout::{House, HouseSet, Shape};
 use crate::symbols::EMPTY_SET;
 
@@ -20,6 +22,22 @@ type Size = u8;
 /// A set of cells implemented using a bit field.
 #[derive(Clone, Copy, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct CellSet(Bits);
+
+/// Errors that can occur when parsing a cell set.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CellSetError {
+    InvalidCell { position: usize, error: CellError },
+}
+
+impl fmt::Display for CellSetError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            CellSetError::InvalidCell { position, error } => {
+                write!(f, "{} ({}{})", error, position, ordinal_suffix(*position))
+            }
+        }
+    }
+}
 
 const ALL_CELLS: std::ops::Range<Size> = 0..Cell::COUNT;
 const ALL_SET: Bits = (1 << Cell::COUNT) - 1;
@@ -67,21 +85,6 @@ impl CellSet {
             i += 1;
         }
         CellSet::new(bits)
-    }
-
-    /// Returns a set containing the cells in `labels`.
-    fn from_str(labels: &str) -> Self {
-        if labels.is_empty() {
-            Self::empty()
-        } else {
-            labels
-                .replace(' ', "")
-                .chars()
-                .collect::<Vec<char>>()
-                .chunks(2)
-                .map(|c| Cell::from_string(c.iter().collect::<String>()))
-                .union_cells()
-        }
     }
 
     /// Returns true if this set is empty.
@@ -400,17 +403,55 @@ impl CellSet {
     }
 }
 
+impl TryFrom<&str> for CellSet {
+    type Error = CellSetError;
+
+    fn try_from(labels: &str) -> Result<Self, Self::Error> {
+        let cleaned: String = labels
+            .chars()
+            .filter(|c| !c.is_whitespace() && *c != ',')
+            .collect();
+        if cleaned.is_empty() {
+            return Ok(Self::empty());
+        }
+
+        let cells = (0..cleaned.len())
+            .step_by(2)
+            .enumerate()
+            .map(|(cell_index, char_pos)| {
+                let position = cell_index + 1;
+                let label = if char_pos + 2 <= cleaned.len() {
+                    &cleaned[char_pos..char_pos + 2]
+                } else {
+                    &cleaned[char_pos..]
+                };
+                Cell::try_from(label).map_err(|error| CellSetError::InvalidCell { position, error })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+        Ok(cells.into_iter().union_cells())
+    }
+}
+
+impl TryFrom<String> for CellSet {
+    type Error = CellSetError;
+
+    fn try_from(labels: String) -> Result<Self, Self::Error> {
+        Self::try_from(labels.as_str())
+    }
+}
+
+impl From<Cell> for CellSet {
+    /// Returns a set containing the single cell.
+    fn from(cell: Cell) -> Self {
+        CellSet::empty().with(cell)
+    }
+}
+
 impl From<House> for CellSet {
     /// Returns a set containing the cells in `house`.
     fn from(house: House) -> Self {
         house.cells()
-    }
-}
-
-impl From<&str> for CellSet {
-    /// Returns a set containing the cells in `labels` after splitting on space.
-    fn from(labels: &str) -> Self {
-        Self::from_str(labels)
     }
 }
 
@@ -642,16 +683,73 @@ impl fmt::Debug for CellSet {
     }
 }
 
-/// Returns a new set from the given bits, cells, or labels.
-#[allow(unused_macros)]
-macro_rules! cells {
-    ($s:expr) => {{
-        CellSet::from($s)
-    }};
+/// Creates a [`CellSet`] containing all 81 cells in the grid.
+///
+/// This is equivalent to calling [`CellSet::full()`] but provides
+/// consistent macro syntax when used alongside [`cells!`].
+///
+/// # Examples
+///
+/// ```
+/// # use sudoku_rust::{CellSet, all_cells};
+/// let all = all_cells!();
+/// assert_eq!(81, all.len());
+/// ```
+#[macro_export]
+macro_rules! all_cells {
+    () => {
+        CellSet::full()
+    };
 }
 
-#[allow(unused_imports)]
-pub(crate) use cells;
+/// Creates a [`CellSet`] from case-insensitive cell labels.
+///
+/// This macro is intended for use in tests and compile-time constants where
+/// cell labels are known to be valid. It will panic if any label is invalid.
+/// For runtime parsing of user input, use [`CellSet::try_from`] instead.
+///
+/// # Examples
+///
+/// ```
+/// # use sudoku_rust::{CellSet, cells};
+/// let empty = cells![];
+/// let single = cells![A1];
+/// let multiple = cells![A1 B2 C3];
+/// let with_commas = cells![A1, B2, C3];  // Commas are optional
+/// let condensed = cells![A1B2C3];  // Spaces are optional
+/// ```
+///
+/// # Panics
+///
+/// Panics if any cell label is invalid:
+///
+/// ```should_panic
+/// # use sudoku_rust::cells;
+/// let invalid = cells![Z9];  // 'Z' is not a valid row
+/// ```
+///
+/// # Valid cell labels
+///
+/// - Rows: `A`-`H`, `J` (case-insensitive, `I` is skipped)
+/// - Columns: `1`-`9`
+/// - Examples: `A1`, `h9`, `J5`
+///
+/// See [`Cell::try_from`] for the underlying parsing logic.
+#[macro_export]
+macro_rules! cells {
+    () => {
+        CellSet::empty()
+    };
+
+    ($($tokens:tt)+) => {
+        match CellSet::try_from(stringify!($($tokens)+)) {
+            Ok(set) => set,
+            Err(e) => {
+                panic!("cells![{}]: {}", stringify!($($tokens)+), e)
+            }
+        }
+    };
+}
 
 pub struct CellIter {
     iter: BitIter,
@@ -690,11 +788,7 @@ impl FusedIterator for BitIter {}
 
 #[cfg(test)]
 mod tests {
-    use crate::layout::cells::cell::cell;
-    use crate::layout::houses::coord::{coord, Coord};
-    use crate::layout::houses::house::{block, col, row};
-    use crate::layout::houses::house_set::houses;
-    use crate::symbols::EMPTY_SET_STR;
+    use crate::*;
 
     use super::*;
 
@@ -749,128 +843,122 @@ mod tests {
             ",
         );
         assert_eq!(
-            CellSet::from("A1 A4 A9 B2 B4 B7 C1 C3 D2 D4 D7 F2 F6 F8 G6 G7 H2 H3 H6 H9 J2 J6 J7"),
+            cells![A1 A4 A9 B2 B4 B7 C1 C3 D2 D4 D7 F2 F6 F8 G6 G7 H2 H3 H6 H9 J2 J6 J7],
             set
         );
     }
 
     #[test]
     fn of() {
-        let set = CellSet::of(&[cell!("A4"), cell!("G7"), cell!("C2"), cell!("J6")]);
-        assert_eq!(CellSet::from("A4 C2 G7 J6"), set);
+        let set = CellSet::of(&[cell!(A4), cell!(G7), cell!(C2), cell!(J6)]);
+        assert_eq!(cells![A4 C2 G7 J6], set);
     }
 
     #[test]
     fn is_empty() {
         assert_eq!(true, CellSet::empty().is_empty());
         assert_eq!(false, CellSet::full().is_empty());
-        assert_eq!(false, cells!("A5 D9 F3 H5").is_empty());
+        assert_eq!(false, cells![A5 D9 F3 H5].is_empty());
     }
 
     #[test]
     fn is_full() {
         assert_eq!(false, CellSet::empty().is_full());
         assert_eq!(true, CellSet::full().is_full());
-        assert_eq!(false, cells!("A5 D9 F3 H5").is_full());
+        assert_eq!(false, cells![A5 D9 F3 H5].is_full());
     }
 
     #[test]
     fn len() {
         assert_eq!(0, CellSet::empty().len());
         assert_eq!(81, CellSet::full().len());
-        assert_eq!(4, cells!("A5 D9 F3 H5").len());
+        assert_eq!(4, cells![A5 D9 F3 H5].len());
     }
 
     #[test]
     fn has() {
-        assert_eq!(false, CellSet::empty().has(cell!("D4")));
-        assert_eq!(true, CellSet::full().has(cell!("D4")));
-        assert_eq!(false, cells!("A5 D9 F3 H5").has(cell!("E8")));
-        assert_eq!(true, cells!("A5 D9 F3 H5").has(cell!("F3")));
+        assert_eq!(false, CellSet::empty().has(cell!(D4)));
+        assert_eq!(true, CellSet::full().has(cell!(D4)));
+        assert_eq!(false, cells![A5 D9 F3 H5].has(cell!(E8)));
+        assert_eq!(true, cells![A5 D9 F3 H5].has(cell!(F3)));
     }
 
     #[test]
     fn has_any() {
-        let set = cells!("A5 D9 F3 H5");
+        let set = cells![A5 D9 F3 H5];
 
         assert_eq!(false, CellSet::empty().has_any(set));
         assert_eq!(true, CellSet::full().has_any(set));
         assert_eq!(true, set.has_any(set));
-        assert_eq!(false, set.has_any(cells!("B8 D3")));
-        assert_eq!(true, set.has_any(cells!("A5 F3")));
-        assert_eq!(true, set.has_any(cells!("A5 B8 D3")));
+        assert_eq!(false, set.has_any(cells![B8 D3]));
+        assert_eq!(true, set.has_any(cells![A5 F3]));
+        assert_eq!(true, set.has_any(cells![A5 B8 D3]));
     }
 
     #[test]
     fn has_all() {
-        let set = cells!("A5 D9 F3 H5");
+        let set = cells![A5 D9 F3 H5];
 
         assert_eq!(false, CellSet::empty().has_all(set));
         assert_eq!(true, CellSet::full().has_all(set));
         assert_eq!(true, set.has_all(set));
-        assert_eq!(true, set.has_all(cells!("D9 H5")));
-        assert_eq!(false, set.has_all(cells!("A5 B8 D3")));
+        assert_eq!(true, set.has_all(cells![D9 H5]));
+        assert_eq!(false, set.has_all(cells![A5 B8 D3]));
     }
 
     #[test]
     fn is_subset_of() {
-        let set = cells!("A5 D9 F3 H5");
+        let set = cells![A5 D9 F3 H5];
 
         assert_eq!(false, set.is_subset_of(CellSet::empty()));
         assert_eq!(true, set.is_subset_of(CellSet::full()));
         assert_eq!(true, set.is_subset_of(set));
-        assert_eq!(true, cells!("D9 H5").is_subset_of(set));
-        assert_eq!(false, cells!("A5 C2 F3").is_subset_of(set));
+        assert_eq!(true, cells![D9 H5].is_subset_of(set));
+        assert_eq!(false, cells![A5 C2 F3].is_subset_of(set));
     }
 
     #[test]
     fn as_single_returns_none_if_not_single() {
         assert!(CellSet::empty().as_single().is_none());
         assert!(CellSet::full().as_single().is_none());
-        assert!(cells!("A5 D9 F3 H5").as_single().is_none());
+        assert!(cells![A5 D9 F3 H5].as_single().is_none());
     }
 
     #[test]
     fn as_single_returns_single() {
-        assert_eq!(cell!("D3"), cells!("D3").as_single().unwrap());
-        assert_eq!(cell!("F4"), cells!("F4").as_single().unwrap());
+        assert_eq!(cell!(D3), CellSet::from(cell!(D3)).as_single().unwrap());
+        assert_eq!(cell!(F4), CellSet::from(cell!(F4)).as_single().unwrap());
     }
 
     #[test]
     fn as_pair_returns_none_if_not_pair() {
         assert!(CellSet::empty().as_pair().is_none());
         assert!(CellSet::full().as_pair().is_none());
-        assert!(cells!("A5 D9 F3 H5").as_pair().is_none());
+        assert!(cells![A5 D9 F3 H5].as_pair().is_none());
     }
 
     #[test]
     fn as_pair_returns_pair() {
-        assert_eq!(
-            (cell!("D3"), cell!("G5")),
-            cells!("D3 G5").as_pair().unwrap()
-        );
-        assert_eq!(
-            (cell!("F4"), cell!("J2")),
-            cells!("J2 F4").as_pair().unwrap()
-        );
+        assert_eq!((cell!(D3), cell!(G5)), cells![D3 G5].as_pair().unwrap());
+        assert_eq!((cell!(F4), cell!(J2)), cells![J2 F4].as_pair().unwrap());
     }
 
     #[test]
     fn as_triple_returns_none_if_not_triple() {
         assert!(CellSet::empty().as_triple().is_none());
         assert!(CellSet::full().as_triple().is_none());
-        assert!(cells!("A5 D9 F3 H5").as_triple().is_none());
+        assert!(cells![A5 D9 F3 H5].as_triple().is_none());
     }
 
     #[test]
     fn as_triple_returns_triple() {
         assert_eq!(
-            (cell!("D3"), cell!("G5"), cell!("H2")),
-            cells!("D3 G5 H2").as_triple().unwrap()
+            (cell!(D3), cell!(G5), cell!(H2)),
+            cells![D3 G5 H2].as_triple().unwrap()
         );
         assert_eq!(
-            (cell!("E5"), cell!("F4"), cell!("J2")),
-            cells!("J2 F4 E5").as_triple().unwrap()
+            (cell!(E5), cell!(F4), cell!(J2)),
+            cells![J2 F4 E5].as_triple().unwrap()
         );
     }
 
@@ -881,8 +969,8 @@ mod tests {
 
     #[test]
     fn first() {
-        assert_eq!(cell!("D3"), cells!("D3 G5 H2").first().unwrap());
-        assert_eq!(cell!("E5"), cells!("J2 F4 E5").first().unwrap());
+        assert_eq!(cell!(D3), cells![D3 G5 H2].first().unwrap());
+        assert_eq!(cell!(E5), cells![J2 F4 E5].first().unwrap());
     }
 
     #[test]
@@ -895,149 +983,137 @@ mod tests {
 
     #[test]
     fn pop() {
-        let mut set = cells!("J2 F4 E5");
+        let mut set = cells![J2 F4 E5];
 
-        assert_eq!(cell!("E5"), set.pop().unwrap());
-        assert_eq!(cells!("F4 J2"), set);
+        assert_eq!(cell!(E5), set.pop().unwrap());
+        assert_eq!(cells![F4 J2], set);
     }
 
     #[test]
     fn intersect_with() {
-        let mut set = cells!("A5 B8 D3");
+        let mut set = cells![A5 B8 D3];
 
-        set.intersect_with(cells!("A5 D9 B8 J2"));
-        assert_eq!(cells!("A5 B8"), set);
+        set.intersect_with(cells![A5 D9 B8 J2]);
+        assert_eq!(cells![A5 B8], set);
     }
 
     #[test]
     fn invert() {
-        let mut set = cells!("A5 B8 D3");
+        let mut set = cells![A5 B8 D3];
 
         set.invert();
-        assert_eq!(false, set.has(cell!("A5")));
-        assert_eq!(false, set.has(cell!("B8")));
-        assert_eq!(false, set.has(cell!("D3")));
-        assert_eq!(true, set.has(cell!("J2")));
-        assert_eq!(true, set.has(cell!("C7")));
+        assert_eq!(false, set.has(cell!(A5)));
+        assert_eq!(false, set.has(cell!(B8)));
+        assert_eq!(false, set.has(cell!(D3)));
+        assert_eq!(true, set.has(cell!(J2)));
+        assert_eq!(true, set.has(cell!(C7)));
 
-        set += cell!("A5");
-        set += cell!("B8");
-        set += cell!("D3");
+        set += cell!(A5);
+        set += cell!(B8);
+        set += cell!(D3);
         assert_eq!(CellSet::full(), set)
     }
 
     #[test]
     fn share_any_house() {
-        assert_eq!(true, cells!("A1 A2 A3").share_any_house());
-        assert_eq!(true, cells!("A1 B1 F1 J1").share_any_house());
-        assert_eq!(true, cells!("A1 A2 C3").share_any_house());
-        assert_eq!(false, cells!("A1 A2 B4").share_any_house());
-        assert_eq!(false, cells!("A1 B1 D3").share_any_house());
+        assert_eq!(true, cells![A1 A2 A3].share_any_house());
+        assert_eq!(true, cells![A1 B1 F1 J1].share_any_house());
+        assert_eq!(true, cells![A1 A2 C3].share_any_house());
+        assert_eq!(false, cells![A1 A2 B4].share_any_house());
+        assert_eq!(false, cells![A1 B1 D3].share_any_house());
     }
 
     #[test]
     fn share_row_or_column() {
-        assert_eq!(true, cells!("A1 A2 A3").share_row_or_column());
-        assert_eq!(true, cells!("A1 B1 F1 J1").share_row_or_column());
-        assert_eq!(false, cells!("A1 A2 C3").share_row_or_column());
-        assert_eq!(false, cells!("A1 B1 C3").share_row_or_column());
+        assert_eq!(true, cells![A1 A2 A3].share_row_or_column());
+        assert_eq!(true, cells![A1 B1 F1 J1].share_row_or_column());
+        assert_eq!(false, cells![A1 A2 C3].share_row_or_column());
+        assert_eq!(false, cells![A1 B1 C3].share_row_or_column());
     }
 
     #[test]
     fn share_row() {
-        assert_eq!(true, cells!("A1 A2 A3").share_row());
-        assert_eq!(false, cells!("A1 A2 C3").share_row());
-        assert_eq!(false, cells!("A1 C2 C3").share_row());
+        assert_eq!(true, cells![A1 A2 A3].share_row());
+        assert_eq!(false, cells![A1 A2 C3].share_row());
+        assert_eq!(false, cells![A1 C2 C3].share_row());
     }
 
     #[test]
     fn share_column() {
-        assert_eq!(false, cells!("A1 A2 A3").share_column());
-        assert_eq!(false, cells!("A1 A2 C3").share_column());
-        assert_eq!(true, cells!("A1 B1 F1 J1").share_column());
+        assert_eq!(false, cells![A1 A2 A3].share_column());
+        assert_eq!(false, cells![A1 A2 C3].share_column());
+        assert_eq!(true, cells![A1 B1 F1 J1].share_column());
     }
 
     #[test]
     fn share_block() {
-        assert_eq!(true, cells!("A1 A2 A3").share_block());
-        assert_eq!(true, cells!("A1 C2 C3").share_block());
-        assert_eq!(false, cells!("A1 A4").share_block());
+        assert_eq!(true, cells![A1 A2 A3].share_block());
+        assert_eq!(true, cells![A1 C2 C3].share_block());
+        assert_eq!(false, cells![A1 A4].share_block());
     }
 
     #[test]
     fn common_row_or_column() {
-        assert_eq!(Some(row!(1)), cells!("A1 A2 A3").common_row_or_column());
-        assert_eq!(Some(col!(1)), cells!("A1 B1 F1 J1").common_row_or_column());
-        assert_eq!(None, cells!("A1 A2 C3").common_row_or_column());
-        assert_eq!(None, cells!("A1 B1 C3").common_row_or_column());
+        assert_eq!(Some(row!(A)), cells![A1 A2 A3].common_row_or_column());
+        assert_eq!(Some(col!(1)), cells![A1 B1 F1 J1].common_row_or_column());
+        assert_eq!(None, cells![A1 A2 C3].common_row_or_column());
+        assert_eq!(None, cells![A1 B1 C3].common_row_or_column());
     }
 
     #[test]
     fn common_row() {
-        assert_eq!(Some(row!(1)), cells!("A1 A2 A3").common_row());
-        assert_eq!(None, cells!("A1 A2 C3").common_row());
-        assert_eq!(None, cells!("A1 C2 C3").common_row());
+        assert_eq!(Some(row!(A)), cells![A1 A2 A3].common_row());
+        assert_eq!(None, cells![A1 A2 C3].common_row());
+        assert_eq!(None, cells![A1 C2 C3].common_row());
     }
 
     #[test]
     fn common_column() {
-        assert_eq!(None, cells!("A1 A2 A3").common_column());
-        assert_eq!(None, cells!("A1 A2 C3").common_column());
-        assert_eq!(Some(col!(1)), cells!("A1 B1 F1 J1").common_column());
+        assert_eq!(None, cells![A1 A2 A3].common_column());
+        assert_eq!(None, cells![A1 A2 C3].common_column());
+        assert_eq!(Some(col!(1)), cells![A1 B1 F1 J1].common_column());
     }
 
     #[test]
     fn common_block() {
-        assert_eq!(Some(block!(1)), cells!("A1 A2 A3").common_block());
-        assert_eq!(Some(block!(1)), cells!("A1 C2 C3").common_block());
-        assert_eq!(None, cells!("A1 A4").common_block());
+        assert_eq!(Some(block!(1)), cells![A1 A2 A3].common_block());
+        assert_eq!(Some(block!(1)), cells![A1 C2 C3].common_block());
+        assert_eq!(None, cells![A1 A4].common_block());
     }
 
     #[test]
     fn rows() {
-        assert_eq!(houses!("R1 R3 R7 R8"), cells!("A5 C2 C8 G9 H3 H6").rows());
+        assert_eq!(rows![A C G H], cells![A5 C2 C8 G9 H3 H6].rows());
     }
 
     #[test]
     fn columns() {
-        assert_eq!(
-            houses!("C2 C3 C5 C6 C8 C9"),
-            cells!("A5 C2 C8 G9 H3 H6").columns()
-        );
+        assert_eq!(cols![2 3 5 6 8 9], cells![A5 C2 C8 G9 H3 H6].columns());
     }
 
     #[test]
     fn blocks() {
-        assert_eq!(
-            houses!("B1 B2 B3 B7 B8 B9"),
-            cells!("A5 C2 C8 G9 H3 H6").blocks()
-        );
+        assert_eq!(blocks![1 2 3 7 8 9], cells![A5 C2 C8 G9 H3 H6].blocks());
     }
 
     #[test]
     fn from_house() {
-        assert_eq!(
-            cells!(House::from("R3")),
-            cells!("C1 C2 C3 C4 C5 C6 C7 C8 C9")
-        );
-        assert_eq!(
-            cells!(House::from("B3")),
-            cells!("A7 A8 A9 B7 B8 B9 C7 C8 C9")
-        );
+        assert_eq!(CellSet::from(row!(C)), cells![C1 C2 C3 C4 C5 C6 C7 C8 C9]);
+        assert_eq!(CellSet::from(block!(3)), cells![A7 A8 A9 B7 B8 B9 C7 C8 C9]);
     }
 
     #[test]
     fn from_labels() {
-        assert_eq!(CellSet::new(0b111), cells!("A1 A2 A3"));
-        assert_eq!(CellSet::new(0b101010), cells!("A2 A4 A6"));
+        assert_eq!(CellSet::new(0b111), cells![A1 A2 A3]);
+        assert_eq!(CellSet::new(0b101010), cells![A2 A4 A6]);
     }
 
     #[test]
     fn from_cell_iterator() {
-        let cells = cells!("A7 A8 A9 B7 B8 B9 C7 C8 C9");
+        let cells = cells![A7 A8 A9 B7 B8 B9 C7 C8 C9];
 
         assert_eq!(
-            cells!("A7 A8 A9 B7 B8 B9 C7 C8 C9"),
+            cells![A7 A8 A9 B7 B8 B9 C7 C8 C9],
             CellSet::from_iter(cells.iter())
         );
     }
@@ -1045,65 +1121,65 @@ mod tests {
     #[test]
     fn from_cell_set_iterator() {
         let cells = vec![
-            cells!("A7 A9 B8 C7 C9"),
-            cells!("A7 A9 C7 C9"),
-            cells!("A8 B7 B8 B9 C8"),
+            cells![A7 A9 B8 C7 C9],
+            cells![A7 A9 C7 C9],
+            cells![A8 B7 B8 B9 C8],
         ];
 
         assert_eq!(
-            cells!("A7 A8 A9 B7 B8 B9 C7 C8 C9"),
+            cells![A7 A8 A9 B7 B8 B9 C7 C8 C9],
             CellSet::from_iter(cells.iter().cloned())
         );
     }
 
     #[test]
     fn index_bit() {
-        assert_eq!(true, cells!("A1 A2 A3")[Cell::new(0b10)]);
-        assert_eq!(false, cells!("A1 A2 A3")[Cell::new(0b1000)]);
+        assert_eq!(true, cells![A1 A2 A3][Cell::new(0b10)]);
+        assert_eq!(false, cells![A1 A2 A3][Cell::new(0b1000)]);
     }
 
     #[test]
     fn index_cell() {
-        assert_eq!(true, cells!("A1 A2 A3")[cell!("A2")]);
-        assert_eq!(false, cells!("A1 A2 A3")[cell!("C2")]);
+        assert_eq!(true, cells![A1 A2 A3][cell!(A2)]);
+        assert_eq!(false, cells![A1 A2 A3][cell!(C2)]);
     }
 
     #[test]
     fn index_label() {
-        assert_eq!(true, cells!("A1 A2 A3")[cell!("A2")]);
-        assert_eq!(false, cells!("A1 A2 A3")[cell!("C2")]);
+        assert_eq!(true, cells![A1 A2 A3][cell!(A2)]);
+        assert_eq!(false, cells![A1 A2 A3][cell!(C2)]);
     }
 
     #[test]
     fn add_returns_the_same_set_when_the_cell_is_present() {
-        let set = cells!("B3 A7 H5");
+        let set = cells![B3 A7 H5];
 
-        let got = set + cell!("A7");
+        let got = set + cell!(A7);
         assert_eq!(set, got);
     }
 
     #[test]
     fn add_returns_a_new_set_when_the_cell_is_not_present() {
-        let set = cells!("B3 A7 H5");
+        let set = cells![B3 A7 H5];
 
-        let got = set + cell!("G3");
-        assert_eq!(cells!("B3 A7 G3 H5"), got);
+        let got = set + cell!(G3);
+        assert_eq!(cells![B3 A7 G3 H5], got);
     }
 
     #[test]
     fn sub_returns_the_same_set_when_the_cell_is_not_present() {
-        let set = cells!("B3 A7 H5");
+        let set = cells![B3 A7 H5];
 
-        let got = set - cell!("G3");
+        let got = set - cell!(G3);
         assert_eq!(set, got);
     }
 
     #[test]
     fn sub_returns_the_same_set_when_the_cell_is_present() {
-        let set = cells!("B3 A7 H5");
+        let set = cells![B3 A7 H5];
 
-        let got = set - cell!("A7");
-        assert_eq!(cells!("B3 H5"), got);
+        let got = set - cell!(A7);
+        assert_eq!(cells![B3 H5], got);
     }
 
     #[test]
@@ -1112,8 +1188,8 @@ mod tests {
         assert_eq!(CellSet::empty(), !CellSet::full());
 
         assert_eq!(
-            CellSet::full() - cell!("A5") - cell!("C9") - cell!("G2"),
-            !cells!("A5 C9 G2")
+            CellSet::full() - cell!(A5) - cell!(C9) - cell!(G2),
+            !cells![A5 C9 G2]
         );
     }
 
@@ -1125,8 +1201,8 @@ mod tests {
         assert_eq!(CellSet::full(), CellSet::full() | CellSet::full());
 
         assert_eq!(
-            cells!("A5 B2 C9 D7 G2 J5"),
-            cells!("A5 C9 G2") | cells!("B2 D7 J5")
+            cells![A5 B2 C9 D7 G2 J5],
+            cells![A5 C9 G2] | cells![B2 D7 J5]
         );
     }
 
@@ -1138,56 +1214,8 @@ mod tests {
         assert_eq!(CellSet::full(), CellSet::full() & CellSet::full());
 
         assert_eq!(
-            cells!("A5 C9 G2"),
-            cells!("A5 B6 C9 F3 G2 J2") & cells!("A5 B2 C9 D7 G2 J5")
-        );
-    }
-
-    #[test]
-    fn minus() {
-        assert_eq!(CellSet::empty(), CellSet::empty() - CellSet::empty());
-        assert_eq!(CellSet::full(), CellSet::full() - CellSet::empty());
-        assert_eq!(CellSet::empty(), CellSet::empty() - CellSet::full());
-        assert_eq!(CellSet::empty(), CellSet::full() - CellSet::full());
-
-        let mut set = CellSet::full();
-        set -= CellSet::full();
-        assert!(set.is_empty());
-    }
-
-    #[test]
-    fn debug() {
-        assert_eq!(
-            "00:000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-            CellSet::empty().debug()
-        );
-        assert_eq!(
-            "04:000000000000000010000100000000000000000000000000010000000000000010000000000000000",
-            cells!("B8 C4 F5 H2").debug()
-        );
-    }
-
-    #[test]
-    fn to_string() {
-        assert_eq!(EMPTY_SET_STR, CellSet::empty().to_string());
-        assert_eq!("B8 C4 F5 H2", cells!("B8 C4 F5 H2").to_string());
-    }
-
-    #[test]
-    fn fmt_debug() {
-        assert_eq!(EMPTY_SET_STR, format!("{:?}", CellSet::empty()));
-        assert_eq!("B8 C4 F5 H2", format!("{:?}", cells!("B8 C4 F5 H2")));
-    }
-
-    #[test]
-    fn pattern_string() {
-        assert_eq!(
-            ".................................................................................",
-            CellSet::empty().pattern_string()
-        );
-        assert_eq!(
-            "................1....1...........................1..............1................",
-            cells!("B8 C4 F5 H2").pattern_string()
+            cells![A5 C9 G2],
+            cells![A5 B6 C9 F3 G2 J2] & cells![A5 B2 C9 D7 G2 J5]
         );
     }
 }

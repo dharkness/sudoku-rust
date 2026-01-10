@@ -71,9 +71,7 @@ pub fn find_two_string_kites(board: &Board, single: bool) -> Option<Effects> {
 #[cfg(test)]
 mod tests {
     use crate::io::{Parse, Parser};
-    use crate::layout::cells::cell::cell;
-    use crate::layout::cells::cell_set::cells;
-    use crate::layout::values::known::known;
+    use crate::*;
 
     use super::*;
 
@@ -88,9 +86,9 @@ mod tests {
 
         if let Some(got) = find_two_string_kites(&board, true) {
             let mut action = Action::new(Strategy::TwoStringKite);
-            action.erase(cell!("B4"), known!("5"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("B7 H4"), known!("5"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("H9 J7"), known!("5"));
+            action.erase(cell!(B4), known!(5));
+            action.clue_cells_for_known(Verdict::Secondary, cells![B7 H4], known!(5));
+            action.clue_cells_for_known(Verdict::Primary, cells![H9 J7], known!(5));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

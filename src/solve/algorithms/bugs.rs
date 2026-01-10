@@ -53,9 +53,7 @@ pub fn find_bugs(board: &Board, single: bool) -> Option<Effects> {
 #[cfg(test)]
 mod tests {
     use crate::io::{Parse, Parser};
-    use crate::layout::cells::cell::cell;
-    use crate::layout::cells::cell_set::cells;
-    use crate::layout::values::known::known;
+    use crate::*;
 
     use super::*;
 
@@ -67,8 +65,8 @@ mod tests {
         );
 
         if let Some(got) = find_bugs(&board, true) {
-            let mut action = Action::new_set(Strategy::Bug, cell!("G1"), known!("3"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("C1 G2 G4 H1"), known!("3"));
+            let mut action = Action::new_set(Strategy::Bug, cell!(G1), known!(3));
+            action.clue_cells_for_known(Verdict::Secondary, cells![C1 G2 G4 H1], known!(3));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

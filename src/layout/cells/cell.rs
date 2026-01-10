@@ -3,12 +3,37 @@ use std::ops::{Add, Neg};
 
 use crate::layout::{Coord, House, Shape};
 
-use super::label::{index_from_label, label_from_index, try_index_from_label};
 use super::{Bit, CellSet};
 
 /// Specifies a single cell by its index from left to right and top to bottom.
 #[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Cell(u8);
+
+/// Errors that can occur when parsing a cell label.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CellError {
+    WrongLength(String),
+    InvalidRow { label: String, row: char },
+    InvalidColumn { label: String, column: char },
+}
+
+impl fmt::Display for CellError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            CellError::WrongLength(label) => {
+                write!(f, "wrong length {} for cell \"{}\"", label.len(), label)
+            }
+            CellError::InvalidRow { label, row } => {
+                write!(f, "invalid row '{}' for cell \"{}\"", row, label)
+            }
+            CellError::InvalidColumn { label, column } => {
+                write!(f, "invalid column '{}' for cell \"{}\"", column, label)
+            }
+        }
+    }
+}
+
+impl std::error::Error for CellError {}
 
 impl Cell {
     pub const COUNT: u8 = 81;
@@ -28,14 +53,6 @@ impl Cell {
 
     pub const fn from_row_column(row: House, column: House) -> Self {
         Self::from_coords(row.coord(), column.coord())
-    }
-
-    pub fn from_str(label: &str) -> Self {
-        Self(index_from_label(label))
-    }
-
-    pub fn from_string(label: String) -> Self {
-        Self::from_str(label.as_str())
     }
 
     pub const fn index(&self) -> u8 {
@@ -121,7 +138,8 @@ impl Cell {
     }
 
     pub const fn label(&self) -> &'static str {
-        label_from_index(self.0)
+        debug_assert!(self.0 < Cell::COUNT);
+        LABELS[self.0 as usize]
     }
 
     pub fn labels(cells: &Vec<Cell>) -> String {
@@ -137,18 +155,34 @@ impl Cell {
 }
 
 impl TryFrom<&str> for Cell {
-    type Error = String;
+    type Error = CellError;
 
     fn try_from(label: &str) -> Result<Self, Self::Error> {
-        match try_index_from_label(label) {
-            Ok(index) => Ok(Self(index)),
-            Err(message) => Err(message),
+        let trimmed = label.trim();
+        if trimmed.len() != 2 {
+            return Err(CellError::WrongLength(trimmed.to_string()));
         }
+
+        let mut chars = trimmed.chars();
+        let row_char = chars.next().unwrap();
+        let col_char = chars.next().unwrap();
+
+        let row = Coord::try_from(row_char).map_err(|_| CellError::InvalidRow {
+            label: trimmed.to_string(),
+            row: row_char,
+        })?;
+
+        let col = Coord::try_from(col_char).map_err(|_| CellError::InvalidColumn {
+            label: trimmed.to_string(),
+            column: col_char,
+        })?;
+
+        Ok(Self::from_coords(row, col))
     }
 }
 
 impl TryFrom<String> for Cell {
-    type Error = String;
+    type Error = CellError;
 
     fn try_from(label: String) -> Result<Self, Self::Error> {
         Self::try_from(label.as_str())
@@ -206,15 +240,47 @@ impl ExactSizeIterator for CellIter {
     }
 }
 
-#[allow(unused_macros)]
+/// Creates a [`Cell`] from a case-insensitive cell label.
+///
+/// This macro is intended for use in tests and compile-time constants.
+/// For runtime parsing, use [`Cell::try_from`] instead.
+///
+/// # Examples
+///
+/// ```
+/// # use sudoku_rust::{Cell, cell};
+/// let c = cell!(A1);
+/// assert_eq!(0, c.index());
+/// ```
+///
+/// # Panics
+///
+/// Panics if the cell label is invalid.
+///
+/// See [`Cell::try_from`] for valid label format.
+#[macro_export]
 macro_rules! cell {
-    ($l:expr) => {
-        Cell::from_str($l)
+    ($value:tt) => {
+        match Cell::try_from(stringify!($value)) {
+            Ok(k) => k,
+            Err(e) => panic!("cell![{}]: {}", stringify!($value), e),
+        }
     };
 }
 
-#[allow(unused_imports)]
-pub(crate) use cell;
+/// Every cell's label.
+#[rustfmt::skip]
+const LABELS: [&str; 81] = [
+    "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9",
+    "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9",
+    "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9",
+    "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9",
+    "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8", "E9",
+    "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9",
+    "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9",
+    "H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9",
+    "J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9",
+];
 
 /// The coordinates of every cell's row, column and block.
 const HOUSE_COORDS: [[Coord; 3]; 81] = {

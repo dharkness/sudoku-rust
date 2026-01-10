@@ -86,10 +86,7 @@ pub fn find_fireworks(board: &Board, single: bool) -> Option<Effects> {
 #[cfg(test)]
 mod tests {
     use crate::io::{Parse, Parser};
-    use crate::layout::cells::cell::cell;
-    use crate::layout::cells::cell_set::cells;
-    use crate::layout::values::known::known;
-    use crate::layout::values::known_set::knowns;
+    use crate::*;
 
     use super::*;
 
@@ -104,10 +101,10 @@ mod tests {
 
         if let Some(got) = find_fireworks(&board, true) {
             let mut action = Action::new(Strategy::Fireworks);
-            action.erase_knowns(cell!("C4"), knowns!("4 5 6"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("C4 F4"), known!("3"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("C4 F1 F4"), known!("7"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("F1 F4"), known!("8"));
+            action.erase_knowns(cell!(C4), knowns![4 5 6]);
+            action.clue_cells_for_known(Verdict::Secondary, cells![C4 F4], known!(3));
+            action.clue_cells_for_known(Verdict::Secondary, cells![C4 F1 F4], known!(7));
+            action.clue_cells_for_known(Verdict::Secondary, cells![F1 F4], known!(8));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

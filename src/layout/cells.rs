@@ -3,7 +3,6 @@
 pub mod bit;
 pub mod cell;
 pub mod cell_set;
-pub mod label;
 pub mod rectangle;
 
 pub use bit::Bit;

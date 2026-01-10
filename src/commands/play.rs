@@ -254,11 +254,17 @@ pub fn start_player(args: PlayArgs) {
                     println!("\n==> G <cells> <digit>\n");
                     continue;
                 }
-                let cells = CellSet::from(input[1]);
+                let cells = match CellSet::try_from(input[1]) {
+                    Ok(cells) => cells,
+                    Err(e) => {
+                        println!("\n==> Bad input: {}\n", e);
+                        continue;
+                    }
+                };
                 let known = match Known::try_from(input[2]) {
                     Ok(known) => known,
-                    Err(message) => {
-                        println!("\n==> {}\n", message);
+                    Err(e) => {
+                        println!("\n==> Bad input: {}\n", e);
                         continue;
                     }
                 };
@@ -292,11 +298,17 @@ pub fn start_player(args: PlayArgs) {
                     println!("\n==> S <cells> <digit>\n");
                     continue;
                 }
-                let cells = CellSet::from(input[1]);
+                let cells = match CellSet::try_from(input[1]) {
+                    Ok(cells) => cells,
+                    Err(e) => {
+                        println!("\n==> Bad input: {}\n", e);
+                        continue;
+                    }
+                };
                 let known = match Known::try_from(input[2]) {
                     Ok(known) => known,
-                    Err(message) => {
-                        println!("\n==> {}\n", message);
+                    Err(e) => {
+                        println!("\n==> Bad input: {}\n", e);
                         continue;
                     }
                 };
@@ -331,11 +343,24 @@ pub fn start_player(args: PlayArgs) {
                     println!("\n==> E <cells> <digits>\n");
                     continue;
                 }
-                let cells = CellSet::from(input[1]);
+                let cells = match CellSet::try_from(input[1]) {
+                    Ok(cells) => cells,
+                    Err(e) => {
+                        println!("\n==> Bad input: {}\n", e);
+                        continue;
+                    }
+                };
+                let knowns = match KnownSet::try_from(input[2]) {
+                    Ok(knowns) => knowns,
+                    Err(e) => {
+                        println!("\n==> Bad input: {}\n", e);
+                        continue;
+                    }
+                };
                 let mut clone = *board;
                 let mut changed = false;
                 for cell in cells {
-                    for known in KnownSet::from(input[2]) {
+                    for known in knowns {
                         match changer.remove_candidate(&clone, Strategy::Erase, cell, known) {
                             ChangeResult::None => {
                                 println!("\n==> {} is not a candidate for {}", known, cell);

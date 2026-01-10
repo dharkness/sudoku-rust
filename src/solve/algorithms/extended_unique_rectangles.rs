@@ -141,10 +141,7 @@ pub fn find_extended_unique_rectangles(board: &Board, single: bool) -> Option<Ef
 #[cfg(test)]
 mod tests {
     use crate::io::{Parse, Parser};
-    use crate::layout::cells::cell::cell;
-    use crate::layout::cells::cell_set::cells;
-    use crate::layout::values::known::known;
-    use crate::layout::values::known_set::knowns;
+    use crate::*;
 
     use super::*;
 
@@ -159,10 +156,10 @@ mod tests {
 
         if let Some(got) = find_extended_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::ExtendedUniqueRectangle);
-            action.erase_knowns(cell!("C1"), knowns!("1 5"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("C3 E1 E3 G1 G3"), known!("1"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("E1 E3 G1 G3"), known!("3"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("C3 E1 G1 G3"), known!("5"));
+            action.erase_knowns(cell!(C1), knowns![1 5]);
+            action.clue_cells_for_known(Verdict::Primary, cells![C3 E1 E3 G1 G3], known!(1));
+            action.clue_cells_for_known(Verdict::Primary, cells![E1 E3 G1 G3], known!(3));
+            action.clue_cells_for_known(Verdict::Primary, cells![C3 E1 G1 G3], known!(5));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
@@ -181,10 +178,10 @@ mod tests {
 
         if let Some(got) = find_extended_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::ExtendedUniqueRectangle);
-            action.erase_knowns(cell!("D2"), knowns!("3 8"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("D6 D7 E2 E6 E7"), known!("3"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("D6 D7 E6 E7"), known!("7"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("D7 E2 E7"), known!("8"));
+            action.erase_knowns(cell!(D2), knowns![3 8]);
+            action.clue_cells_for_known(Verdict::Primary, cells![D6 D7 E2 E6 E7], known!(3));
+            action.clue_cells_for_known(Verdict::Primary, cells![D6 D7 E6 E7], known!(7));
+            action.clue_cells_for_known(Verdict::Primary, cells![D7 E2 E7], known!(8));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
@@ -203,12 +200,12 @@ mod tests {
 
         if let Some(got) = find_extended_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::ExtendedUniqueRectangle);
-            action.erase_cells(cells!("D7 F7"), known!("3"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("D5 F5"), known!("1"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("D7 F7"), known!("1"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("D3 F3"), known!("3"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("D3 D5"), known!("4"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("F3 F5"), known!("4"));
+            action.erase_cells(cells![D7 F7], known!(3));
+            action.clue_cells_for_known(Verdict::Primary, cells![D5 F5], known!(1));
+            action.clue_cells_for_known(Verdict::Secondary, cells![D7 F7], known!(1));
+            action.clue_cells_for_known(Verdict::Primary, cells![D3 F3], known!(3));
+            action.clue_cells_for_known(Verdict::Primary, cells![D3 D5], known!(4));
+            action.clue_cells_for_known(Verdict::Primary, cells![F3 F5], known!(4));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

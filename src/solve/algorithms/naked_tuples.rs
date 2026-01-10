@@ -82,9 +82,7 @@ pub fn is_degenerate(known_sets: &[KnownSet], size: usize, smaller_size: usize) 
 
 #[cfg(test)]
 mod tests {
-    use crate::layout::cells::cell::cell;
-    use crate::layout::cells::cell_set::cells;
-    use crate::layout::values::known_set::knowns;
+    use crate::*;
 
     use super::*;
 
@@ -93,18 +91,18 @@ mod tests {
         let mut board = Board::new();
         let mut effects = Effects::new();
 
-        let knowns = knowns!("1 2 3 4 5 6 7");
-        board.remove_candidates_from_cells(cells!("A1 A2"), knowns, &mut effects);
+        let knowns = knowns![1 2 3 4 5 6 7];
+        board.remove_candidates_from_cells(cells![A1 A2], knowns, &mut effects);
 
         find_naked_pairs(&board, false)
             .unwrap()
             .apply_all(&mut board);
 
-        assert_eq!(!knowns, board.candidates(cell!("A1")));
-        assert_eq!(!knowns, board.candidates(cell!("A2")));
-        assert_eq!(knowns, board.candidates(cell!("A5")));
-        assert_eq!(knowns, board.candidates(cell!("B3")));
-        assert_eq!(knowns, board.candidates(cell!("C2")));
+        assert_eq!(!knowns, board.candidates(cell!(A1)));
+        assert_eq!(!knowns, board.candidates(cell!(A2)));
+        assert_eq!(knowns, board.candidates(cell!(A5)));
+        assert_eq!(knowns, board.candidates(cell!(B3)));
+        assert_eq!(knowns, board.candidates(cell!(C2)));
     }
 
     #[test]
@@ -112,17 +110,17 @@ mod tests {
         let mut board = Board::new();
         let mut effects = Effects::new();
 
-        let knowns = knowns!("1 2 3 4 5 6");
-        board.remove_candidates_from_cells(cells!("A1 A2 A5"), knowns, &mut effects);
+        let knowns = knowns![1 2 3 4 5 6];
+        board.remove_candidates_from_cells(cells![A1 A2 A5], knowns, &mut effects);
 
         find_naked_triples(&board, false)
             .unwrap()
             .apply_all(&mut board);
 
-        assert_eq!(!knowns, board.candidates(cell!("A1")));
-        assert_eq!(knowns, board.candidates(cell!("A8")));
-        assert_eq!(KnownSet::full(), board.candidates(cell!("B3")));
-        assert_eq!(KnownSet::full(), board.candidates(cell!("C2")));
+        assert_eq!(!knowns, board.candidates(cell!(A1)));
+        assert_eq!(knowns, board.candidates(cell!(A8)));
+        assert_eq!(KnownSet::full(), board.candidates(cell!(B3)));
+        assert_eq!(KnownSet::full(), board.candidates(cell!(C2)));
     }
 
     #[test]
@@ -130,17 +128,17 @@ mod tests {
         let mut board = Board::new();
         let mut effects = Effects::new();
 
-        let knowns = knowns!("1 2 3 4 5");
-        board.remove_candidates_from_cells(cells!("A1 A2 A5 A8"), knowns, &mut effects);
+        let knowns = knowns![1 2 3 4 5];
+        board.remove_candidates_from_cells(cells![A1 A2 A5 A8], knowns, &mut effects);
 
         find_naked_quads(&board, false)
             .unwrap()
             .apply_all(&mut board);
 
-        assert_eq!(!knowns, board.candidates(cell!("A1")));
-        assert_eq!(!knowns, board.candidates(cell!("A2")));
-        assert_eq!(knowns, board.candidates(cell!("A9")));
-        assert_eq!(KnownSet::full(), board.candidates(cell!("B3")));
-        assert_eq!(KnownSet::full(), board.candidates(cell!("C2")));
+        assert_eq!(!knowns, board.candidates(cell!(A1)));
+        assert_eq!(!knowns, board.candidates(cell!(A2)));
+        assert_eq!(knowns, board.candidates(cell!(A9)));
+        assert_eq!(KnownSet::full(), board.candidates(cell!(B3)));
+        assert_eq!(KnownSet::full(), board.candidates(cell!(C2)));
     }
 }

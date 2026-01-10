@@ -78,9 +78,7 @@ pub fn find_xyz_wings(board: &Board, single: bool) -> Option<Effects> {
 #[cfg(test)]
 mod tests {
     use crate::io::{Parse, Parser};
-    use crate::layout::cells::cell::cell;
-    use crate::layout::cells::cell_set::cells;
-    use crate::layout::values::known::known;
+    use crate::*;
 
     use super::*;
 
@@ -97,10 +95,10 @@ mod tests {
             assert_eq!(1, got.actions().len());
 
             let mut action = Action::new(Strategy::XYZWing);
-            action.erase(cell!("F7"), known!("1"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("D9 F1 F9"), known!("1"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("D9 F9"), known!("2"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("F1 F9"), known!("4"));
+            action.erase(cell!(F7), known!(1));
+            action.clue_cells_for_known(Verdict::Secondary, cells![D9 F1 F9], known!(1));
+            action.clue_cells_for_known(Verdict::Primary, cells![D9 F9], known!(2));
+            action.clue_cells_for_known(Verdict::Primary, cells![F1 F9], known!(4));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

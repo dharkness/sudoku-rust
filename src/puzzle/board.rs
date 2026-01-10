@@ -530,9 +530,9 @@ mod test {
     use itertools::Itertools;
 
     use crate::io::{Parse, Parser};
-    use crate::layout::cells::cell::cell;
-    use crate::layout::values::known::known;
+    use crate::layout::Shape;
     use crate::testing::strip_leading_whitespace;
+    use crate::*;
 
     use super::*;
 
@@ -564,17 +564,17 @@ mod test {
         let f = Board::new();
 
         assert_eq!(f.unknown_count(), 81);
-        assert_eq!(f.unknowns(), CellSet::full());
+        assert_eq!(f.unknowns(), all_cells![]);
         assert_eq!(f.known_count(), 0);
-        assert_eq!(f.knowns(), CellSet::empty());
-        assert_eq!(f.all_knowns(CellSet::full()), KnownSet::empty());
+        assert_eq!(f.knowns(), cells![]);
+        assert_eq!(f.all_knowns(all_cells![]), knowns![]);
 
         assert_eq!(f.given_count(), 0);
-        assert_eq!(f.givens(), CellSet::empty());
+        assert_eq!(f.givens(), cells![]);
 
         assert_eq!(f.is_fully_solved(), false);
         assert_eq!(f.solved_count(), 0);
-        assert_eq!(f.solved(), CellSet::empty());
+        assert_eq!(f.solved(), cells![]);
 
         for cell in Cell::iter() {
             assert_eq!(f.is_unknown(cell), true);
@@ -586,7 +586,7 @@ mod test {
         }
 
         for known in Known::iter() {
-            assert_eq!(f.candidate_cells(known), CellSet::full());
+            assert_eq!(f.candidate_cells(known), all_cells![]);
         }
 
         for house in House::iter() {
@@ -600,18 +600,25 @@ mod test {
     #[test]
     fn test_parsed() {
         let f = fixture();
-        let solved = CellSet::from(
-            "A3 A7 A8 A9 B2 B5 B7 C8 D1 D4 D5 D9 E4 E6 F1 F5 F6 F9 G1 G2 G3 H1 H2 H3 H5 H8 J1 J2 J3 J7",
-        );
+        let solved = cells![
+            A3 A7 A8 A9
+            B2 B5 B7
+            C8 D1 D4 D5 D9
+            E4 E6
+            F1 F5 F6 F9
+            G1 G2 G3
+            H1 H2 H3 H5 H8
+            J1 J2 J3 J7
+        ];
 
         assert_eq!(f.unknown_count(), 81 - solved.len());
-        assert_eq!(f.unknowns(), CellSet::full() - solved);
+        assert_eq!(f.unknowns(), all_cells![] - solved);
         assert_eq!(f.known_count(), solved.len());
         assert_eq!(f.knowns(), solved);
-        assert_eq!(f.all_knowns(CellSet::full()), KnownSet::full());
+        assert_eq!(f.all_knowns(all_cells![]), KnownSet::full());
 
         assert_eq!(f.given_count(), 0);
-        assert_eq!(f.givens(), CellSet::empty());
+        assert_eq!(f.givens(), cells![]);
 
         assert_eq!(f.is_fully_solved(), false);
         assert_eq!(f.solved_count(), solved.len());
@@ -623,7 +630,7 @@ mod test {
             assert_eq!(f.is_given(cell), false);
             assert_eq!(f.is_solved(cell), true);
             assert_eq!(f.value(cell).is_known(), true);
-            assert_eq!(f.candidates(cell), KnownSet::empty());
+            assert_eq!(f.candidates(cell), knowns![]);
         }
     }
 
@@ -631,63 +638,45 @@ mod test {
     fn test_is_candidate() {
         let f = fixture();
 
-        assert_eq!(f.is_candidate(cell!("A1"), known!("4")), true);
-        assert_eq!(f.is_candidate(cell!("A1"), known!("8")), true);
-        assert_eq!(f.is_candidate(cell!("C3"), known!("4")), true);
-        assert_eq!(f.is_candidate(cell!("C3"), known!("5")), true);
-        assert_eq!(f.is_candidate(cell!("C3"), known!("6")), true);
-        assert_eq!(f.is_candidate(cell!("C3"), known!("8")), true);
+        assert_eq!(f.is_candidate(cell!(A1), known!(4)), true);
+        assert_eq!(f.is_candidate(cell!(A1), known!(8)), true);
+        assert_eq!(f.is_candidate(cell!(C3), known!(4)), true);
+        assert_eq!(f.is_candidate(cell!(C3), known!(5)), true);
+        assert_eq!(f.is_candidate(cell!(C3), known!(6)), true);
+        assert_eq!(f.is_candidate(cell!(C3), known!(8)), true);
+        assert_eq!(f.is_candidate(cell!(A1), known!(1)), false);
+        assert_eq!(f.is_candidate(cell!(A1), known!(2)), false);
+        assert_eq!(f.is_candidate(cell!(A1), known!(3)), false);
+        assert_eq!(f.is_candidate(cell!(A1), known!(5)), false);
+        assert_eq!(f.is_candidate(cell!(A1), known!(6)), false);
+        assert_eq!(f.is_candidate(cell!(A1), known!(7)), false);
+        assert_eq!(f.is_candidate(cell!(A1), known!(9)), false);
 
-        assert_eq!(f.is_candidate(cell!("A1"), known!("1")), false);
-        assert_eq!(f.is_candidate(cell!("A1"), known!("2")), false);
-        assert_eq!(f.is_candidate(cell!("A1"), known!("3")), false);
-        assert_eq!(f.is_candidate(cell!("A1"), known!("5")), false);
-        assert_eq!(f.is_candidate(cell!("A1"), known!("6")), false);
-        assert_eq!(f.is_candidate(cell!("A1"), known!("7")), false);
-        assert_eq!(f.is_candidate(cell!("A1"), known!("9")), false);
+        assert_eq!(f.is_candidate(cell!(H1), known!(5)), false);
 
-        assert_eq!(f.is_candidate(cell!("H1"), known!("5")), false);
-    }
-
-    #[test]
-    fn test_candidates() {
-        let f = fixture();
-
-        assert_eq!(f.candidates(cell!("A1")), KnownSet::from("4 8"));
-        assert_eq!(f.candidates(cell!("C3")), KnownSet::from("4 5 6 8"));
-        assert_eq!(f.candidates(cell!("D1")), KnownSet::empty());
+        assert_eq!(f.candidates(cell!(A1)), knowns![4 8]);
+        assert_eq!(f.candidates(cell!(C3)), knowns![4 5 6 8]);
+        assert_eq!(f.candidates(cell!(D1)), knowns![]);
     }
 
     #[test]
     fn test_all_candidates() {
         let f = fixture();
 
-        assert_eq!(f.all_candidates(CellSet::empty()), KnownSet::empty());
-        assert_eq!(f.all_candidates(CellSet::full()), KnownSet::full());
-        assert_eq!(
-            f.all_candidates(CellSet::from("A1 A2")),
-            KnownSet::from("4 5 8 9")
-        );
-        assert_eq!(
-            f.all_candidates(CellSet::from("A1 A2 A3 A4")),
-            KnownSet::from("1 4 5 8 9")
-        );
+        assert_eq!(f.all_candidates(cells![]), knowns![]);
+        assert_eq!(f.all_candidates(all_cells![]), KnownSet::full());
+        assert_eq!(f.all_candidates(cells![A1 A2]), knowns![4 5 8 9]);
+        assert_eq!(f.all_candidates(cells![A1 A2 A3 A4]), knowns![1 4 5 8 9]);
     }
 
     #[test]
     fn test_common_candidates() {
         let f = fixture();
 
-        assert_eq!(f.common_candidates(CellSet::empty()), KnownSet::empty());
-        assert_eq!(f.common_candidates(CellSet::full()), KnownSet::empty());
-        assert_eq!(
-            f.common_candidates(CellSet::from("A2 A4")),
-            KnownSet::from("5 9")
-        );
-        assert_eq!(
-            f.common_candidates(CellSet::from("A1 A2 A3 A4")),
-            KnownSet::empty()
-        );
+        assert_eq!(f.common_candidates(cells![]), knowns![]);
+        assert_eq!(f.common_candidates(all_cells![]), knowns![]);
+        assert_eq!(f.common_candidates(cells![A2 A4]), knowns![5 9]);
+        assert_eq!(f.common_candidates(cells![A1 A2 A3 A4]), knowns![]);
     }
 
     #[test]
@@ -695,28 +684,68 @@ mod test {
         let f = fixture();
 
         assert_eq!(f.cells_with_n_candidates(0), f.knowns());
-        assert_eq!(f.cells_with_n_candidates(0), CellSet::from("A3 A7 A8 A9 B2 B5 B7 C8 D1 D4 D5 D9 E4 E6 F1 F5 F6 F9 G1 G2 G3 H1 H2 H3 H5 H8 J1 J2 J3 J7"));
-        assert_eq!(f.cells_with_n_candidates(1), CellSet::empty());
+        assert_eq!(
+            f.cells_with_n_candidates(0),
+            cells![
+                A3 A7 A8 A9
+                B2 B5 B7
+                C8
+                D1 D4 D5 D9
+                E4 E6
+                F1 F5 F6 F9
+                G1 G2 G3 H1 H2 H3 H5 H8
+                J1 J2 J3 J7
+            ]
+        );
+        assert_eq!(f.cells_with_n_candidates(1), cells![]);
         assert_eq!(
             f.cells_with_n_candidates(2),
-            CellSet::from("A1 A2 A5 D3 D6 D8 E1 F2 F4 J5")
+            cells![
+                A1 A2 A5
+                D3 D6 D8
+                E1
+                F2 F4
+                J5
+            ]
         );
         assert_eq!(
             f.cells_with_n_candidates(3),
-            CellSet::from("B1 B3 B8 B9 C7 C9 D2 D7 E2 E5 E8 F7 F8 G5 G7 G9 H4 H6 H9 J4 J8 J9")
+            cells![
+                B1 B3 B8 B9
+                C7 C9
+                D2 D7
+                E2 E5 E8
+                F7 F8
+                G5 G7 G9
+                H4 H6 H9
+                J4 J8 J9
+            ]
         );
         assert_eq!(
             f.cells_with_n_candidates(4),
-            CellSet::from("A4 A6 B6 C1 C2 C3 E3 E7 G4 G6 G8 H7")
+            cells![
+                A4 A6
+                B6
+                C1 C2 C3
+                E3 E7
+                G4 G6 G8
+                H7
+            ]
         );
         assert_eq!(
             f.cells_with_n_candidates(5),
-            CellSet::from("B4 C5 C6 E9 F3 J6")
+            cells![
+                B4
+                C5 C6
+                E9
+                F3
+                J6
+            ]
         );
-        assert_eq!(f.cells_with_n_candidates(6), CellSet::from("C4"));
-        assert_eq!(f.cells_with_n_candidates(7), CellSet::empty());
-        assert_eq!(f.cells_with_n_candidates(8), CellSet::empty());
-        assert_eq!(f.cells_with_n_candidates(9), CellSet::empty());
+        assert_eq!(f.cells_with_n_candidates(6), cells![C4]);
+        assert_eq!(f.cells_with_n_candidates(7), cells![]);
+        assert_eq!(f.cells_with_n_candidates(8), cells![]);
+        assert_eq!(f.cells_with_n_candidates(9), cells![]);
     }
 
     #[test]
@@ -726,17 +755,17 @@ mod test {
         assert_eq!(
             f.cell_candidates_with_n_candidates(5).collect_vec(),
             vec![
-                (cell!("B4"), KnownSet::from("2 4 6 7 9")),
-                (cell!("C5"), KnownSet::from("1 2 6 7 8")),
-                (cell!("C6"), KnownSet::from("1 2 5 6 8")),
-                (cell!("E9"), KnownSet::from("2 5 7 8 9")),
-                (cell!("F3"), KnownSet::from("1 4 5 6 8")),
-                (cell!("J6"), KnownSet::from("3 5 6 8 9")),
+                (cell!(B4), knowns![2 4 6 7 9]),
+                (cell!(C5), knowns![1 2 6 7 8]),
+                (cell!(C6), knowns![1 2 5 6 8]),
+                (cell!(E9), knowns![2 5 7 8 9]),
+                (cell!(F3), knowns![1 4 5 6 8]),
+                (cell!(J6), knowns![3 5 6 8 9]),
             ]
         );
         assert_eq!(
             f.cell_candidates_with_n_candidates(6).collect_vec(),
-            vec![(cell!("C4"), KnownSet::from("1 2 4 5 6 7"))]
+            vec![(cell!(C4), knowns![1 2 4 5 6 7])]
         );
         assert_eq!(
             f.cell_candidates_with_n_candidates(7)
@@ -751,8 +780,15 @@ mod test {
         let f = fixture();
 
         assert_eq!(
-            f.candidate_cells(known!("1")),
-            CellSet::from("A4 A5 A6 C4 C5 C6 C7 E3 E5 F3 F4 G4 G5 G6 G7 G8 H4 H6 H7")
+            f.candidate_cells(known!(1)),
+            cells![
+                A4 A5 A6
+                C4 C5 C6 C7
+                E3 E5
+                F3 F4
+                G4 G5 G6 G7 G8
+                H4 H6 H7
+            ]
         );
     }
 
@@ -761,8 +797,8 @@ mod test {
         let f = fixture();
 
         assert_eq!(
-            f.house_candidate_cells(House::from("R3"), known!("1")),
-            CellSet::from("C4 C5 C6 C7")
+            f.house_candidate_cells(row!(C), known!(1)),
+            cells![C4 C5 C6 C7]
         );
     }
 }

@@ -201,7 +201,10 @@ impl Node {
         } else if known == self.max_known {
             self.min_known
         } else {
-            panic!("Node::other: known not in pair")
+            panic!(
+                "known {} not in pair [{}, {}]",
+                known, self.min_known, self.max_known
+            )
         }
     }
 
@@ -211,7 +214,10 @@ impl Node {
         } else if known == self.max_known {
             self.max_edges
         } else {
-            panic!("Node::other: known not in pair")
+            panic!(
+                "known {} not in pair [{}, {}]",
+                known, self.min_known, self.max_known
+            )
         }
     }
 }
@@ -402,9 +408,7 @@ fn add_candidate(new: &Rc<Chain>, chains: &mut Vec<Rc<Chain>>) {
 #[cfg(test)]
 mod tests {
     use crate::io::{Parse, Parser};
-    use crate::layout::cells::cell::cell;
-    use crate::layout::cells::cell_set::cells;
-    use crate::layout::values::known::known;
+    use crate::*;
 
     use super::*;
 
@@ -417,17 +421,17 @@ mod tests {
 
         if let Some(got) = find_xy_chains(&board, true) {
             let mut action = Action::new(Strategy::XYChain);
-            action.erase(cell!("C4"), known!("9"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("B7 E5"), known!("2"));
-            action.clue_cells_for_known(Verdict::Tertiary, cells!("B5 C9"), known!("2"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("B5 F4"), known!("8"));
-            action.clue_cells_for_known(Verdict::Tertiary, cells!("B7 E5"), known!("8"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("C9"), known!("9"));
-            action.clue_cells_for_known(Verdict::Tertiary, cells!("F4"), known!("9"));
+            action.erase(cell!(C4), known!(9));
+            action.clue_cells_for_known(Verdict::Secondary, cells![B7 E5], known!(2));
+            action.clue_cells_for_known(Verdict::Tertiary, cells![B5 C9], known!(2));
+            action.clue_cells_for_known(Verdict::Secondary, cells![B5 F4], known!(8));
+            action.clue_cells_for_known(Verdict::Tertiary, cells![B7 E5], known!(8));
+            action.clue_cells_for_known(Verdict::Secondary, cells![C9], known!(9));
+            action.clue_cells_for_known(Verdict::Tertiary, cells![F4], known!(9));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
-            panic!("No effects found");
+            panic!("no effects found");
         }
     }
 }

@@ -7,6 +7,24 @@ use super::{KnownSet, Value};
 #[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Known(u8);
 
+/// Errors that can occur when parsing a known value.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum KnownError {
+    InvalidValue(String),
+}
+
+impl fmt::Display for KnownError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            KnownError::InvalidValue(label) => {
+                write!(f, "invalid known '{}'", label)
+            }
+        }
+    }
+}
+
+impl std::error::Error for KnownError {}
+
 impl Known {
     pub const COUNT: u8 = 9;
 
@@ -64,25 +82,24 @@ impl Known {
 }
 
 impl TryFrom<char> for Known {
-    type Error = String;
+    type Error = KnownError;
 
     fn try_from(label: char) -> Result<Self, Self::Error> {
-        if !('1'..='9').contains(&label) {
-            Err(format!("Invalid digit \"{}\"", label))
-        } else {
-            Ok(Known::new(label as u8 - b'0'))
+        match label {
+            '1'..='9' => Ok(Self(label as u8 - b'1')),
+            _ => Err(KnownError::InvalidValue(label.to_string())),
         }
     }
 }
 
 impl TryFrom<&str> for Known {
-    type Error = String;
+    type Error = KnownError;
 
     fn try_from(label: &str) -> Result<Self, Self::Error> {
-        if let Some(char) = label.chars().next() {
-            Known::try_from(char)
-        } else {
-            Err(format!("Invalid digit \"{}\"", label))
+        let trimmed = label.trim();
+        match trimmed.len() {
+            1 => Known::try_from(trimmed.chars().next().unwrap()),
+            _ => Err(KnownError::InvalidValue(label.to_string())),
         }
     }
 }
@@ -137,14 +154,31 @@ impl ExactSizeIterator for KnownIter {
     }
 }
 
-#[allow(unused_macros)]
+/// Creates a [`Known`] from a digit character.
+///
+/// Compile-time convenience that panics on invalid input.
+/// For runtime parsing with error handling, use [`Known::try_from`].
+///
+/// # Examples
+///
+/// ```
+/// use sudoku_rust::known;
+///
+/// let k = known!(5);
+/// let k = known!(9);
+/// ```
+///
+/// # Panics
+///
+/// Panics if the value is not 1-9. See [`Known::try_from`] for valid formats.
+#[macro_export]
 macro_rules! known {
-    ($k:expr) => {
-        Known::from_str($k)
+    ($value:tt) => {
+        match Known::try_from(stringify!($value)) {
+            Ok(k) => k,
+            Err(e) => panic!("known![{}]: {}", stringify!($value), e),
+        }
     };
 }
-
-#[allow(unused_imports)]
-pub(crate) use known;
 
 const HIGHLIGHT_LABELS: [char; 9] = ['❶', '❷', '❸', '❹', '❺', '❻', '❼', '❽', '❾'];

@@ -97,12 +97,9 @@ impl fmt::Debug for Value {
     }
 }
 
-#[allow(unused_macros)]
+#[macro_export]
 macro_rules! value {
     ($k:expr) => {
         Value::new($k as u8)
     };
 }
-
-#[allow(unused_imports)]
-pub(crate) use value;

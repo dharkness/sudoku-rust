@@ -105,10 +105,7 @@ pub fn find_hidden_unique_rectangles(board: &Board, single: bool) -> Option<Effe
 #[cfg(test)]
 mod tests {
     use crate::io::{Parse, Parser};
-    use crate::layout::cells::cell::cell;
-    use crate::layout::cells::cell_set::cells;
-    use crate::layout::values::known::known;
-    use crate::layout::values::known_set::knowns;
+    use crate::*;
 
     use super::*;
 
@@ -123,9 +120,9 @@ mod tests {
 
         if let Some(got) = find_hidden_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::HiddenUniqueRectangle);
-            action.erase(cell!("D3"), known!("6"));
-            action.clue_cells_for_knowns(Verdict::Primary, cells!("D7 F3 F7"), knowns!("1 6"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("D3"), known!("1"));
+            action.erase(cell!(D3), known!(6));
+            action.clue_cells_for_knowns(Verdict::Primary, cells![D7 F3 F7], knowns![1 6]);
+            action.clue_cells_for_known(Verdict::Primary, CellSet::from(cell!(D3)), known!(1));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
@@ -144,9 +141,9 @@ mod tests {
 
         if let Some(got) = find_hidden_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::HiddenUniqueRectangle);
-            action.erase(cell!("D3"), known!("6"));
-            action.clue_cells_for_knowns(Verdict::Primary, cells!("B1 B3 D1"), knowns!("6 8"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("D3"), known!("8"));
+            action.erase(cell!(D3), known!(6));
+            action.clue_cells_for_knowns(Verdict::Primary, cells![B1 B3 D1], knowns![6 8]);
+            action.clue_cells_for_known(Verdict::Primary, CellSet::from(cell!(D3)), known!(8));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
@@ -165,9 +162,9 @@ mod tests {
 
         if let Some(got) = find_hidden_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::HiddenUniqueRectangle);
-            action.erase(cell!("H3"), known!("7"));
-            action.clue_cells_for_knowns(Verdict::Primary, cells!("E2 E3 H2"), knowns!("1 7"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("H3"), known!("1"));
+            action.erase(cell!(H3), known!(7));
+            action.clue_cells_for_knowns(Verdict::Primary, cells![E2 E3 H2], knowns![1 7]);
+            action.clue_cells_for_known(Verdict::Primary, CellSet::from(cell!(H3)), known!(1));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

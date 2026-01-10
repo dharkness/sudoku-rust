@@ -83,9 +83,7 @@ fn fit_row_column(board: &Board, block: House, known: Known) -> Option<(CellSet,
 #[cfg(test)]
 mod tests {
     use crate::io::{Parse, Parser};
-    use crate::layout::cells::cell::cell;
-    use crate::layout::cells::cell_set::cells;
-    use crate::layout::values::known::known;
+    use crate::*;
 
     use super::*;
 
@@ -98,13 +96,13 @@ mod tests {
 
         if let Some(got) = find_empty_rectangles(&board, true) {
             let mut action = Action::new(Strategy::EmptyRectangle);
-            action.erase(cell!("J5"), known!("2"));
-            action.clue_cells_for_known(Verdict::Primary, cells!("H7 J7 J9"), known!("2"));
-            action.clue_cells_for_known(Verdict::Secondary, cells!("B5 B7"), known!("2"));
+            action.erase(cell!(J5), known!(2));
+            action.clue_cells_for_known(Verdict::Primary, cells![H7 J7 J9], known!(2));
+            action.clue_cells_for_known(Verdict::Secondary, cells![B5 B7], known!(2));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
-            panic!("No effects found");
+            panic!("no effects found");
         }
     }
 }
