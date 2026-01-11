@@ -1,6 +1,3 @@
-use std::ops::{Deref, DerefMut};
-
-use super::label::index_from_label;
 use super::Cell;
 
 /// Specifies a single cell by its position in a bit field.
@@ -26,31 +23,5 @@ impl Bit {
 
     pub const fn cell(&self) -> Cell {
         Cell::new(self.index())
-    }
-}
-
-impl Deref for Bit {
-    type Target = u128;
-
-    fn deref(&self) -> &u128 {
-        &self.0
-    }
-}
-
-impl DerefMut for Bit {
-    fn deref_mut(&mut self) -> &mut u128 {
-        &mut self.0
-    }
-}
-
-impl From<&str> for Bit {
-    fn from(label: &str) -> Self {
-        Self(1 << index_from_label(label))
-    }
-}
-
-impl From<Cell> for Bit {
-    fn from(cell: Cell) -> Self {
-        cell.bit()
     }
 }
