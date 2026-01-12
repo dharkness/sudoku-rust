@@ -8,8 +8,8 @@
 use clap::{Parser, Subcommand};
 
 use crate::commands::{
-    bingo, create_puzzle, extract_patterns, find_solutions, solve_puzzles, start_player, BingoArgs,
-    CreateArgs, ExtractArgs, FindArgs, PlayArgs, SolveArgs,
+    bingo, create_puzzle, extract_patterns, find_solutions, profile_puzzles, solve_puzzles,
+    start_player, BingoArgs, CreateArgs, ExtractArgs, FindArgs, PlayArgs, ProfileArgs, SolveArgs,
 };
 use crate::io::create_signal;
 
@@ -100,6 +100,13 @@ enum Commands {
     /// Add the `--actions` option to print the strategies employed to solve each puzzle.
     #[clap(alias = "f", verbatim_doc_comment)]
     Find(FindArgs),
+
+    /// Benchmark solver performance on puzzles from a file or stdin
+    ///
+    /// Reads all puzzles into memory first, then times how long it takes
+    /// to solve them all. Useful for establishing performance baselines.
+    #[clap(alias = "pr", verbatim_doc_comment)]
+    Profile(ProfileArgs),
 }
 
 /// Executes the specified subcommand.
@@ -115,6 +122,7 @@ fn main() {
             Commands::Bingo(args) => bingo(args),
             Commands::Extract(args) => extract_patterns(args),
             Commands::Find(args) => find_solutions(args),
+            Commands::Profile(args) => profile_puzzles(args),
         }
     } else {
         start_player(PlayArgs::new());
