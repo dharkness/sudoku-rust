@@ -46,7 +46,7 @@ impl House {
     }
 
     pub const fn row(coord: Coord) -> Self {
-        ROWS[coord.usize()]
+        Self::new(Shape::Row, coord)
     }
 
     pub const fn all_columns() -> HouseSet {
@@ -58,7 +58,7 @@ impl House {
     }
 
     pub const fn column(coord: Coord) -> Self {
-        COLUMNS[coord.usize()]
+        Self::new(Shape::Column, coord)
     }
 
     pub const fn all_blocks() -> HouseSet {
@@ -70,7 +70,7 @@ impl House {
     }
 
     pub const fn block(coord: Coord) -> Self {
-        BLOCKS[coord.usize()]
+        Self::new(Shape::Block, coord)
     }
 
     pub fn try_from_with_shape(shape: Shape, label: &str) -> Result<Self, HouseError> {
@@ -440,19 +440,6 @@ const fn make_houses(shape: Shape) -> [House; 9] {
     }
     houses
 }
-
-pub const ALL: [House; 27] = {
-    let mut houses: [House; 27] = [House::new(Shape::Row, Coord::new(0)); 27];
-    let mut i = 0;
-
-    while i < 9 {
-        houses[i] = ROWS[i];
-        houses[i + 9] = COLUMNS[i];
-        houses[i + 18] = BLOCKS[i];
-        i += 1;
-    }
-    houses
-};
 
 pub const INTERSECTIONS: [[[[CellSet; 9]; 3]; 9]; 3] = {
     let mut sets: [[[[CellSet; 9]; 3]; 9]; 3] = [[[[CellSet::empty(); 9]; 3]; 9]; 3];

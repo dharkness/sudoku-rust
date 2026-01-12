@@ -68,43 +68,47 @@ impl Cell {
     }
 
     pub const fn houses(&self) -> [House; 3] {
-        HOUSES[self.usize()]
+        [self.row(), self.column(), self.block()]
     }
 
     pub const fn house(&self, shape: Shape) -> House {
-        HOUSES[self.usize()][shape.usize()]
+        match shape {
+            Shape::Row => self.row(),
+            Shape::Column => self.column(),
+            Shape::Block => self.block(),
+        }
     }
 
     pub const fn row(&self) -> House {
-        HOUSES[self.usize()][Shape::Row.usize()]
+        House::row(self.row_coord())
     }
 
     pub const fn row_coord(&self) -> Coord {
-        HOUSE_COORDS[self.usize()][Shape::Row.usize()]
+        Coord::new(self.0 / 9)
     }
 
     pub const fn column(&self) -> House {
-        HOUSES[self.usize()][Shape::Column.usize()]
+        House::column(self.column_coord())
     }
 
     pub const fn column_coord(&self) -> Coord {
-        HOUSE_COORDS[self.usize()][Shape::Column.usize()]
+        Coord::new(self.0 % 9)
     }
 
     pub const fn block(&self) -> House {
-        HOUSES[self.usize()][Shape::Block.usize()]
+        House::block(self.block_coord())
     }
 
     pub const fn block_coord(&self) -> Coord {
-        HOUSE_COORDS[self.usize()][Shape::Block.usize()]
+        Coord::new((self.0 / 9 / 3) * 3 + (self.0 % 9 / 3))
     }
 
     pub const fn coord_in_row(&self) -> Coord {
-        COORDS_IN_HOUSES[self.usize()][Shape::Row.usize()]
+        self.column_coord()
     }
 
     pub const fn coord_in_column(&self) -> Coord {
-        COORDS_IN_HOUSES[self.usize()][Shape::Column.usize()]
+        self.row_coord()
     }
 
     pub const fn coord_in_block(&self) -> Coord {
@@ -281,35 +285,6 @@ const LABELS: [&str; 81] = [
     "H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9",
     "J1", "J2", "J3", "J4", "J5", "J6", "J7", "J8", "J9",
 ];
-
-/// The coordinates of every cell's row, column and block.
-const HOUSE_COORDS: [[Coord; 3]; 81] = {
-    let mut coords = [[Coord::new(0); 3]; 81];
-    let mut cell = 0;
-    while cell < 81 {
-        let row = cell / 9;
-        let column = cell % 9;
-        let block = (row / 3) * 3 + (column / 3);
-        coords[cell as usize] = [Coord::new(row), Coord::new(column), Coord::new(block)];
-        cell += 1;
-    }
-    coords
-};
-
-/// Every cell's row, column and block.
-const HOUSES: [[House; 3]; 81] = {
-    let mut houses = [[House::new(Shape::Row, Coord::new(0)); 3]; 81];
-    let mut cell = 0;
-    while cell < 81 {
-        houses[cell as usize] = [
-            House::row(HOUSE_COORDS[cell as usize][Shape::Row.usize()]),
-            House::column(HOUSE_COORDS[cell as usize][Shape::Column.usize()]),
-            House::block(HOUSE_COORDS[cell as usize][Shape::Block.usize()]),
-        ];
-        cell += 1;
-    }
-    houses
-};
 
 /// The coordinates of every cell within its row, column and block.
 const COORDS_IN_HOUSES: [[Coord; 3]; 81] = {
