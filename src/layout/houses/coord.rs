@@ -109,7 +109,7 @@ impl TryFrom<String> for Coord {
 
 impl From<i32> for Coord {
     fn from(coord: i32) -> Self {
-        debug_assert!(coord >= 1 && coord <= 9);
+        debug_assert!((1..=9).contains(&coord));
         Self::new(coord as u8 - 1)
     }
 }

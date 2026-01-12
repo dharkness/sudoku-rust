@@ -121,7 +121,7 @@ impl House {
     }
 
     pub const fn is_block_top(&self) -> bool {
-        self.is_row() && self.coord.u8() % 3 == 0
+        self.is_row() && self.coord.u8().is_multiple_of(3)
     }
 
     pub const fn is_block_bottom(&self) -> bool {
@@ -137,7 +137,7 @@ impl House {
     }
 
     pub const fn is_block_left(&self) -> bool {
-        self.is_column() && self.coord.u8() % 3 == 0
+        self.is_column() && self.coord.u8().is_multiple_of(3)
     }
 
     pub const fn is_block_right(&self) -> bool {
