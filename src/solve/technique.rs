@@ -3,7 +3,7 @@ use crate::puzzle::{Board, Difficulty, Effects, Strategy};
 use super::algorithms;
 
 /// Names and categorizes a solver technique.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug)]
 pub struct Technique {
     strategy: Strategy,
     difficulty: Difficulty,
