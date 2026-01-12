@@ -54,7 +54,7 @@
 //! or solving a puzzle and [`format_runtime`] and [`format_number`] for logging.
 
 pub use cancelable::{create_signal, Cancelable};
-pub use format::{format_for_fancy_console, format_for_wiki, format_grid, format_packed, Format};
+pub use format::{format_for_fancy_console, format_for_wiki, format_grid, format_packed};
 pub use numbers::{format_number, format_runtime, ordinal_suffix};
 pub use parse::{Parse, ParsePacked, Parser};
 pub use print::{

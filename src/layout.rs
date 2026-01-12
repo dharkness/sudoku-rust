@@ -34,16 +34,11 @@
 //! This is another 9-bit bitset, with each bit representing one of the nine coordinates.
 //! It has nearly the identical interface and features as the other sets.
 
-pub use cells::{
-    Cell, CellIteratorUnion, CellSet, CellSetIteratorIntersection, CellSetIteratorUnion, Rectangle,
-};
+pub use cells::{Cell, CellIteratorUnion, CellSet, CellSetIteratorUnion, Rectangle};
 pub use houses::{
-    Coord, CoordSet, House, HouseIteratorUnion, HouseSet, HouseSetIteratorIntersection,
-    HouseSetIteratorUnion, Shape,
+    Coord, CoordSet, House, HouseIteratorUnion, HouseSet, HouseSetIteratorUnion, Shape,
 };
-pub use values::{
-    Known, KnownIteratorUnion, KnownSet, KnownSetIteratorIntersection, KnownSetIteratorUnion, Value,
-};
+pub use values::{Known, KnownIteratorUnion, KnownSet, KnownSetIteratorUnion, Value};
 
 pub mod cells;
 pub mod houses;

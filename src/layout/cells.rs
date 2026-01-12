@@ -7,5 +7,5 @@ pub mod rectangle;
 
 pub use bit::Bit;
 pub use cell::Cell;
-pub use cell_set::{CellIteratorUnion, CellSet, CellSetIteratorIntersection, CellSetIteratorUnion};
+pub use cell_set::{CellIteratorUnion, CellSet, CellSetIteratorUnion};
 pub use rectangle::Rectangle;

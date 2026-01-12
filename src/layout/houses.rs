@@ -13,7 +13,5 @@ pub mod shape;
 pub use coord::{Coord, CoordError};
 pub use coord_set::CoordSet;
 pub use house::{House, HouseIter};
-pub use house_set::{
-    HouseIteratorUnion, HouseSet, HouseSetIteratorIntersection, HouseSetIteratorUnion, Iter,
-};
+pub use house_set::{HouseIteratorUnion, HouseSet, HouseSetIteratorUnion, Iter};
 pub use shape::Shape;
