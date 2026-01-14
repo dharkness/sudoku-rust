@@ -1,5 +1,6 @@
 use std::fmt;
 use std::ops::{Add, Neg};
+use std::str::FromStr;
 
 use crate::layout::{Coord, House, Shape};
 
@@ -146,7 +147,7 @@ impl Cell {
         LABELS[self.0 as usize]
     }
 
-    pub fn labels(cells: &Vec<Cell>) -> String {
+    pub fn labels(cells: &[Cell]) -> String {
         let mut labels = String::new();
         labels.push('(');
         for cell in cells {
@@ -158,10 +159,10 @@ impl Cell {
     }
 }
 
-impl TryFrom<&str> for Cell {
-    type Error = CellError;
+impl FromStr for Cell {
+    type Err = CellError;
 
-    fn try_from(label: &str) -> Result<Self, Self::Error> {
+    fn from_str(label: &str) -> Result<Self, Self::Err> {
         let trimmed = label.trim();
         if trimmed.len() != 2 {
             return Err(CellError::WrongLength(trimmed.to_string()));
@@ -171,25 +172,23 @@ impl TryFrom<&str> for Cell {
         let row_char = chars.next().unwrap();
         let col_char = chars.next().unwrap();
 
-        let row = Coord::try_from(row_char).map_err(|_| CellError::InvalidRow {
-            label: trimmed.to_string(),
-            row: row_char,
-        })?;
+        let row = row_char
+            .to_string()
+            .parse::<Coord>()
+            .map_err(|_| CellError::InvalidRow {
+                label: trimmed.to_string(),
+                row: row_char,
+            })?;
 
-        let col = Coord::try_from(col_char).map_err(|_| CellError::InvalidColumn {
-            label: trimmed.to_string(),
-            column: col_char,
-        })?;
+        let col = col_char
+            .to_string()
+            .parse::<Coord>()
+            .map_err(|_| CellError::InvalidColumn {
+                label: trimmed.to_string(),
+                column: col_char,
+            })?;
 
         Ok(Self::from_coords(row, col))
-    }
-}
-
-impl TryFrom<String> for Cell {
-    type Error = CellError;
-
-    fn try_from(label: String) -> Result<Self, Self::Error> {
-        Self::try_from(label.as_str())
     }
 }
 
@@ -247,7 +246,7 @@ impl ExactSizeIterator for CellIter {
 /// Creates a [`Cell`] from a case-insensitive cell label.
 ///
 /// This macro is intended for use in tests and compile-time constants.
-/// For runtime parsing, use [`Cell::try_from`] instead.
+/// For runtime parsing, use [`Cell::from_str`] or `"A1".parse::<Cell>()` instead.
 ///
 /// # Examples
 ///
@@ -261,11 +260,11 @@ impl ExactSizeIterator for CellIter {
 ///
 /// Panics if the cell label is invalid.
 ///
-/// See [`Cell::try_from`] for valid label format.
+/// See [`Cell::from_str`] for valid label format.
 #[macro_export]
 macro_rules! cell {
     ($value:tt) => {
-        match Cell::try_from(stringify!($value)) {
+        match stringify!($value).parse::<Cell>() {
             Ok(k) => k,
             Err(e) => panic!("cell![{}]: {}", stringify!($value), e),
         }

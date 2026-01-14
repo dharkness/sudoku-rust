@@ -53,10 +53,12 @@ impl HouseSet {
             .enumerate()
             .map(|(index, ch)| {
                 let position = index + 1;
-                Coord::try_from(ch).map_err(|error| HouseSetError::InvalidHouse {
-                    position,
-                    error: HouseError::InvalidCoord { shape, error },
-                })
+                ch.to_string()
+                    .parse::<Coord>()
+                    .map_err(|error| HouseSetError::InvalidHouse {
+                        position,
+                        error: HouseError::InvalidCoord { shape, error },
+                    })
             })
             .collect::<Result<Vec<_>, _>>()?;
 

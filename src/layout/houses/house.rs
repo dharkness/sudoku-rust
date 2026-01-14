@@ -76,7 +76,9 @@ impl House {
     pub fn try_from_with_shape(shape: Shape, label: &str) -> Result<Self, HouseError> {
         Ok(Self::new(
             shape,
-            Coord::try_from(label).map_err(|error| HouseError::InvalidCoord { shape, error })?,
+            label
+                .parse::<Coord>()
+                .map_err(|error| HouseError::InvalidCoord { shape, error })?,
         ))
     }
 

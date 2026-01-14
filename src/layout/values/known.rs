@@ -1,5 +1,6 @@
 use std::fmt;
 use std::ops::{Add, Neg};
+use std::str::FromStr;
 
 use super::{KnownSet, Value};
 
@@ -42,24 +43,6 @@ impl Known {
         Self(index as u8)
     }
 
-    pub fn from_char(label: char) -> Self {
-        match Self::try_from(label) {
-            Ok(known) => known,
-            Err(message) => panic!("{}", message),
-        }
-    }
-
-    pub fn from_str(label: &str) -> Self {
-        match Self::try_from(label) {
-            Ok(known) => known,
-            Err(message) => panic!("{}", message),
-        }
-    }
-
-    pub fn from_string(label: String) -> Self {
-        Self::from_str(label.as_str())
-    }
-
     pub const fn usize(&self) -> usize {
         self.0 as usize
     }
@@ -92,13 +75,19 @@ impl TryFrom<char> for Known {
     }
 }
 
-impl TryFrom<&str> for Known {
-    type Error = KnownError;
+impl FromStr for Known {
+    type Err = KnownError;
 
-    fn try_from(label: &str) -> Result<Self, Self::Error> {
+    fn from_str(label: &str) -> Result<Self, Self::Err> {
         let trimmed = label.trim();
         match trimmed.len() {
-            1 => Known::try_from(trimmed.chars().next().unwrap()),
+            1 => {
+                let ch = trimmed.chars().next().unwrap();
+                match ch {
+                    '1'..='9' => Ok(Self(ch as u8 - b'1')),
+                    _ => Err(KnownError::InvalidValue(label.to_string())),
+                }
+            }
             _ => Err(KnownError::InvalidValue(label.to_string())),
         }
     }
@@ -157,7 +146,7 @@ impl ExactSizeIterator for KnownIter {
 /// Creates a [`Known`] from a digit character.
 ///
 /// Compile-time convenience that panics on invalid input.
-/// For runtime parsing with error handling, use [`Known::try_from`].
+/// For runtime parsing with error handling, use [`Known::from_str`] or `"5".parse::<Known>()`.
 ///
 /// # Examples
 ///
@@ -170,11 +159,11 @@ impl ExactSizeIterator for KnownIter {
 ///
 /// # Panics
 ///
-/// Panics if the value is not 1-9. See [`Known::try_from`] for valid formats.
+/// Panics if the value is not 1-9. See [`Known::from_str`] for valid formats.
 #[macro_export]
 macro_rules! known {
     ($value:tt) => {
-        match Known::try_from(stringify!($value)) {
+        match stringify!($value).parse::<Known>() {
             Ok(k) => k,
             Err(e) => panic!("known![{}]: {}", stringify!($value), e),
         }

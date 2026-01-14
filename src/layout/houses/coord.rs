@@ -1,4 +1,5 @@
 use std::fmt;
+use std::str::FromStr;
 
 #[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Coord(u8);
@@ -87,23 +88,24 @@ impl TryFrom<char> for Coord {
     }
 }
 
-impl TryFrom<&str> for Coord {
-    type Error = CoordError;
+impl FromStr for Coord {
+    type Err = CoordError;
 
-    fn try_from(label: &str) -> Result<Self, Self::Error> {
+    fn from_str(label: &str) -> Result<Self, Self::Err> {
         let trimmed = label.trim();
         match trimmed.len() {
-            1 => Coord::try_from(trimmed.chars().next().unwrap()),
+            1 => {
+                let ch = trimmed.chars().next().unwrap();
+                match ch {
+                    '1'..='9' => Ok(Self(ch as u8 - b'1')),
+                    'A'..='H' => Ok(Self(ch as u8 - b'A')),
+                    'a'..='h' => Ok(Self(ch as u8 - b'a')),
+                    'J' | 'j' => Ok(Self(8)),
+                    _ => Err(CoordError::InvalidValue(label.to_string())),
+                }
+            }
             _ => Err(CoordError::InvalidValue(label.to_string())),
         }
-    }
-}
-
-impl TryFrom<String> for Coord {
-    type Error = CoordError;
-
-    fn try_from(label: String) -> Result<Self, Self::Error> {
-        Self::try_from(label.as_str())
     }
 }
 
@@ -136,7 +138,7 @@ impl fmt::Display for Coord {
 #[macro_export]
 macro_rules! coord {
     ($label:tt) => {
-        match Coord::try_from(stringify!($label)) {
+        match stringify!($label).parse::<Coord>() {
             Ok(coord) => coord,
             Err(e) => panic!("coord![{}]: {}", stringify!($value), e),
         }

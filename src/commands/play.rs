@@ -214,7 +214,10 @@ pub fn start_player(args: PlayArgs) {
                         println!();
                     } else if ('1'..='9').contains(&c) {
                         println!();
-                        print_candidate(board, Known::from_char(c));
+                        match c.to_string().parse::<Known>() {
+                            Ok(known) => print_candidate(board, known),
+                            Err(_) => println!("\n==> Invalid candidate \"{}\"\n", c),
+                        }
                         println!();
                     } else {
                         println!("\n==> Invalid candidate \"{}\"\n", c);
@@ -261,7 +264,7 @@ pub fn start_player(args: PlayArgs) {
                         continue;
                     }
                 };
-                let known = match Known::try_from(input[2]) {
+                let known = match input[2].parse::<Known>() {
                     Ok(known) => known,
                     Err(e) => {
                         println!("\n==> Bad input: {}\n", e);
@@ -305,7 +308,7 @@ pub fn start_player(args: PlayArgs) {
                         continue;
                     }
                 };
-                let known = match Known::try_from(input[2]) {
+                let known = match input[2].parse::<Known>() {
                     Ok(known) => known,
                     Err(e) => {
                         println!("\n==> Bad input: {}\n", e);
@@ -447,7 +450,7 @@ pub fn start_player(args: PlayArgs) {
                 if input.len() == 2 {
                     match input[1].len() {
                         1 => {
-                            if let Ok(known) = Known::try_from(input[1]) {
+                            if let Ok(known) = input[1].parse::<Known>() {
                                 affecting_known = Some(known);
                             } else {
                                 println!("\n==> Invalid digit: {}\n", input[1]);
@@ -455,7 +458,7 @@ pub fn start_player(args: PlayArgs) {
                             }
                         }
                         2 => {
-                            if let Ok(cell) = Cell::try_from(input[1]) {
+                            if let Ok(cell) = input[1].parse::<Cell>() {
                                 affecting_cell = Some(cell);
                             } else {
                                 println!("\n==> Invalid cell: {}\n", input[1]);

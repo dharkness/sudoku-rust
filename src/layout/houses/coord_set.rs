@@ -268,24 +268,16 @@ impl TryFrom<&str> for CoordSet {
             .chars()
             .enumerate()
             .map(|(index, ch)| {
-                Coord::try_from(ch.to_string().as_str()).map_err(|error| {
-                    CoordSetError::InvalidCoord {
+                ch.to_string()
+                    .parse::<Coord>()
+                    .map_err(|error| CoordSetError::InvalidCoord {
                         position: index + 1,
                         error,
-                    }
-                })
+                    })
             })
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(coords.into_iter().union_coords())
-    }
-}
-
-impl TryFrom<String> for CoordSet {
-    type Error = CoordSetError;
-
-    fn try_from(labels: String) -> Result<Self, Self::Error> {
-        Self::try_from(labels.as_str())
     }
 }
 

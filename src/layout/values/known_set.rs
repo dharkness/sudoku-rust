@@ -230,22 +230,16 @@ impl TryFrom<&str> for KnownSet {
             .chars()
             .enumerate()
             .map(|(index, ch)| {
-                Known::try_from(ch).map_err(|error| KnownSetError::InvalidKnown {
-                    position: index + 1,
-                    error,
-                })
+                ch.to_string()
+                    .parse::<Known>()
+                    .map_err(|error| KnownSetError::InvalidKnown {
+                        position: index + 1,
+                        error,
+                    })
             })
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(knowns.into_iter().union_knowns())
-    }
-}
-
-impl TryFrom<String> for KnownSet {
-    type Error = KnownSetError;
-
-    fn try_from(values: String) -> Result<Self, Self::Error> {
-        Self::try_from(values.as_str())
     }
 }
 

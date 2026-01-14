@@ -26,7 +26,11 @@ pub fn profile_puzzles(args: ProfileArgs) {
             let file = File::open(&path).expect("Failed to open file");
             BufReader::new(file).lines().map_while(Result::ok).collect()
         }
-        None => std::io::stdin().lock().lines().map_while(Result::ok).collect(),
+        None => std::io::stdin()
+            .lock()
+            .lines()
+            .map_while(Result::ok)
+            .collect(),
     };
 
     let count = puzzles.len();

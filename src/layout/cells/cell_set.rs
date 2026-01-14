@@ -1,8 +1,3 @@
-// While the tuple struct is a thin wrapper (should be same memory storage),
-// the fact that it's a struct means it cannot be passed by value without moving it.
-//
-// Or maybe not. References are about ownership--not pointers.
-
 use std::fmt;
 use std::iter::FusedIterator;
 use std::ops::{
@@ -425,19 +420,13 @@ impl TryFrom<&str> for CellSet {
                 } else {
                     &cleaned[char_pos..]
                 };
-                Cell::try_from(label).map_err(|error| CellSetError::InvalidCell { position, error })
+                label
+                    .parse::<Cell>()
+                    .map_err(|error| CellSetError::InvalidCell { position, error })
             })
             .collect::<Result<Vec<_>, _>>()?;
 
         Ok(cells.into_iter().union_cells())
-    }
-}
-
-impl TryFrom<String> for CellSet {
-    type Error = CellSetError;
-
-    fn try_from(labels: String) -> Result<Self, Self::Error> {
-        Self::try_from(labels.as_str())
     }
 }
 
@@ -734,7 +723,7 @@ macro_rules! all_cells {
 /// - Columns: `1`-`9`
 /// - Examples: `A1`, `h9`, `J5`
 ///
-/// See [`Cell::try_from`] for the underlying parsing logic.
+/// See [`Cell::from_str`] for the underlying parsing logic.
 #[macro_export]
 macro_rules! cells {
     () => {

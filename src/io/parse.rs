@@ -84,7 +84,10 @@ impl Parser for ParsePacked {
                 ' ' | '\r' | '\n' | '|' | '_' => continue,
                 '1'..='9' => {
                     let cell = Cell::new(c);
-                    let known = Known::from_char(char);
+                    let known = match char.to_string().parse::<Known>() {
+                        Ok(known) => known,
+                        Err(_) => continue,
+                    };
                     let current = board.value(cell);
                     if current != known.value() {
                         match self.changer.set_given(&board, Strategy::Given, cell, known) {
@@ -144,7 +147,9 @@ impl Parser for ParseGrid {
         for char in input.chars() {
             if ('1'..='9').contains(&char) {
                 collecting = true;
-                candidates[c] += Known::from_char(char);
+                if let Ok(known) = char.to_string().parse::<Known>() {
+                    candidates[c] += known;
+                }
             } else if collecting {
                 collecting = false;
                 c += 1;
