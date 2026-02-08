@@ -8,6 +8,10 @@ use crate::puzzle::Strategy;
 
 /// Tracks the number of times a strategy was called, the number of times it found a solution,
 /// and the total time spent in the strategy.
+///
+/// The timings are stored in a nested `HashMap` where the outer key is the strategy and
+/// the inner key is the number of solutions found for a single call. The inner value
+/// is a tuple of the number of calls that found that many solutions and the total duration for those calls.
 pub struct Timings {
     timings: HashMap<Strategy, HashMap<usize, (usize, Duration)>>,
     found: usize,
@@ -63,9 +67,7 @@ impl Timings {
     }
 
     pub fn print_totals(&self) {
-        println!(
-            "Strategy                            Called       Found       Total    Call Avg         Avg"
-        );
+        println!("Strategy                            Called       Found       Total    Call Avg         Avg");
         for (strategy, (found, count, duration)) in self
             .timings
             .iter()

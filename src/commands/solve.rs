@@ -156,7 +156,7 @@ impl DetailedReporter {
             .iter()
             .sorted_by(|a, b| a.0.cmp(b.0))
             .for_each(|(strategy, count)| {
-                println!("- {:>2} {:?}", count, strategy);
+                println!("- {:>2} {}", count, strategy.label());
             });
     }
 }
@@ -251,39 +251,39 @@ impl CSVReporter {
     fn format_counts(&self, counts: &HashMap<Strategy, i32>) -> String {
         format!(
             "{:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2}",
-            // counts.get(&Strategy::Peer).unwrap_or(0),
-            counts.get(&Strategy::NakedSingle).unwrap_or(&0),
-            counts.get(&Strategy::HiddenSingle).unwrap_or(&0),
+            // dash_zero(*counts.get(&Strategy::Peer).unwrap_or(0)),
+            dash_zero(*counts.get(&Strategy::NakedSingle).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::HiddenSingle).unwrap_or(&0)),
 
-            counts.get(&Strategy::NakedPair).unwrap_or(&0),
-            counts.get(&Strategy::NakedTriple).unwrap_or(&0),
-            counts.get(&Strategy::NakedQuad).unwrap_or(&0),
-            counts.get(&Strategy::HiddenPair).unwrap_or(&0),
-            counts.get(&Strategy::HiddenTriple).unwrap_or(&0),
-            counts.get(&Strategy::HiddenQuad).unwrap_or(&0),
-            counts.get(&Strategy::PointingPair).unwrap_or(&0),
-            counts.get(&Strategy::PointingTriple).unwrap_or(&0),
-            counts.get(&Strategy::BoxLineReduction).unwrap_or(&0),
+            dash_zero(*counts.get(&Strategy::NakedPair).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::NakedTriple).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::NakedQuad).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::HiddenPair).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::HiddenTriple).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::HiddenQuad).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::PointingPair).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::PointingTriple).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::BoxLineReduction).unwrap_or(&0)),
 
-            counts.get(&Strategy::XWing).unwrap_or(&0),
-            counts.get(&Strategy::SinglesChain).unwrap_or(&0),
-            counts.get(&Strategy::YWing).unwrap_or(&0),
-            counts.get(&Strategy::EmptyRectangle).unwrap_or(&0),
-            counts.get(&Strategy::Swordfish).unwrap_or(&0),
-            counts.get(&Strategy::XYZWing).unwrap_or(&0),
+            dash_zero(*counts.get(&Strategy::XWing).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::SinglesChain).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::YWing).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::EmptyRectangle).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::Swordfish).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::XYZWing).unwrap_or(&0)),
 
-            counts.get(&Strategy::Jellyfish).unwrap_or(&0),
-            counts.get(&Strategy::Skyscraper).unwrap_or(&0),
-            counts.get(&Strategy::AvoidableRectangle).unwrap_or(&0),
-            counts.get(&Strategy::TwoStringKite).unwrap_or(&0),
-            counts.get(&Strategy::XYChain).unwrap_or(&0),
-            counts.get(&Strategy::UniqueRectangle).unwrap_or(&0),
-            counts.get(&Strategy::AlmostUniqueRectangle).unwrap_or(&0),
-            counts.get(&Strategy::Fireworks).unwrap_or(&0),
-            counts.get(&Strategy::ExtendedUniqueRectangle).unwrap_or(&0),
-            counts.get(&Strategy::HiddenUniqueRectangle).unwrap_or(&0),
-            counts.get(&Strategy::WXYZWing).unwrap_or(&0),
-            counts.get(&Strategy::Bug).unwrap_or(&0),
+            dash_zero(*counts.get(&Strategy::Jellyfish).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::Skyscraper).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::AvoidableRectangle).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::TwoStringKite).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::XYChain).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::UniqueRectangle).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::AlmostUniqueRectangle).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::Fireworks).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::ExtendedUniqueRectangle).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::HiddenUniqueRectangle).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::WXYZWing).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::Bug).unwrap_or(&0)),
         )
     }
 }
@@ -352,5 +352,13 @@ impl Reporter for CSVReporter {
             self.format_counts(counts),
             start.packed_string()
         );
+    }
+}
+
+fn dash_zero(value: i32) -> String {
+    if value == 0 {
+        "-".to_string()
+    } else {
+        value.to_string()
     }
 }
