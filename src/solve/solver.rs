@@ -98,13 +98,7 @@ impl Solver {
                                 start.packed_string()
                             );
                         }
-                        return Resolution::Failed(
-                            *before,
-                            applied,
-                            difficulty,
-                            action.clone(),
-                            errors,
-                        );
+                        return Resolution::Failed(*before, applied, difficulty, action, errors);
                     }
                 }
             } else {
