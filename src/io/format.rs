@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-use crate::layout::{House, KnownSet};
+use crate::layout::{DigitSet, House};
 use crate::puzzle::Board;
 use crate::symbols::MISSING;
 
@@ -33,7 +33,7 @@ pub fn format_packed(board: &Board, unknown: char, spaces: bool) -> String {
     formatter.format(board)
 }
 
-/// Formats a [`Board`] into an ASCII grid showing all knowns and candidates.
+/// Formats a [`Board`] into an ASCII grid showing all digits and candidates.
 pub fn format_grid(board: &Board) -> String {
     Format::grid().format(board)
 }
@@ -101,7 +101,7 @@ impl FormatPacked {
             }
             row.cells().iter().for_each(|cell| {
                 let value = board.value(cell);
-                if value.is_known() {
+                if value.is_digit() {
                     result.push(value.label());
                 } else {
                     result.push(self.unknown);
@@ -136,7 +136,7 @@ impl FormatGrid {
                     .cells()
                     .iter()
                     .map(|cell| {
-                        if board.is_known(cell) {
+                        if board.is_solved(cell) {
                             1
                         } else {
                             board.candidates(cell).len()
@@ -157,8 +157,8 @@ impl FormatGrid {
             }
 
             column.cells().iter().enumerate().for_each(|(r, cell)| {
-                let candidates = if board.is_known(cell) {
-                    KnownSet::of(board.value(cell).known().unwrap())
+                let candidates = if board.is_solved(cell) {
+                    DigitSet::of(board.value(cell).digit().unwrap())
                 } else {
                     board.candidates(cell)
                 };
@@ -171,7 +171,7 @@ impl FormatGrid {
                     "{:width$} ",
                     candidates
                         .iter()
-                        .map(|known| known.label())
+                        .map(|digit| digit.label())
                         .collect::<String>(),
                     width = widths[column.usize()]
                 );
@@ -229,7 +229,7 @@ impl FormatWiki {
             }
             row.cells().iter().for_each(|cell| {
                 let mut value: u32;
-                if board.is_known(cell) {
+                if board.is_solved(cell) {
                     value = 1 << board.value(cell).value();
                     if board.is_given(cell) {
                         value += 1;

@@ -5,7 +5,7 @@ use std::fmt::Write;
 
 use colored::Colorize;
 
-use crate::layout::{Cell, CellSet, Known, KnownSet};
+use crate::layout::{Cell, CellSet, Digit, DigitSet};
 use crate::symbols::EMPTY_SET;
 
 #[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
@@ -41,7 +41,7 @@ impl Verdict {
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Clue {
     verdict: Verdict,
-    known: Known,
+    digit: Digit,
     cells: CellSet,
 }
 
@@ -55,19 +55,19 @@ impl Clues {
         Self { clues: Vec::new() }
     }
 
-    pub fn clue_cell_for_known(&mut self, color: Verdict, cell: Cell, known: Known) {
-        self.clue_cells_for_known(color, CellSet::empty() + cell, known)
+    pub fn clue_cell_for_digit(&mut self, color: Verdict, cell: Cell, digit: Digit) {
+        self.clue_cells_for_digit(color, CellSet::empty() + cell, digit)
     }
 
-    pub fn clue_cells_for_known(&mut self, color: Verdict, cells: CellSet, known: Known) {
+    pub fn clue_cells_for_digit(&mut self, color: Verdict, cells: CellSet, digit: Digit) {
         let clue = Clue {
             verdict: color,
-            known,
+            digit,
             cells,
         };
         match self.clues.binary_search_by(|clue| {
             match color.partial_cmp(&clue.verdict) {
-                Some(Ordering::Equal) => known.partial_cmp(&clue.known),
+                Some(Ordering::Equal) => digit.partial_cmp(&clue.digit),
                 result => result,
             }
             .unwrap()
@@ -77,14 +77,14 @@ impl Clues {
         }
     }
 
-    pub fn clue_cell_for_knowns(&mut self, color: Verdict, cell: Cell, knowns: KnownSet) {
-        self.clue_cells_for_knowns(color, CellSet::empty() + cell, knowns)
+    pub fn clue_cell_for_digits(&mut self, color: Verdict, cell: Cell, digits: DigitSet) {
+        self.clue_cells_for_digits(color, CellSet::empty() + cell, digits)
     }
 
-    pub fn clue_cells_for_knowns(&mut self, color: Verdict, cells: CellSet, knowns: KnownSet) {
-        knowns
+    pub fn clue_cells_for_digits(&mut self, color: Verdict, cells: CellSet, digits: DigitSet) {
+        digits
             .iter()
-            .for_each(|known| self.clue_cells_for_known(color, cells, known))
+            .for_each(|digit| self.clue_cells_for_digit(color, cells, digit))
     }
 
     pub fn is_empty(&self) -> bool {
@@ -95,19 +95,19 @@ impl Clues {
         &self.clues
     }
 
-    pub fn collect(&self) -> HashMap<Cell, HashMap<Known, Verdict>> {
+    pub fn collect(&self) -> HashMap<Cell, HashMap<Digit, Verdict>> {
         self.clues.iter().fold(HashMap::new(), |mut map, clue| {
             clue.cells.iter().for_each(|cell| {
                 map.entry(cell)
                     .or_default()
-                    .insert(clue.known, clue.verdict);
+                    .insert(clue.digit, clue.verdict);
             });
             map
         })
     }
 
-    pub fn collect_for_known(&self, known: Known) -> HashMap<Cell, Verdict> {
-        self.clues.iter().filter(|clue| clue.known == known).fold(
+    pub fn collect_for_digit(&self, digit: Digit) -> HashMap<Cell, Verdict> {
+        self.clues.iter().filter(|clue| clue.digit == digit).fold(
             HashMap::new(),
             |mut map, clue| {
                 clue.cells.iter().for_each(|cell| {
@@ -128,7 +128,7 @@ impl fmt::Display for Clues {
             let mut prev_color = Verdict::Secondary;
             for Clue {
                 verdict: color,
-                known,
+                digit,
                 cells,
             } in &self.clues
             {
@@ -141,7 +141,7 @@ impl fmt::Display for Clues {
                 } else {
                     f.write_str(", ")?;
                 }
-                write!(f, "{}: {}", known, cells)?;
+                write!(f, "{}: {}", digit, cells)?;
             }
             write!(f, "]")
         }

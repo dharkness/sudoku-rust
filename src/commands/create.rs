@@ -6,7 +6,7 @@ use itertools::Itertools;
 
 use crate::build::{Finder, Generator};
 use crate::io::{
-    format_runtime, print_all_and_single_candidates, print_known_values, Cancelable, Parse, Parser,
+    format_runtime, print_all_and_single_candidates, print_solved_values, Cancelable, Parse, Parser,
 };
 use crate::puzzle::{Changer, Options};
 
@@ -42,9 +42,9 @@ pub fn create_puzzle(args: CreateArgs) {
             let parser = Parse::packed_with_options(Options::all());
             let (board, effects, failure) = parser.parse(&solution);
 
-            if let Some((cell, known)) = failure {
+            if let Some((cell, digit)) = failure {
                 print_all_and_single_candidates(&board);
-                eprintln!("\n==> Setting {} to {} will cause errors\n", cell, known);
+                eprintln!("\n==> Setting {} to {} will cause errors\n", cell, digit);
                 effects.print_errors();
                 exit(1);
             }
@@ -83,7 +83,7 @@ pub fn create_puzzle(args: CreateArgs) {
         }
     };
 
-    print_known_values(&board);
+    print_solved_values(&board);
     println!(
         "\n==> Seeking a starting puzzle for {} ...",
         board.packed_string()
@@ -97,7 +97,7 @@ pub fn create_puzzle(args: CreateArgs) {
     print_all_and_single_candidates(&start);
     println!(
         "\n==> Created puzzle with {} clues in {} µs\n\n    {}\n",
-        start.known_count(),
+        start.solved_count(),
         format_runtime(runtime.elapsed()),
         start.packed_string()
     );

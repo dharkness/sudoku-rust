@@ -1,4 +1,4 @@
-use crate::layout::{Cell, CellSet, KnownSet};
+use crate::layout::{Cell, CellSet, DigitSet};
 
 /// Combines two or more peer cells into a unit that can be treated as a single cell
 /// when looking for naked/hidden singles and tuples.
@@ -9,15 +9,16 @@ use crate::layout::{Cell, CellSet, KnownSet};
 pub struct PseudoCell {
     pub pseudo: Cell,
     pub cells: CellSet,
-    pub knowns: KnownSet,
+    pub digits: DigitSet,
 }
 
 impl PseudoCell {
-    pub fn new(cells: CellSet, knowns: KnownSet) -> PseudoCell {
+    pub fn new(cells: CellSet, digits: DigitSet) -> PseudoCell {
+        debug_assert!(cells.len() >= 2);
         PseudoCell {
             pseudo: cells.first().unwrap(),
             cells,
-            knowns,
+            digits,
         }
     }
 }

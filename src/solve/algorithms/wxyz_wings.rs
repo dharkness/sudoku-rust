@@ -5,23 +5,23 @@ use super::*;
 pub fn find_wxyz_wings(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    let pairs_by_candidates = board.cell_candidates_with_n_candidates(2).fold(
+    let pairs_by_candidates = board.cells_with_n_candidates_iter(2).fold(
         HashMap::new(),
-        |mut map: HashMap<KnownSet, CellSet>, (cell, candidates)| {
+        |mut map: HashMap<DigitSet, CellSet>, (cell, candidates)| {
             *map.entry(candidates).or_default() += cell;
             map
         },
     );
-    let triples_by_candidates = board.cell_candidates_with_n_candidates(3).fold(
+    let triples_by_candidates = board.cells_with_n_candidates_iter(3).fold(
         HashMap::new(),
-        |mut map: HashMap<KnownSet, CellSet>, (cell, candidates)| {
+        |mut map: HashMap<DigitSet, CellSet>, (cell, candidates)| {
             *map.entry(candidates).or_default() += cell;
             map
         },
     );
-    let quads_by_candidates = board.cell_candidates_with_n_candidates(4).fold(
+    let quads_by_candidates = board.cells_with_n_candidates_iter(4).fold(
         HashMap::new(),
-        |mut map: HashMap<KnownSet, CellSet>, (cell, candidates)| {
+        |mut map: HashMap<DigitSet, CellSet>, (cell, candidates)| {
             *map.entry(candidates).or_default() += cell;
             map
         },
@@ -58,8 +58,8 @@ pub fn find_wxyz_wings(board: &Board, single: bool) -> Option<Effects> {
             let triples_with_two_common_candidates =
                 triples_by_candidates
                     .iter()
-                    .fold(HashMap::new(), |mut acc, (ks, cs)| {
-                        let diff = *ks - *candidates;
+                    .fold(HashMap::new(), |mut acc, (ds, cs)| {
+                        let diff = *ds - *candidates;
                         if let Some(single) = diff.as_single() {
                             *acc.entry(single).or_insert_with(CellSet::empty) |= *cs;
                         }
@@ -71,8 +71,8 @@ pub fn find_wxyz_wings(board: &Board, single: bool) -> Option<Effects> {
                 // pairs and triples with one fewer candidate, grouped by the extra candidate
                 pairs_by_candidates.iter().fold(
                     triples_with_two_common_candidates,
-                    |mut acc, (ks, cs)| {
-                        let diff = *ks - *candidates;
+                    |mut acc, (ds, cs)| {
+                        let diff = *ds - *candidates;
                         if let Some(single) = diff.as_single() {
                             *acc.entry(single).or_insert_with(CellSet::empty) |= *cs;
                         }
@@ -81,7 +81,7 @@ pub fn find_wxyz_wings(board: &Board, single: bool) -> Option<Effects> {
                 ),
                 pairs_by_candidates
                     .iter()
-                    .filter(|(ks, _)| ks.is_subset_of(*candidates))
+                    .filter(|(ds, _)| ds.is_subset_of(*candidates))
                     .map(|(_, cells)| *cells)
                     .union_cells(),
             )
@@ -130,34 +130,34 @@ pub fn find_wxyz_wings(board: &Board, single: bool) -> Option<Effects> {
             return false;
         }
 
-        let wing_knowns = wing
+        let wing_digits = wing
             .iter()
-            .fold(KnownSet::empty(), |set, cell| set | board.candidates(cell));
-        if wing_knowns.len() != 4 {
+            .fold(DigitSet::empty(), |set, cell| set | board.candidates(cell));
+        if wing_digits.len() != 4 {
             return false;
         }
-        if wing_knowns
+        if wing_digits
             .iter()
-            .any(|known| (wing & board.candidate_cells(known)).len() < 2)
+            .any(|digit| (wing & board.candidate_cells(digit)).len() < 2)
         {
             return false;
         }
 
-        let mut restricted: HashMap<Known, CellSet> = HashMap::new();
-        let mut non_restricted: HashMap<Known, CellSet> = HashMap::new();
-        for known in wing_knowns {
-            let candidates = wing & board.candidate_cells(known);
+        let mut restricted: HashMap<Digit, CellSet> = HashMap::new();
+        let mut non_restricted: HashMap<Digit, CellSet> = HashMap::new();
+        for digit in wing_digits {
+            let candidates = wing & board.candidate_cells(digit);
             let is_restricted = candidates
                 .iter()
                 .combinations(2)
                 .all(|combo| combo[0].sees(combo[1]));
             if is_restricted {
-                restricted.insert(known, candidates);
+                restricted.insert(digit, candidates);
             } else {
                 if !non_restricted.is_empty() {
                     return false;
                 }
-                non_restricted.insert(known, candidates);
+                non_restricted.insert(digit, candidates);
             }
         }
         if non_restricted.is_empty() {
@@ -175,9 +175,9 @@ pub fn find_wxyz_wings(board: &Board, single: bool) -> Option<Effects> {
         }
 
         let mut action = Action::new_erase_cells(Strategy::WXYZWing, erase, candidate);
-        action.clue_cells_for_known(Verdict::Secondary, cells, candidate);
-        for (known, cells) in restricted {
-            action.clue_cells_for_known(Verdict::Primary, cells, known);
+        action.clue_cells_for_digit(Verdict::Secondary, cells, candidate);
+        for (digit, cells) in restricted {
+            action.clue_cells_for_digit(Verdict::Primary, cells, digit);
         }
 
         effects.add_action(action)
@@ -222,8 +222,8 @@ pub fn find_wxyz_wings(board: &Board, single: bool) -> Option<Effects> {
         for n in (1..4).rev() {
             for triple_combo in triples.iter().combinations(n) {
                 let base = triple_combo.iter().copied().union_cells();
-                for k in !candidates {
-                    if let Some(disjoint) = disjoints.get(&k) {
+                for d in !candidates {
+                    if let Some(disjoint) = disjoints.get(&d) {
                         for others in (*disjoint | subsets).iter().combinations(4 - n) {
                             if check_wing(base | others.iter().copied().union_cells()) && single {
                                 return Some(effects);
@@ -266,11 +266,11 @@ mod tests {
             assert_eq!(1, got.actions().len());
 
             let mut action = Action::new(Strategy::WXYZWing);
-            action.erase(cell!(D2), known!(9));
-            action.clue_cells_for_known(Verdict::Secondary, cells![D3 D4 D6 F1], known!(9));
-            action.clue_cells_for_known(Verdict::Primary, cells![D3 F1], known!(1));
-            action.clue_cells_for_known(Verdict::Primary, cells![D3 D6], known!(2));
-            action.clue_cells_for_known(Verdict::Primary, cells![D3 D4 D6], known!(5));
+            action.erase(cell!(D2), digit!(9));
+            action.clue_cells_for_digit(Verdict::Secondary, cells![D3 D4 D6 F1], digit!(9));
+            action.clue_cells_for_digit(Verdict::Primary, cells![D3 F1], digit!(1));
+            action.clue_cells_for_digit(Verdict::Primary, cells![D3 D6], digit!(2));
+            action.clue_cells_for_digit(Verdict::Primary, cells![D3 D4 D6], digit!(5));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
@@ -291,11 +291,11 @@ mod tests {
             assert_eq!(1, got.actions().len());
 
             let mut action = Action::new(Strategy::WXYZWing);
-            action.erase_cells(cells![F6 G5 J5], known!(5));
-            action.clue_cells_for_known(Verdict::Secondary, cells![E5 G6 J6], known!(5));
-            action.clue_cells_for_known(Verdict::Primary, cells![D6 J6], known!(6));
-            action.clue_cells_for_known(Verdict::Primary, cells![D6 G6], known!(2));
-            action.clue_cells_for_known(Verdict::Primary, cells![D6 E5], known!(9));
+            action.erase_cells(cells![F6 G5 J5], digit!(5));
+            action.clue_cells_for_digit(Verdict::Secondary, cells![E5 G6 J6], digit!(5));
+            action.clue_cells_for_digit(Verdict::Primary, cells![D6 J6], digit!(6));
+            action.clue_cells_for_digit(Verdict::Primary, cells![D6 G6], digit!(2));
+            action.clue_cells_for_digit(Verdict::Primary, cells![D6 E5], digit!(9));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

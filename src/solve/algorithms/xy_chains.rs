@@ -14,27 +14,27 @@ pub fn find_xy_chains(board: &Board, single: bool) -> Option<Effects> {
         forest.add_node(board, cell);
     }
 
-    for k in Known::iter() {
-        let candidates = board.candidate_cells(k);
-        let mut found = Found::new(k);
+    for d in Digit::iter() {
+        let candidates = board.candidate_cells(d);
+        let mut found = Found::new(d);
 
         for graph in forest.graphs.values() {
             if graph.nodes.len() < 4 {
                 continue;
             }
 
-            let erasables = candidates & graph.peers[k.usize()];
+            let erasables = candidates & graph.peers[d.usize()];
             if erasables.is_empty() {
                 continue;
             }
 
             let starts = erasables.iter().fold(CellSet::empty(), |acc, cell| {
-                acc | (cell.peers() & candidates & graph.cells[k.usize()])
+                acc | (cell.peers() & candidates & graph.cells[d.usize()])
             });
             for start in starts {
                 // find all chains from start
                 let mut chains: VecDeque<Rc<Chain>> = VecDeque::new();
-                chains.push_back(Rc::new(Chain::new(&graph.nodes[&start], k)));
+                chains.push_back(Rc::new(Chain::new(&graph.nodes[&start], d)));
 
                 while let Some(chain) = chains.pop_front() {
                     for end in chain.edges() {
@@ -120,8 +120,8 @@ impl Graph {
         cells[0] = CellSet::of(&[root]);
 
         let mut peers = [CellSet::empty(); 9];
-        peers[node.min_known.usize()] = root.peers();
-        peers[node.max_known.usize()] = root.peers();
+        peers[node.min_digit.usize()] = root.peers();
+        peers[node.max_digit.usize()] = root.peers();
 
         let mut nodes = HashMap::new();
         nodes.insert(root, Rc::clone(node));
@@ -135,22 +135,22 @@ impl Graph {
     }
 
     fn can_add_node(&self, node: &Rc<Node>) -> bool {
-        self.peers[node.min_known.usize()].has(node.cell)
-            || self.peers[node.max_known.usize()].has(node.cell)
+        self.peers[node.min_digit.usize()].has(node.cell)
+            || self.peers[node.max_digit.usize()].has(node.cell)
     }
 
     fn add_node(&mut self, node: &Rc<Node>) {
         let cell = node.cell;
-        let min_k = node.min_known.usize();
-        let max_k = node.max_known.usize();
+        let min_d = node.min_digit.usize();
+        let max_d = node.max_digit.usize();
 
         self.cells[0].add(cell);
-        self.cells[min_k].add(cell);
-        self.cells[max_k].add(cell);
+        self.cells[min_d].add(cell);
+        self.cells[max_d].add(cell);
 
         let peers = node.cell.peers();
-        self.peers[min_k].union_with(peers);
-        self.peers[max_k].union_with(peers);
+        self.peers[min_d].union_with(peers);
+        self.peers[max_d].union_with(peers);
 
         self.nodes.insert(cell, Rc::clone(node));
     }
@@ -172,10 +172,10 @@ impl Graph {
 /// One node is created for each cell with two candidates and shared among all graphs.
 struct Node {
     cell: Cell,
-    pair: KnownSet,
-    min_known: Known,
+    pair: DigitSet,
+    min_digit: Digit,
     min_edges: CellSet,
-    max_known: Known,
+    max_digit: Digit,
     max_edges: CellSet,
 }
 
@@ -183,69 +183,69 @@ impl Node {
     fn new(board: &Board, cell: Cell) -> Self {
         let edges = cell.peers() & board.cells_with_n_candidates(2);
         let pair = board.candidates(cell);
-        let (min_known, max_known) = pair.as_pair().unwrap();
+        let (min_digit, max_digit) = pair.as_pair().unwrap();
 
         Node {
             cell,
             pair,
-            min_known,
-            min_edges: (edges & board.candidate_cells(min_known)) - cell,
-            max_known,
-            max_edges: (edges & board.candidate_cells(max_known)) - cell,
+            min_digit,
+            min_edges: (edges & board.candidate_cells(min_digit)) - cell,
+            max_digit,
+            max_edges: (edges & board.candidate_cells(max_digit)) - cell,
         }
     }
 
-    fn other(&self, known: Known) -> Known {
-        if known == self.min_known {
-            self.max_known
-        } else if known == self.max_known {
-            self.min_known
+    fn other(&self, digit: Digit) -> Digit {
+        if digit == self.min_digit {
+            self.max_digit
+        } else if digit == self.max_digit {
+            self.min_digit
         } else {
             panic!(
-                "known {} not in pair [{}, {}]",
-                known, self.min_known, self.max_known
+                "digit {} not in pair [{}, {}]",
+                digit, self.min_digit, self.max_digit
             )
         }
     }
 
-    fn edges(&self, known: Known) -> CellSet {
-        if known == self.min_known {
+    fn edges(&self, digit: Digit) -> CellSet {
+        if digit == self.min_digit {
             self.min_edges
-        } else if known == self.max_known {
+        } else if digit == self.max_digit {
             self.max_edges
         } else {
             panic!(
-                "known {} not in pair [{}, {}]",
-                known, self.min_known, self.max_known
+                "digit {} not in pair [{}, {}]",
+                digit, self.min_digit, self.max_digit
             )
         }
     }
 }
 
-/// One chain is created per unique path in a graph and starting known.
+/// One chain is created per unique path in a graph and starting digit.
 /// They are extended with nodes along edges, and their links are shared when branching.
 struct Chain {
     head: Rc<Link>,
     len: usize,
     start: Cell,
-    start_known: Known,
+    start_digit: Digit,
     end: Cell,
-    end_known: Known,
+    end_digit: Digit,
     visited: CellSet,
     erases: CellSet,
 }
 
 impl Chain {
-    fn new(start: &Rc<Node>, known: Known) -> Self {
-        let link = Rc::new(Link::new(start, known));
-        let end_known = link.known;
+    fn new(start: &Rc<Node>, digit: Digit) -> Self {
+        let link = Rc::new(Link::new(start, digit));
+        let end_digit = link.digit;
         Chain {
             head: link,
             len: 1,
             start: start.cell,
-            start_known: known,
+            start_digit: digit,
             end: start.cell,
-            end_known,
+            end_digit,
             visited: CellSet::empty() + start.cell,
             erases: CellSet::empty(),
         }
@@ -254,8 +254,8 @@ impl Chain {
     fn extend(&self, node: &Rc<Node>, erasable: CellSet) -> Rc<Self> {
         let head = Link::extend(&self.head, node);
         let len = head.len;
-        let end_known = head.known;
-        let erases = if len >= 4 && end_known == self.start_known {
+        let end_digit = head.digit;
+        let erases = if len >= 4 && end_digit == self.start_digit {
             erasable
         } else {
             CellSet::empty()
@@ -265,9 +265,9 @@ impl Chain {
             head,
             len,
             start: self.start,
-            start_known: self.start_known,
+            start_digit: self.start_digit,
             end: node.cell,
-            end_known,
+            end_digit,
             visited: self.visited + node.cell,
             erases,
         })
@@ -282,10 +282,10 @@ impl fmt::Display for Chain {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut link = &self.head;
         while let Some(tail) = &link.tail {
-            write!(f, "{} {} ", link.known, link.node.cell)?;
+            write!(f, "{} {} ", link.digit, link.node.cell)?;
             link = tail;
         }
-        write!(f, "{} {} {}", link.known, link.node.cell, link.tail_known)
+        write!(f, "{} {} {}", link.digit, link.node.cell, link.tail_digit)
     }
 }
 
@@ -293,50 +293,50 @@ impl fmt::Display for Chain {
 /// They are shared among chains when a chain branches to multiple edges.
 struct Link {
     tail: Option<Rc<Link>>,
-    tail_known: Known,
+    tail_digit: Digit,
     len: usize,
     node: Rc<Node>,
-    known: Known,
+    digit: Digit,
 }
 
 impl Link {
-    fn new(start: &Rc<Node>, known: Known) -> Self {
+    fn new(start: &Rc<Node>, digit: Digit) -> Self {
         Link {
             tail: None,
-            tail_known: known,
+            tail_digit: digit,
             len: 1,
             node: Rc::clone(start),
-            known: start.other(known),
+            digit: start.other(digit),
         }
     }
 
     fn extend(tail: &Rc<Link>, node: &Rc<Node>) -> Rc<Self> {
         Rc::new(Link {
             tail: Some(Rc::clone(tail)),
-            tail_known: tail.known,
+            tail_digit: tail.digit,
             len: tail.len + 1,
             node: Rc::clone(node),
-            known: node.other(tail.known),
+            digit: node.other(tail.digit),
         })
     }
 
     fn edges(&self) -> CellSet {
-        self.node.edges(self.known)
+        self.node.edges(self.digit)
     }
 }
 
-/// Tracks the shortest unique chains for a given starting known
+/// Tracks the shortest unique chains for a given starting digit
 /// and resolves them to the final set after searching all graphs for it.
 struct Found {
-    known: Known,
+    digit: Digit,
     erases: CellSet,
     chains: Vec<Rc<Chain>>,
 }
 
 impl Found {
-    fn new(known: Known) -> Self {
+    fn new(digit: Digit) -> Self {
         Found {
-            known,
+            digit,
             erases: CellSet::empty(),
             chains: Vec::new(),
         }
@@ -355,13 +355,13 @@ impl Found {
                 .then(left.erases.len().cmp(&right.erases.len()))
         }) {
             let mut action =
-                Action::new_erase_cells(Strategy::XYChain, chain.erases, chain.start_known);
+                Action::new_erase_cells(Strategy::XYChain, chain.erases, chain.start_digit);
             let mut link = Some(&chain.head);
             while let Some(next) = link {
                 let cell = next.node.cell;
-                let known = next.node.other(next.known);
-                action.clue_cell_for_known(Verdict::Secondary, cell, known);
-                action.clue_cell_for_known(Verdict::Tertiary, cell, next.known);
+                let digit = next.node.other(next.digit);
+                action.clue_cell_for_digit(Verdict::Secondary, cell, digit);
+                action.clue_cell_for_digit(Verdict::Tertiary, cell, next.digit);
                 link = next.tail.as_ref();
             }
 
@@ -421,13 +421,13 @@ mod tests {
 
         if let Some(got) = find_xy_chains(&board, true) {
             let mut action = Action::new(Strategy::XYChain);
-            action.erase(cell!(C4), known!(9));
-            action.clue_cells_for_known(Verdict::Secondary, cells![B7 E5], known!(2));
-            action.clue_cells_for_known(Verdict::Tertiary, cells![B5 C9], known!(2));
-            action.clue_cells_for_known(Verdict::Secondary, cells![B5 F4], known!(8));
-            action.clue_cells_for_known(Verdict::Tertiary, cells![B7 E5], known!(8));
-            action.clue_cells_for_known(Verdict::Secondary, cells![C9], known!(9));
-            action.clue_cells_for_known(Verdict::Tertiary, cells![F4], known!(9));
+            action.erase(cell!(C4), digit!(9));
+            action.clue_cells_for_digit(Verdict::Secondary, cells![B7 E5], digit!(2));
+            action.clue_cells_for_digit(Verdict::Tertiary, cells![B5 C9], digit!(2));
+            action.clue_cells_for_digit(Verdict::Secondary, cells![B5 F4], digit!(8));
+            action.clue_cells_for_digit(Verdict::Tertiary, cells![B7 E5], digit!(8));
+            action.clue_cells_for_digit(Verdict::Secondary, cells![C9], digit!(9));
+            action.clue_cells_for_digit(Verdict::Tertiary, cells![F4], digit!(9));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

@@ -47,13 +47,13 @@ All built on efficient bitset representations:
 - **`Bit`** (u128) - Single bit for cell position
 - **`Cell`** (u8) - Cell index 0-80
 - **`CellSet`** (u128) - Bitset of cells with O(1) set operations
-- **`Known`** (u8) - Digit value 1-9
-- **`KnownSet`** (u16) - Bitset of candidate digits
+- **`Digit`** (u8) - Digit value 1-9
+- **`DigitSet`** (u16) - Bitset of candidate digits
 - **`House`** - Row, column, or block (3x3 box)
 - **`Board`** - Central state with multiple redundant views for fast lookups:
   - `values: [Value; 81]` - Actual digits
-  - `candidate_knowns_by_cell: [KnownSet; 81]` - Candidates per cell
-  - `candidate_cells_by_known: [CellSet; 9]` - Cells per candidate digit
+  - `candidate_digits_by_cell: [DigitSet; 81]` - Candidates per cell
+  - `candidate_cells_by_digit: [CellSet; 9]` - Cells per candidate digit
 
 ### Solving Flow
 
@@ -79,8 +79,8 @@ let difference = set1 - set2;
 **Action construction:**
 ```rust
 let mut action = Action::new(strategy);
-action.erase_cells(cells, known);
-action.clue_cells_for_known(...);
+ action.erase_cells(cells, digit);
+ action.clue_cells_for_digit(...);
 effects.add_action(action);
 ```
 

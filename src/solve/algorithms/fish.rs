@@ -34,8 +34,8 @@ fn check_houses(
     shape: Shape,
     effects: &mut Effects,
 ) -> bool {
-    for known in Known::iter() {
-        let candidate_cells = board.candidate_cells(known);
+    for digit in Digit::iter() {
+        let candidate_cells = board.candidate_cells(digit);
         for candidates in shape
             .house_iter()
             .map(|house| (house, house.cells() & candidate_cells))
@@ -83,13 +83,13 @@ fn check_houses(
             }
 
             let mut action = Action::new(strategy);
-            action.erase_cells(erase, known);
+            action.erase_cells(erase, digit);
             candidates.iter().for_each(|(house, cells, _)| {
-                action.clue_cells_for_known(Verdict::Secondary, *cells, known);
-                action.clue_cells_for_known(
+                action.clue_cells_for_digit(Verdict::Secondary, *cells, digit);
+                action.clue_cells_for_digit(
                     Verdict::Related,
-                    house.cells() - main_cells - board.knowns(),
-                    known,
+                    house.cells() - main_cells - board.solved(),
+                    digit,
                 );
             });
 
@@ -128,7 +128,7 @@ mod tests {
         let found = find_x_wings(&board, true).unwrap_or(Effects::new());
         assert_eq!(
             cells![A4 E4 H4 J4 D8 E8 H8 J8],
-            found.erases_from_cells(known!(7))
+            found.erases_from_cells(digit!(7))
         );
     }
 
@@ -151,7 +151,7 @@ mod tests {
         let found = find_swordfish(&board, true).unwrap_or(Effects::new());
         assert_eq!(
             cells![B2 B8 C2 C6 C8 C9 D6],
-            found.erases_from_cells(known!(8))
+            found.erases_from_cells(digit!(8))
         );
     }
 
@@ -174,7 +174,7 @@ mod tests {
         let found = find_jellyfish(&board, true).unwrap_or(Effects::new());
         assert_eq!(
             cells![B1 B5 B8 C8 C9 G1 G8 H1 H5 H9],
-            found.erases_from_cells(known!(2))
+            found.erases_from_cells(digit!(2))
         );
     }
 }

@@ -4,12 +4,12 @@ use super::*;
 pub fn find_hidden_unique_rectangles(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    let knowns = board.knowns();
+    let solved_cells = board.solved();
     let bi_values = board.cells_with_n_candidates(2);
     let mut possible_type_2s = Vec::new();
 
     'rect: for mut rect in Rectangle::iter() {
-        if rect.cells.has_any(knowns) {
+        if rect.cells.has_any(solved_cells) {
             continue;
         }
 
@@ -24,24 +24,24 @@ pub fn find_hidden_unique_rectangles(board: &Board, single: bool) -> Option<Effe
                 1 => {
                     // type 1
                     rect = rect.with_origin(origin);
-                    for known in pair {
+                    for digit in pair {
                         let opposite = rect.bottom_right;
                         if let Some(row) = opposite.common_row_or_column(rect.bottom_left) {
                             if let Some(column) = opposite.common_row_or_column(rect.top_right) {
-                                if board.house_candidate_cells(row, known).len() == 2
-                                    && board.house_candidate_cells(column, known).len() == 2
+                                if board.house_candidate_cells(row, digit).len() == 2
+                                    && board.house_candidate_cells(column, digit).len() == 2
                                 {
-                                    let mut action = Action::new_erase_knowns(
+                                    let mut action = Action::new_erase_digits(
                                         Strategy::HiddenUniqueRectangle,
                                         opposite,
-                                        pair - known,
+                                        pair - digit,
                                     );
-                                    action.clue_cells_for_knowns(
+                                    action.clue_cells_for_digits(
                                         Verdict::Primary,
                                         rect.cells - opposite,
                                         pair,
                                     );
-                                    action.clue_cell_for_known(Verdict::Primary, opposite, known);
+                                    action.clue_cell_for_digit(Verdict::Primary, opposite, digit);
 
                                     if effects.add_action(action) && single {
                                         return Some(effects);
@@ -69,21 +69,21 @@ pub fn find_hidden_unique_rectangles(board: &Board, single: bool) -> Option<Effe
             let (roof1, roof2) = roof.as_pair().unwrap();
             let (floor1, floor2) = floor.as_pair().unwrap();
 
-            for known in pair {
+            for digit in pair {
                 for (wall1, wall2, erase) in [(floor1, roof1, roof2), (floor2, roof2, roof1)] {
                     if let Some(house) = wall1.common_row_or_column(wall2) {
-                        if board.house_candidate_cells(house, known).len() == 2 {
-                            let mut action = Action::new_erase_knowns(
+                        if board.house_candidate_cells(house, digit).len() == 2 {
+                            let mut action = Action::new_erase_digits(
                                 Strategy::HiddenUniqueRectangle,
                                 erase,
-                                pair - known,
+                                pair - digit,
                             );
-                            action.clue_cells_for_knowns(
+                            action.clue_cells_for_digits(
                                 Verdict::Primary,
                                 rect.cells - erase,
                                 pair,
                             );
-                            action.clue_cell_for_known(Verdict::Primary, erase, known);
+                            action.clue_cell_for_digit(Verdict::Primary, erase, digit);
 
                             if effects.add_action(action) && single {
                                 return Some(effects);
@@ -120,9 +120,9 @@ mod tests {
 
         if let Some(got) = find_hidden_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::HiddenUniqueRectangle);
-            action.erase(cell!(D3), known!(6));
-            action.clue_cells_for_knowns(Verdict::Primary, cells![D7 F3 F7], knowns![1 6]);
-            action.clue_cells_for_known(Verdict::Primary, CellSet::from(cell!(D3)), known!(1));
+            action.erase(cell!(D3), digit!(6));
+            action.clue_cells_for_digits(Verdict::Primary, cells![D7 F3 F7], digits![1 6]);
+            action.clue_cells_for_digit(Verdict::Primary, CellSet::from(cell!(D3)), digit!(1));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
@@ -141,9 +141,9 @@ mod tests {
 
         if let Some(got) = find_hidden_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::HiddenUniqueRectangle);
-            action.erase(cell!(D3), known!(6));
-            action.clue_cells_for_knowns(Verdict::Primary, cells![B1 B3 D1], knowns![6 8]);
-            action.clue_cells_for_known(Verdict::Primary, CellSet::from(cell!(D3)), known!(8));
+            action.erase(cell!(D3), digit!(6));
+            action.clue_cells_for_digits(Verdict::Primary, cells![B1 B3 D1], digits![6 8]);
+            action.clue_cells_for_digit(Verdict::Primary, CellSet::from(cell!(D3)), digit!(8));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
@@ -162,9 +162,9 @@ mod tests {
 
         if let Some(got) = find_hidden_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::HiddenUniqueRectangle);
-            action.erase(cell!(H3), known!(7));
-            action.clue_cells_for_knowns(Verdict::Primary, cells![E2 E3 H2], knowns![1 7]);
-            action.clue_cells_for_known(Verdict::Primary, CellSet::from(cell!(H3)), known!(1));
+            action.erase(cell!(H3), digit!(7));
+            action.clue_cells_for_digits(Verdict::Primary, cells![E2 E3 H2], digits![1 7]);
+            action.clue_cells_for_digit(Verdict::Primary, CellSet::from(cell!(H3)), digit!(1));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

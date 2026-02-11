@@ -38,7 +38,7 @@ impl Finder {
         let mut stack = Vec::with_capacity(81);
         stack.push(Entry {
             board,
-            cells: self.shuffle_cells(board.knowns()),
+            cells: self.shuffle_cells(board.solved()),
         });
 
         while !stack.is_empty() {
@@ -67,14 +67,14 @@ impl Finder {
                     if !find_brute_force(&board, false, 0, 2).is_solved() {
                         continue;
                     }
-                    if next.known_count() < fewest_clues {
-                        fewest_clues = next.known_count();
+                    if next.solved_count() < fewest_clues {
+                        fewest_clues = next.solved_count();
                         fewest_clues_board = next;
                         fewest_clues_actions = actions;
                     }
                     stack.push(Entry {
                         board: next,
-                        cells: self.shuffle_cells(next.knowns()),
+                        cells: self.shuffle_cells(next.solved()),
                     });
                 }
                 _ => continue,

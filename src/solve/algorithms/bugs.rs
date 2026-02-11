@@ -19,13 +19,13 @@ pub fn find_bugs(board: &Board, single: bool) -> Option<Effects> {
 
     let triple = triples.as_single().unwrap();
     let candidates = board.candidates(triple);
-    let mut eliminated = KnownSet::empty();
+    let mut eliminated = DigitSet::empty();
 
-    for known in candidates {
+    for digit in candidates {
         for house in triple.houses() {
-            if board.house_candidate_cells(house, known).len() == 2 {
+            if board.house_candidate_cells(house, digit).len() == 2 {
                 // removing this candidate will not create a BUG
-                eliminated += known;
+                eliminated += digit;
                 break;
             }
         }
@@ -34,7 +34,7 @@ pub fn find_bugs(board: &Board, single: bool) -> Option<Effects> {
     if eliminated.len() == 2 {
         let solution = (candidates - eliminated).as_single().unwrap();
         let mut action = Action::new_set(Strategy::Bug, triple, solution);
-        action.clue_cells_for_known(
+        action.clue_cells_for_digit(
             Verdict::Secondary,
             triple.peers() & board.candidate_cells(solution),
             solution,
@@ -67,8 +67,8 @@ mod tests {
         );
 
         if let Some(got) = find_bugs(&board, true) {
-            let mut action = Action::new_set(Strategy::Bug, cell!(G1), known!(3));
-            action.clue_cells_for_known(Verdict::Secondary, cells![C1 G2 G4 H1], known!(3));
+            let mut action = Action::new_set(Strategy::Bug, cell!(G1), digit!(3));
+            action.clue_cells_for_digit(Verdict::Secondary, cells![C1 G2 G4 H1], digit!(3));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

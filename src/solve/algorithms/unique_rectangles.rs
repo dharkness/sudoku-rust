@@ -14,9 +14,9 @@ pub fn find_almost_unique_rectangles(board: &Board, single: bool) -> Option<Effe
 pub fn find(board: &Board, single: bool, full: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    let bi_values_by_candidates = board.cell_candidates_with_n_candidates(2).fold(
+    let bi_values_by_candidates = board.cells_with_n_candidates_iter(2).fold(
         HashMap::new(),
-        |mut map: HashMap<KnownSet, CellSet>, (cell, candidates)| {
+        |mut map: HashMap<DigitSet, CellSet>, (cell, candidates)| {
             *map.entry(candidates).or_default() += cell;
             map
         },
@@ -118,7 +118,7 @@ fn check_type_one(
     full: bool,
     corners: CellSet,
     rectangle: Rectangle,
-    pair: KnownSet,
+    pair: DigitSet,
     found_type_ones: &mut HashSet<Rectangle>,
     effects: &mut Effects,
 ) -> bool {
@@ -139,9 +139,9 @@ fn check_type_one(
     } else {
         Strategy::AlmostUniqueRectangle
     });
-    action.erase_knowns(fourth, erase);
-    action.clue_cells_for_knowns(Verdict::Primary, corners, pair);
-    action.clue_cell_for_knowns(Verdict::Secondary, fourth, candidates - pair);
+    action.erase_digits(fourth, erase);
+    action.clue_cells_for_digits(Verdict::Primary, corners, pair);
+    action.clue_cell_for_digits(Verdict::Secondary, fourth, candidates - pair);
 
     effects.add_action(action) && single
 }
@@ -150,7 +150,7 @@ fn check_neighbors(
     board: &Board,
     single: bool,
     full: bool,
-    pair: KnownSet,
+    pair: DigitSet,
     floor_left: Cell,
     floor_right: Cell,
     shape: Shape,
@@ -183,7 +183,7 @@ fn check_diagonals(
     board: &Board,
     single: bool,
     full: bool,
-    pair: KnownSet,
+    pair: DigitSet,
     top: Cell,
     bottom: Cell,
     found_type_ones: &HashSet<Rectangle>,
@@ -204,9 +204,9 @@ struct Candidate {
     /// The raw rectangle with the floor and roof cells.
     pub rectangle: Rectangle,
     /// The pair of candidates in danger of forming a deadly rectangle.
-    pub pair: KnownSet,
-    pub pair1: Known,
-    pub pair2: Known,
+    pub pair: DigitSet,
+    pub pair1: Digit,
+    pub pair2: Digit,
 
     /// True if the two floor cells are diagonally opposite corners.
     pub diagonal: bool,
@@ -215,20 +215,20 @@ struct Candidate {
     pub floor_right: Cell,
 
     pub roof: CellSet,
-    pub roof_extras: KnownSet,
+    pub roof_extras: DigitSet,
     pub roof_left: Cell,
-    pub roof_left_pair: KnownSet,
-    pub roof_left_extras: KnownSet,
+    pub roof_left_pair: DigitSet,
+    pub roof_left_extras: DigitSet,
     pub roof_right: Cell,
-    pub roof_right_pair: KnownSet,
-    pub roof_right_extras: KnownSet,
+    pub roof_right_pair: DigitSet,
+    pub roof_right_extras: DigitSet,
 }
 
 impl Candidate {
     fn try_from_neighbors(
         board: &Board,
         full: bool,
-        pair: KnownSet,
+        pair: DigitSet,
         floor_left: Cell,
         floor_right: Cell,
         roof_house: House,
@@ -259,7 +259,7 @@ impl Candidate {
     fn try_from_corners(
         board: &Board,
         full: bool,
-        pair: KnownSet,
+        pair: DigitSet,
         floor_left: Cell,
         floor_right: Cell,
         roof_left: Cell,
@@ -316,7 +316,7 @@ impl Candidate {
     fn try_from_diagonals(
         board: &Board,
         full: bool,
-        pair: KnownSet,
+        pair: DigitSet,
         floor1: Cell,
         floor2: Cell,
     ) -> Result<Self, ()> {
@@ -385,10 +385,10 @@ impl Candidate {
     }
 
     fn add_clues_for_all_corner_cells(&self, action: &mut Action) {
-        action.clue_cell_for_knowns(Verdict::Primary, self.floor_left, self.pair);
-        action.clue_cell_for_knowns(Verdict::Primary, self.floor_right, self.pair);
-        action.clue_cell_for_knowns(Verdict::Primary, self.roof_left, self.roof_left_pair);
-        action.clue_cell_for_knowns(Verdict::Primary, self.roof_right, self.roof_right_pair);
+        action.clue_cell_for_digits(Verdict::Primary, self.floor_left, self.pair);
+        action.clue_cell_for_digits(Verdict::Primary, self.floor_right, self.pair);
+        action.clue_cell_for_digits(Verdict::Primary, self.roof_left, self.roof_left_pair);
+        action.clue_cell_for_digits(Verdict::Primary, self.roof_right, self.roof_right_pair);
     }
 
     fn check(&self, board: &Board, single: bool, full: bool, effects: &mut Effects) -> bool {
@@ -440,7 +440,7 @@ impl Candidate {
         });
         action.erase_cells(cells, extra);
         self.add_clues_for_all_corner_cells(&mut action);
-        action.clue_cells_for_known(Verdict::Secondary, self.roof, extra);
+        action.clue_cells_for_digit(Verdict::Secondary, self.roof, extra);
         // println!("type 2 {} - {}", self.rectangle, action);
 
         effects.add_action(action)
@@ -474,12 +474,12 @@ impl Candidate {
             Strategy::AlmostUniqueRectangle
         });
         self.add_clues_for_all_corner_cells(&mut action);
-        action.clue_cell_for_knowns(Verdict::Secondary, self.roof_left, self.roof_left_extras);
-        action.clue_cell_for_knowns(Verdict::Secondary, self.roof_right, self.roof_right_extras);
+        action.clue_cell_for_digits(Verdict::Secondary, self.roof_left, self.roof_left_extras);
+        action.clue_cell_for_digits(Verdict::Secondary, self.roof_right, self.roof_right_extras);
 
         for house in self.roof_left.common_houses(self.roof_right) {
             let peers = house.cells() - self.roof;
-            let peer_knowns: Vec<(Cell, KnownSet)> = peers
+            let peer_digits: Vec<(Cell, DigitSet)> = peers
                 .iter()
                 .map(|cell| (cell, board.candidates(cell)))
                 .collect();
@@ -490,37 +490,37 @@ impl Candidate {
                     continue;
                 }
 
-                for peer_knowns_combo in peer_knowns
+                for peer_digits_combo in peer_digits
                     .iter()
-                    .filter(|(_, knowns)| (2..=size).contains(&knowns.len()))
+                    .filter(|(_, digits)| (2..=size).contains(&digits.len()))
                     .combinations(size - 1)
                 {
-                    let known_sets: Vec<KnownSet> = peer_knowns_combo
+                    let digit_sets: Vec<DigitSet> = peer_digits_combo
                         .iter()
-                        .map(|(_, ks)| *ks)
+                        .map(|(_, ds)| *ds)
                         .chain([self.roof_extras])
                         .collect();
-                    let knowns = known_sets.iter().copied().union_knowns();
-                    if knowns.len() != size
-                        || naked_tuples::is_degenerate(&known_sets, size, 2)
-                        || naked_tuples::is_degenerate(&known_sets, size, 3)
+                    let digits = digit_sets.iter().copied().union_digits();
+                    if digits.len() != size
+                        || naked_tuples::is_degenerate(&digit_sets, size, 2)
+                        || naked_tuples::is_degenerate(&digit_sets, size, 3)
                     {
                         continue;
                     }
 
-                    let cells = peers - peer_knowns_combo.iter().map(|(c, _)| *c).union_cells();
+                    let cells = peers - peer_digits_combo.iter().map(|(c, _)| *c).union_cells();
 
                     let mut found = false;
-                    for known in knowns {
-                        let erase = cells & board.candidate_cells(known);
+                    for digit in digits {
+                        let erase = cells & board.candidate_cells(digit);
                         if !erase.is_empty() {
                             found = true;
-                            action.erase_cells(erase, known)
+                            action.erase_cells(erase, digit)
                         }
                     }
                     if found {
-                        for (cell, knowns) in peer_knowns_combo {
-                            action.clue_cell_for_knowns(Verdict::Secondary, *cell, *knowns);
+                        for (cell, digits) in peer_digits_combo {
+                            action.clue_cell_for_digits(Verdict::Secondary, *cell, *digits);
                         }
                     }
                     break;
@@ -571,8 +571,8 @@ impl Candidate {
                 Strategy::AlmostUniqueRectangle
             });
             action.erase_cells(self.roof & board.candidate_cells(erase), erase);
-            action.clue_cells_for_knowns(Verdict::Primary, self.floor, self.pair);
-            action.clue_cells_for_known(Verdict::Secondary, self.roof, required);
+            action.clue_cells_for_digits(Verdict::Primary, self.floor, self.pair);
+            action.clue_cells_for_digit(Verdict::Secondary, self.roof, required);
 
             // println!("type 4 {} - {}", self.rectangle, action);
             if effects.add_action(action) {
@@ -612,15 +612,15 @@ impl Candidate {
                 (self.floor_right, self.roof_left),
             ],
         ];
-        'found: for known in self.pair {
+        'found: for digit in self.pair {
             for sides in &sides {
                 if sides.iter().all(|(floor, roof)| {
                     floor
                         .common_houses(*roof)
                         .into_iter()
-                        .any(|house| board.house_candidate_cells(house, known).len() == 2)
+                        .any(|house| board.house_candidate_cells(house, digit).len() == 2)
                 }) {
-                    keep = Some(known);
+                    keep = Some(digit);
                     break 'found;
                 }
             }
@@ -634,8 +634,8 @@ impl Candidate {
                 Strategy::AlmostUniqueRectangle
             });
             action.erase_cells(self.floor, erase);
-            action.clue_cells_for_knowns(Verdict::Primary, self.roof, self.pair);
-            action.clue_cells_for_known(Verdict::Primary, self.floor, keep);
+            action.clue_cells_for_digits(Verdict::Primary, self.roof, self.pair);
+            action.clue_cells_for_digit(Verdict::Primary, self.floor, keep);
 
             // println!("type 5 {} - {}", self.rectangle, action);
             effects.add_action(action)
@@ -671,9 +671,9 @@ mod tests {
 
         if let Some(got) = find_unique_rectangles(&board, true) {
             let mut action =
-                Action::new_erase_knowns(Strategy::UniqueRectangle, cell!(D1), knowns![2 9]);
-            action.clue_cells_for_knowns(Verdict::Primary, cells![D9 F1 F9], knowns![2 9]);
-            action.clue_cell_for_knowns(Verdict::Secondary, cell!(D1), knowns![1 5]);
+                Action::new_erase_digits(Strategy::UniqueRectangle, cell!(D1), digits![2 9]);
+            action.clue_cells_for_digits(Verdict::Primary, cells![D9 F1 F9], digits![2 9]);
+            action.clue_cell_for_digits(Verdict::Secondary, cell!(D1), digits![1 5]);
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
             panic!("not found");
@@ -691,9 +691,9 @@ mod tests {
 
         if let Some(got) = find_almost_unique_rectangles(&board, true) {
             let mut action =
-                Action::new_erase(Strategy::AlmostUniqueRectangle, cell!(D1), known!(9));
-            action.clue_cells_for_knowns(Verdict::Primary, cells![D9 F1 F9], knowns![2 9]);
-            action.clue_cell_for_knowns(Verdict::Secondary, cell!(D1), knowns![1 5]);
+                Action::new_erase(Strategy::AlmostUniqueRectangle, cell!(D1), digit!(9));
+            action.clue_cells_for_digits(Verdict::Primary, cells![D9 F1 F9], digits![2 9]);
+            action.clue_cell_for_digits(Verdict::Secondary, cell!(D1), digits![1 5]);
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
             panic!("not found");
@@ -711,9 +711,9 @@ mod tests {
 
         if let Some(got) = find_unique_rectangles(&board, true) {
             let mut action =
-                Action::new_erase_cells(Strategy::UniqueRectangle, cells![A3 C6], known!(7));
-            action.clue_cells_for_knowns(Verdict::Primary, cells![A5 A6 H5 H6], knowns![1 5]);
-            action.clue_cells_for_known(Verdict::Secondary, cells![A5 A6], known!(7));
+                Action::new_erase_cells(Strategy::UniqueRectangle, cells![A3 C6], digit!(7));
+            action.clue_cells_for_digits(Verdict::Primary, cells![A5 A6 H5 H6], digits![1 5]);
+            action.clue_cells_for_digit(Verdict::Secondary, cells![A5 A6], digit!(7));
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
             panic!("not found");
@@ -731,11 +731,11 @@ mod tests {
 
         if let Some(got) = find_almost_unique_rectangles(&board, true) {
             let mut action =
-                Action::new_erase_cells(Strategy::AlmostUniqueRectangle, cells![A3 C6], known!(7));
-            action.clue_cells_for_knowns(Verdict::Primary, cells![H5 H6], knowns![1 5]);
-            action.clue_cells_for_knowns(Verdict::Primary, cells![A5], knowns![5]);
-            action.clue_cells_for_knowns(Verdict::Primary, cells![A6], knowns![1]);
-            action.clue_cells_for_known(Verdict::Secondary, cells![A5 A6], known!(7));
+                Action::new_erase_cells(Strategy::AlmostUniqueRectangle, cells![A3 C6], digit!(7));
+            action.clue_cells_for_digits(Verdict::Primary, cells![H5 H6], digits![1 5]);
+            action.clue_cells_for_digits(Verdict::Primary, cells![A5], digits![5]);
+            action.clue_cells_for_digits(Verdict::Primary, cells![A6], digits![1]);
+            action.clue_cells_for_digit(Verdict::Secondary, cells![A5 A6], digit!(7));
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
             panic!("not found");
@@ -753,9 +753,9 @@ mod tests {
 
         if let Some(got) = find_unique_rectangles(&board, true) {
             let mut action =
-                Action::new_erase_cells(Strategy::UniqueRectangle, cells![A9 C9 G7], known!(6));
-            action.clue_cells_for_knowns(Verdict::Primary, cells![B7 B9 H7 H9], knowns![2 9]);
-            action.clue_cells_for_known(Verdict::Secondary, cells![B7 H9], known!(6));
+                Action::new_erase_cells(Strategy::UniqueRectangle, cells![A9 C9 G7], digit!(6));
+            action.clue_cells_for_digits(Verdict::Primary, cells![B7 B9 H7 H9], digits![2 9]);
+            action.clue_cells_for_digit(Verdict::Secondary, cells![B7 H9], digit!(6));
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
             panic!("not found");
@@ -773,13 +773,13 @@ mod tests {
 
         if let Some(got) = find_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::UniqueRectangle);
-            action.erase_knowns(cell!(H8), knowns![4 9]);
-            action.erase_knowns(cell!(J8), knowns![6 9]);
-            action.clue_cells_for_knowns(Verdict::Primary, cells![D2 D8 F2 F8], knowns![1 5]);
-            action.clue_cell_for_knowns(Verdict::Secondary, cell!(A8), knowns![4 6 9]);
-            action.clue_cell_for_knowns(Verdict::Secondary, cell!(B8), knowns![4 9]);
-            action.clue_cell_for_knowns(Verdict::Secondary, cell!(D8), knowns![4 6]);
-            action.clue_cell_for_knowns(Verdict::Secondary, cell!(F8), knowns![6 9]);
+            action.erase_digits(cell!(H8), digits![4 9]);
+            action.erase_digits(cell!(J8), digits![6 9]);
+            action.clue_cells_for_digits(Verdict::Primary, cells![D2 D8 F2 F8], digits![1 5]);
+            action.clue_cell_for_digits(Verdict::Secondary, cell!(A8), digits![4 6 9]);
+            action.clue_cell_for_digits(Verdict::Secondary, cell!(B8), digits![4 9]);
+            action.clue_cell_for_digits(Verdict::Secondary, cell!(D8), digits![4 6]);
+            action.clue_cell_for_digits(Verdict::Secondary, cell!(F8), digits![6 9]);
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
             panic!("not found");
@@ -797,14 +797,14 @@ mod tests {
 
         if let Some(got) = find_almost_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::AlmostUniqueRectangle);
-            action.erase_knowns(cell!(H8), knowns![4 9]);
-            action.erase_knowns(cell!(J8), knowns![6 9]);
-            action.clue_cells_for_knowns(Verdict::Primary, cells![D2 F2 F8], knowns![1]);
-            action.clue_cells_for_knowns(Verdict::Primary, cells![D2 D8 F2], knowns![5]);
-            action.clue_cell_for_knowns(Verdict::Secondary, cell!(A8), knowns![4 6 9]);
-            action.clue_cell_for_knowns(Verdict::Secondary, cell!(B8), knowns![4 9]);
-            action.clue_cell_for_knowns(Verdict::Secondary, cell!(D8), knowns![4 6]);
-            action.clue_cell_for_knowns(Verdict::Secondary, cell!(F8), knowns![6 9]);
+            action.erase_digits(cell!(H8), digits![4 9]);
+            action.erase_digits(cell!(J8), digits![6 9]);
+            action.clue_cells_for_digits(Verdict::Primary, cells![D2 F2 F8], digits![1]);
+            action.clue_cells_for_digits(Verdict::Primary, cells![D2 D8 F2], digits![5]);
+            action.clue_cell_for_digits(Verdict::Secondary, cell!(A8), digits![4 6 9]);
+            action.clue_cell_for_digits(Verdict::Secondary, cell!(B8), digits![4 9]);
+            action.clue_cell_for_digits(Verdict::Secondary, cell!(D8), digits![4 6]);
+            action.clue_cell_for_digits(Verdict::Secondary, cell!(F8), digits![6 9]);
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
             panic!("not found");
@@ -822,9 +822,9 @@ mod tests {
 
         if let Some(got) = find_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::UniqueRectangle);
-            action.erase_cells(cells![H1 H2], known!(9));
-            action.clue_cells_for_knowns(Verdict::Primary, cells![A1 A2], knowns![7 9]);
-            action.clue_cells_for_known(Verdict::Secondary, cells![H1 H2], known!(7));
+            action.erase_cells(cells![H1 H2], digit!(9));
+            action.clue_cells_for_digits(Verdict::Primary, cells![A1 A2], digits![7 9]);
+            action.clue_cells_for_digit(Verdict::Secondary, cells![H1 H2], digit!(7));
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
             panic!("not found");
@@ -842,9 +842,9 @@ mod tests {
 
         if let Some(got) = find_almost_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::AlmostUniqueRectangle);
-            action.erase(cell!(H1), known!(9));
-            action.clue_cells_for_knowns(Verdict::Primary, cells![A1 A2], knowns![7 9]);
-            action.clue_cells_for_known(Verdict::Secondary, cells![H1 H2], known!(7));
+            action.erase(cell!(H1), digit!(9));
+            action.clue_cells_for_digits(Verdict::Primary, cells![A1 A2], digits![7 9]);
+            action.clue_cells_for_digit(Verdict::Secondary, cells![H1 H2], digit!(7));
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
             panic!("not found");
@@ -876,9 +876,9 @@ mod tests {
 
         if let Some(got) = find_unique_rectangles(&board, true) {
             let mut action =
-                Action::new_erase_cells(Strategy::UniqueRectangle, cells![E6 F1], known!(2));
-            action.clue_cells_for_known(Verdict::Primary, cells![E1 F6], known!(2));
-            action.clue_cells_for_known(Verdict::Primary, cells![E1 E6 F1 F6], known!(8));
+                Action::new_erase_cells(Strategy::UniqueRectangle, cells![E6 F1], digit!(2));
+            action.clue_cells_for_digit(Verdict::Primary, cells![E1 F6], digit!(2));
+            action.clue_cells_for_digit(Verdict::Primary, cells![E1 E6 F1 F6], digit!(8));
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
             panic!("not found");

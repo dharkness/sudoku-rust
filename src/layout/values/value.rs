@@ -3,7 +3,7 @@ use std::ops::Not;
 
 use crate::symbols::MISSING;
 
-use super::Known;
+use super::Digit;
 
 /// Holds the value stored in a cell, either unknown or one of the nine digits.
 #[derive(Clone, Copy, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
@@ -25,13 +25,13 @@ impl Value {
         self.0 == Self::UNKNOWN
     }
 
-    pub const fn is_known(&self) -> bool {
+    pub const fn is_digit(&self) -> bool {
         self.0 != Self::UNKNOWN
     }
 
-    pub const fn known(&self) -> Option<Known> {
-        if self.is_known() {
-            Some(Known::from_ordinal(self.0))
+    pub const fn digit(&self) -> Option<Digit> {
+        if self.is_digit() {
+            Some(Digit::from_ordinal(self.0))
         } else {
             None
         }
@@ -50,9 +50,9 @@ impl Value {
     }
 }
 
-impl From<Known> for Value {
-    fn from(known: Known) -> Self {
-        known.value()
+impl From<Digit> for Value {
+    fn from(digit: Digit) -> Self {
+        digit.value()
     }
 }
 

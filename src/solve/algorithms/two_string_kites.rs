@@ -3,20 +3,20 @@ use super::*;
 pub fn find_two_string_kites(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    for known in Known::iter() {
-        let candidates = board.candidate_cells(known);
+    for digit in Digit::iter() {
+        let candidates = board.candidate_cells(digit);
         if candidates.len() < 5 {
             continue;
         }
 
         for row in House::rows_iter() {
-            let row_cells = board.house_candidate_cells(row, known);
+            let row_cells = board.house_candidate_cells(row, digit);
             if row_cells.len() != 2 || row_cells.blocks().len() == 1 {
                 continue;
             }
 
             for column in House::columns_iter() {
-                let column_cells = board.house_candidate_cells(column, known);
+                let column_cells = board.house_candidate_cells(column, digit);
                 if column_cells.len() != 2
                     || !(row_cells & column_cells).is_empty()
                     || column_cells.blocks().len() == 1
@@ -50,9 +50,9 @@ pub fn find_two_string_kites(board: &Board, single: bool) -> Option<Effects> {
                     continue;
                 }
 
-                let mut action = Action::new_erase_cells(Strategy::TwoStringKite, erase, known);
-                action.clue_cells_for_known(Verdict::Secondary, ends, known);
-                action.clue_cells_for_known(Verdict::Primary, pivots, known);
+                let mut action = Action::new_erase_cells(Strategy::TwoStringKite, erase, digit);
+                action.clue_cells_for_digit(Verdict::Secondary, ends, digit);
+                action.clue_cells_for_digit(Verdict::Primary, pivots, digit);
 
                 if effects.add_action(action) && single {
                     return Some(effects);
@@ -86,9 +86,9 @@ mod tests {
 
         if let Some(got) = find_two_string_kites(&board, true) {
             let mut action = Action::new(Strategy::TwoStringKite);
-            action.erase(cell!(B4), known!(5));
-            action.clue_cells_for_known(Verdict::Secondary, cells![B7 H4], known!(5));
-            action.clue_cells_for_known(Verdict::Primary, cells![H9 J7], known!(5));
+            action.erase(cell!(B4), digit!(5));
+            action.clue_cells_for_digit(Verdict::Secondary, cells![B7 H4], digit!(5));
+            action.clue_cells_for_digit(Verdict::Primary, cells![H9 J7], digit!(5));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

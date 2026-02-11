@@ -1,9 +1,10 @@
-//! Provides [`Known`] and [`KnownSet`] to track collections of knowns and methods to manipulate them.
+//! Provides [`Digit`] and [`DigitSet`] to track collections of digits
+//! and methods to manipulate them.
 
-pub mod known;
-pub mod known_set;
+pub mod digit;
+pub mod digit_set;
 pub mod value;
 
-pub use known::Known;
-pub use known_set::{KnownIteratorUnion, KnownSet, KnownSetIteratorUnion};
+pub use digit::Digit;
+pub use digit_set::{DigitIteratorUnion, DigitSet, DigitSetIteratorUnion};
 pub use value::Value;

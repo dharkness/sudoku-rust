@@ -3,25 +3,25 @@ use super::*;
 pub fn find_empty_rectangles(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    for known in Known::iter() {
+    for digit in Digit::iter() {
         for block in House::blocks_iter() {
-            if let Some((cells, row, column)) = fit_row_column(board, block, known) {
+            if let Some((cells, row, column)) = fit_row_column(board, block, digit) {
                 let mut erased = CellSet::empty();
                 // top, left, right and bottom are general terms about the formed rectangle:
                 // bottom may be above top, and top and bottom will be columns in the second loop
                 for (top, left) in [(row, column), (column, row)] {
                     // look for start and pivot cells as only candidates in right house
                     // to remove a candidate at the left and bottom house intersection
-                    let candidates = board.house_candidate_cells(left, known) - cells;
+                    let candidates = board.house_candidate_cells(left, digit) - cells;
 
-                    for start in (board.house_candidate_cells(top, known) - cells).iter() {
+                    for start in (board.house_candidate_cells(top, digit) - cells).iter() {
                         if erased.has(start) {
                             continue;
                         }
 
                         let right = start.house(left.shape());
                         if let Some(pivot) =
-                            (board.house_candidate_cells(right, known) - start).as_single()
+                            (board.house_candidate_cells(right, digit) - start).as_single()
                         {
                             if start.block() == pivot.block() {
                                 // can't remove a cell from the starting block
@@ -29,20 +29,20 @@ pub fn find_empty_rectangles(board: &Board, single: bool) -> Option<Effects> {
                             }
 
                             let bottom = pivot.house(top.shape());
-                            let ends = board.house_candidate_cells(bottom, known) - pivot;
+                            let ends = board.house_candidate_cells(bottom, digit) - pivot;
 
                             if let Some(end) = (ends & candidates).as_single() {
                                 erased += end;
 
                                 let mut action =
-                                    Action::new_erase(Strategy::EmptyRectangle, end, known);
+                                    Action::new_erase(Strategy::EmptyRectangle, end, digit);
                                 if ends.len() == 1 {
-                                    action.erase(start, known);
+                                    action.erase(start, digit);
                                 } else {
-                                    action.clue_cell_for_known(Verdict::Secondary, start, known);
+                                    action.clue_cell_for_digit(Verdict::Secondary, start, digit);
                                 }
-                                action.clue_cells_for_known(Verdict::Primary, cells, known);
-                                action.clue_cell_for_known(Verdict::Secondary, pivot, known);
+                                action.clue_cells_for_digit(Verdict::Primary, cells, digit);
+                                action.clue_cell_for_digit(Verdict::Secondary, pivot, digit);
 
                                 if effects.add_action(action) && single {
                                     return Some(effects);
@@ -62,8 +62,8 @@ pub fn find_empty_rectangles(board: &Board, single: bool) -> Option<Effects> {
     }
 }
 
-fn fit_row_column(board: &Board, block: House, known: Known) -> Option<(CellSet, House, House)> {
-    let cells = board.house_candidate_cells(block, known);
+fn fit_row_column(board: &Board, block: House, digit: Digit) -> Option<(CellSet, House, House)> {
+    let cells = board.house_candidate_cells(block, digit);
     if cells.len() < 3 {
         // possible degenerate singles chain if two and not a candidate if only one
         return None;
@@ -96,9 +96,9 @@ mod tests {
 
         if let Some(got) = find_empty_rectangles(&board, true) {
             let mut action = Action::new(Strategy::EmptyRectangle);
-            action.erase(cell!(J5), known!(2));
-            action.clue_cells_for_known(Verdict::Primary, cells![H7 J7 J9], known!(2));
-            action.clue_cells_for_known(Verdict::Secondary, cells![B5 B7], known!(2));
+            action.erase(cell!(J5), digit!(2));
+            action.clue_cells_for_digit(Verdict::Primary, cells![H7 J7 J9], digit!(2));
+            action.clue_cells_for_digit(Verdict::Secondary, cells![B5 B7], digit!(2));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

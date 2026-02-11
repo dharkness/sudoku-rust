@@ -2,35 +2,35 @@ use std::fmt;
 use std::ops::{Add, Neg};
 use std::str::FromStr;
 
-use super::{KnownSet, Value};
+use super::{DigitSet, Value};
 
-/// Holds one of the possible known values.
+/// Holds one of the possible digit values.
 #[derive(Clone, Copy, Debug, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub struct Known(u8);
+pub struct Digit(u8);
 
-/// Errors that can occur when parsing a known value.
+/// Errors that can occur when parsing a digit value.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum KnownError {
+pub enum DigitError {
     InvalidValue(String),
 }
 
-impl fmt::Display for KnownError {
+impl fmt::Display for DigitError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            KnownError::InvalidValue(label) => {
-                write!(f, "invalid known '{}'", label)
+            DigitError::InvalidValue(label) => {
+                write!(f, "invalid digit '{}'", label)
             }
         }
     }
 }
 
-impl std::error::Error for KnownError {}
+impl std::error::Error for DigitError {}
 
-impl Known {
+impl Digit {
     pub const COUNT: u8 = 9;
 
-    pub fn iter() -> KnownIter {
-        KnownIter::new()
+    pub fn iter() -> DigitIter {
+        DigitIter::new()
     }
 
     pub const fn new(index: u32) -> Self {
@@ -64,19 +64,19 @@ impl Known {
     }
 }
 
-impl TryFrom<char> for Known {
-    type Error = KnownError;
+impl TryFrom<char> for Digit {
+    type Error = DigitError;
 
     fn try_from(label: char) -> Result<Self, Self::Error> {
         match label {
             '1'..='9' => Ok(Self(label as u8 - b'1')),
-            _ => Err(KnownError::InvalidValue(label.to_string())),
+            _ => Err(DigitError::InvalidValue(label.to_string())),
         }
     }
 }
 
-impl FromStr for Known {
-    type Err = KnownError;
+impl FromStr for Digit {
+    type Err = DigitError;
 
     fn from_str(label: &str) -> Result<Self, Self::Err> {
         let trimmed = label.trim();
@@ -85,87 +85,87 @@ impl FromStr for Known {
                 let ch = trimmed.chars().next().unwrap();
                 match ch {
                     '1'..='9' => Ok(Self(ch as u8 - b'1')),
-                    _ => Err(KnownError::InvalidValue(label.to_string())),
+                    _ => Err(DigitError::InvalidValue(label.to_string())),
                 }
             }
-            _ => Err(KnownError::InvalidValue(label.to_string())),
+            _ => Err(DigitError::InvalidValue(label.to_string())),
         }
     }
 }
 
-impl Add<Known> for Known {
-    type Output = KnownSet;
+impl Add<Digit> for Digit {
+    type Output = DigitSet;
 
-    fn add(self, rhs: Known) -> KnownSet {
-        KnownSet::empty() + self + rhs
+    fn add(self, rhs: Digit) -> DigitSet {
+        DigitSet::empty() + self + rhs
     }
 }
 
-impl Neg for Known {
-    type Output = KnownSet;
+impl Neg for Digit {
+    type Output = DigitSet;
 
-    fn neg(self) -> KnownSet {
-        KnownSet::full() - self
+    fn neg(self) -> DigitSet {
+        DigitSet::full() - self
     }
 }
 
-impl fmt::Display for Known {
+impl fmt::Display for Digit {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.label())
     }
 }
 
-pub struct KnownIter(u8);
+pub struct DigitIter(u8);
 
-impl KnownIter {
+impl DigitIter {
     pub const fn new() -> Self {
         Self(0)
     }
 }
 
-impl Iterator for KnownIter {
-    type Item = Known;
+impl Iterator for DigitIter {
+    type Item = Digit;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.0 < 9 {
-            let known = Known::new(self.0.into());
+            let digit = Digit::new(self.0.into());
             self.0 += 1;
-            Some(known)
+            Some(digit)
         } else {
             None
         }
     }
 }
 
-impl ExactSizeIterator for KnownIter {
+impl ExactSizeIterator for DigitIter {
     fn len(&self) -> usize {
         9 - self.0 as usize
     }
 }
 
-/// Creates a [`Known`] from a digit character.
+/// Creates a [`Digit`] from a digit character.
 ///
 /// Compile-time convenience that panics on invalid input.
-/// For runtime parsing with error handling, use [`Known::from_str`] or `"5".parse::<Known>()`.
+/// For runtime parsing with error handling, use [`Digit::from_str`] or `"5".parse::<Digit>()`.
 ///
 /// # Examples
 ///
 /// ```
-/// use sudoku_rust::known;
+/// use sudoku_rust::digit;
 ///
-/// let k = known!(5);
-/// let k = known!(9);
+/// let d = digit!(5);
+/// let d = digit!(9);
 /// ```
 ///
 /// # Panics
 ///
-/// Panics if the value is not 1-9. See [`Known::from_str`] for valid formats.
+/// Panics if the value is not 1-9. See [`Digit::from_str`] for valid formats.
 #[macro_export]
-macro_rules! known {
+macro_rules! digit {
     ($value:tt) => {
-        match stringify!($value).parse::<Known>() {
-            Ok(k) => k,
-            Err(e) => panic!("known![{}]: {}", stringify!($value), e),
+        match stringify!($value).parse::<Digit>() {
+            Ok(d) => d,
+            Err(e) => panic!("digit![{}]: {}", stringify!($value), e),
         }
     };
 }

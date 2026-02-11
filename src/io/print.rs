@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 use itertools::Itertools;
 
-use crate::layout::{Cell, House, Known};
+use crate::layout::{Cell, Digit, House};
 use crate::puzzle::{Action, Board, Verdict};
 use crate::symbols::{GIVEN, MISSING};
 
@@ -39,13 +39,13 @@ pub fn write_givens(board: &Board) -> Vec<String> {
     })
 }
 
-pub fn print_known_values(board: &Board) {
-    for line in add_single_value_labels(write_known_values(board)) {
+pub fn print_solved_values(board: &Board) {
+    for line in add_single_value_labels(write_solved_values(board)) {
         println!("{}", line);
     }
 }
 
-pub fn write_known_values(board: &Board) -> Vec<String> {
+pub fn write_solved_values(board: &Board) -> Vec<String> {
     write_single_value(|cell, line: &mut String| {
         let value = board.value(cell);
         if value.is_unknown() {
@@ -56,13 +56,13 @@ pub fn write_known_values(board: &Board) -> Vec<String> {
     })
 }
 
-pub fn print_candidate(board: &Board, candidate: Known) {
+pub fn print_candidate(board: &Board, candidate: Digit) {
     for line in add_single_value_labels(write_candidate(board, candidate)) {
         println!("{}", line);
     }
 }
 
-pub fn write_candidate(board: &Board, candidate: Known) -> Vec<String> {
+pub fn write_candidate(board: &Board, candidate: Digit) -> Vec<String> {
     write_single_value(|cell, line: &mut String| {
         if board.is_candidate(cell, candidate) {
             line.push(GIVEN);
@@ -81,7 +81,7 @@ pub fn write_candidate(board: &Board, candidate: Known) -> Vec<String> {
 
 pub fn write_candidate_with_highlight(
     board: &Board,
-    candidate: Known,
+    candidate: Digit,
     verdicts: HashMap<Cell, Verdict>,
 ) -> Vec<String> {
     write_single_value(|cell, line: &mut String| {
@@ -195,10 +195,10 @@ pub fn write_candidates(board: &Board) -> Vec<String> {
             let value = board.value(cell);
             let candidates = board.candidates(cell);
             if !value {
-                for k in Known::iter() {
-                    let line = k.usize() / 3;
-                    if candidates[k] {
-                        cell_lines[line].push(k.label());
+                for d in Digit::iter() {
+                    let line = d.usize() / 3;
+                    if candidates[d] {
+                        cell_lines[line].push(d.label());
                     } else {
                         cell_lines[line].push(MISSING);
                     }
@@ -245,7 +245,7 @@ pub fn write_candidates(board: &Board) -> Vec<String> {
 
 pub fn write_candidates_with_highlight(
     board: &Board,
-    verdicts: HashMap<Cell, HashMap<Known, Verdict>>,
+    verdicts: HashMap<Cell, HashMap<Digit, Verdict>>,
 ) -> Vec<String> {
     let mut lines = Vec::new();
 
@@ -258,15 +258,15 @@ pub fn write_candidates_with_highlight(
             let cell = Cell::from_row_column(row, column);
             let value = board.value(cell);
             let candidates = board.candidates(cell);
-            if let Some(known) = value.known() {
+            if let Some(digit) = value.digit() {
                 let verdict = verdicts
                     .get(&cell)
-                    .and_then(|map| map.get(&known))
+                    .and_then(|map| map.get(&digit))
                     .unwrap_or(&Verdict::None);
                 cell_lines[0].push_str("      ");
                 cell_lines[1].push_str(&format!(
                     "  {}   ",
-                    verdict.color_char(known.label()).as_str()
+                    verdict.color_char(digit.label()).as_str()
                 ));
                 if board.is_given(cell) {
                     cell_lines[2]
@@ -275,16 +275,16 @@ pub fn write_candidates_with_highlight(
                     cell_lines[2].push_str("      ");
                 }
             } else {
-                for known in Known::iter() {
-                    let line = known.usize() / 3;
-                    let label = if candidates[known] {
-                        known.label()
+                for digit in Digit::iter() {
+                    let line = digit.usize() / 3;
+                    let label = if candidates[digit] {
+                        digit.label()
                     } else {
                         MISSING
                     };
                     let verdict = verdicts
                         .get(&cell)
-                        .and_then(|map| map.get(&known))
+                        .and_then(|map| map.get(&digit))
                         .unwrap_or(&Verdict::None);
                     cell_lines[line].push_str(verdict.color_char(label).as_str());
                     cell_lines[line].push(' ');
@@ -323,8 +323,8 @@ pub fn write_candidates_with_highlight(
 pub fn print_all_and_single_candidates(board: &Board) {
     actually_print_all_and_single_candidates(
         write_candidates(board),
-        Known::iter()
-            .map(|k| write_candidate(board, k))
+        Digit::iter()
+            .map(|d| write_candidate(board, d))
             .collect_vec(),
     );
 }
@@ -332,8 +332,8 @@ pub fn print_all_and_single_candidates(board: &Board) {
 pub fn print_all_and_single_candidates_with_highlight(board: &Board, action: &Action) {
     actually_print_all_and_single_candidates(
         write_candidates_with_highlight(board, action.collect_verdicts()),
-        Known::iter()
-            .map(|k| write_candidate_with_highlight(board, k, action.collect_verdicts_for_known(k)))
+        Digit::iter()
+            .map(|d| write_candidate_with_highlight(board, d, action.collect_verdicts_for_digit(d)))
             .collect_vec(),
     );
 }

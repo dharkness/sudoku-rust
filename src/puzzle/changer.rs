@@ -1,4 +1,4 @@
-use crate::layout::{Cell, Known};
+use crate::layout::{Cell, Digit};
 use crate::puzzle::{Change, Strategy};
 use crate::solve::find_intersection_removals;
 
@@ -30,20 +30,20 @@ impl Changer {
         board: &Board,
         strategy: Strategy,
         cell: Cell,
-        known: Known,
+        digit: Digit,
     ) -> ChangeResult {
-        self.apply(board, &Action::new_set(strategy, cell, known))
+        self.apply(board, &Action::new_set(strategy, cell, digit))
     }
 
     /// Solves a single cell to one of its candidates.
-    pub fn set_known(
+    pub fn set_digit(
         &self,
         board: &Board,
         strategy: Strategy,
         cell: Cell,
-        known: Known,
+        digit: Digit,
     ) -> ChangeResult {
-        self.apply(board, &Action::new_set(strategy, cell, known))
+        self.apply(board, &Action::new_set(strategy, cell, digit))
     }
 
     /// Removes a candidate from a single cell.
@@ -52,9 +52,9 @@ impl Changer {
         board: &Board,
         strategy: Strategy,
         cell: Cell,
-        known: Known,
+        digit: Digit,
     ) -> ChangeResult {
-        self.apply(board, &Action::new_erase(strategy, cell, known))
+        self.apply(board, &Action::new_erase(strategy, cell, digit))
     }
 
     /// Applies the given action and any automatic actions it creates.

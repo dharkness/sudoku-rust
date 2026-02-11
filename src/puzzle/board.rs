@@ -2,12 +2,12 @@ use std::fmt;
 use std::ops::{BitAnd, BitAndAssign};
 
 use crate::io::format_for_fancy_console;
-use crate::layout::{Cell, CellSet, House, Known, KnownSet, Value};
+use crate::layout::{Cell, CellSet, Digit, DigitSet, House, Value};
 use crate::solve::creates_deadly_rectangles;
 
 use super::{Effects, Error, PseudoCell, Strategy};
 
-/// Indicates the result of setting a given or known or removing a candidate.
+/// Indicates the result of solving a cell or removing a candidate.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Change {
     None,
@@ -53,31 +53,31 @@ impl BitAndAssign for Change {
 ///
 /// The givens are cells that begin with a digit, the clues given
 /// by the puzzle creator to make it solvable. When a cell
-/// is either given as a clue or been solved with a digit,
-/// it is called known.
+/// is either given as a clue or placed with a digit,
+/// it is called solved.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Board {
     /// Cells that were given a digit at the start,
     /// often referred to as clues.
     givens: CellSet,
 
-    /// All cells with a digit, both givens and solved cells.
-    knowns: CellSet,
+    /// Every solved (given or placed) cell.
+    solved_cells: CellSet,
+
+    /// Every solved (given or placed) cell for each digit.
+    solved_cells_by_digit: [CellSet; 9],
 
     /// Value of each cell, either a digit or unknown.
     values: [Value; 81],
 
     /// Set of available digits that may still be set for each cell.
-    candidate_knowns_by_cell: [KnownSet; 81],
+    candidate_digits_by_cell: [DigitSet; 81],
 
     /// Set of available cells for each digit.
-    candidate_cells_by_known: [CellSet; 9],
+    candidate_cells_by_digit: [CellSet; 9],
 
     /// Every cell that has N candidates.
     cells_with_n_candidates: [CellSet; 10],
-
-    /// Every cell solved or given for each digit.
-    solved_cells_by_known: [CellSet; 9],
 }
 
 impl Board {
@@ -86,86 +86,91 @@ impl Board {
     pub const fn new() -> Board {
         Board {
             givens: CellSet::empty(),
-            knowns: CellSet::empty(),
+            solved_cells: CellSet::empty(),
+            solved_cells_by_digit: [CellSet::empty(); 9],
             values: [Value::unknown(); 81],
-            candidate_knowns_by_cell: [KnownSet::full(); 81],
-            candidate_cells_by_known: [CellSet::full(); 9],
+            candidate_digits_by_cell: [DigitSet::full(); 81],
+            candidate_cells_by_digit: [CellSet::full(); 9],
             cells_with_n_candidates: [
                 CellSet::empty(), CellSet::empty(), CellSet::empty(),
                 CellSet::empty(), CellSet::empty(), CellSet::empty(),
                 CellSet::empty(), CellSet::empty(), CellSet::empty(),
                 CellSet::full(),
             ],
-            solved_cells_by_known: [CellSet::empty(); 9],
         }
     }
 
-    /// Returns true if the cell is unknown.
-    pub const fn is_unknown(&self, cell: Cell) -> bool {
-        !self.knowns.has(cell)
+    /// Returns true if the cell is not solved.
+    pub const fn is_unsolved(&self, cell: Cell) -> bool {
+        !self.solved_cells.has(cell)
     }
 
-    /// Returns the number of unknown cells in the puzzle.
-    pub const fn unknown_count(&self) -> usize {
-        81 - self.knowns.len()
+    /// Returns the number of unsolved cells in the puzzle.
+    pub const fn unsolved_count(&self) -> usize {
+        81 - self.solved_cells.len()
     }
 
-    /// Returns the set of all unknown cells.
-    pub fn unknowns(&self) -> CellSet {
-        !self.knowns
+    /// Returns the set of all unsolved cells.
+    pub fn unsolved(&self) -> CellSet {
+        !self.solved_cells
     }
 
-    /// Returns an iterator of all unknown cells with their candidates.
-    pub fn unknown_iter(&self) -> impl Iterator<Item = (Cell, KnownSet)> + '_ {
-        self.unknowns()
+    /// Returns an iterator of all unsolved cells with their candidates.
+    pub fn unsolved_iter(&self) -> impl Iterator<Item = (Cell, DigitSet)> + '_ {
+        self.unsolved()
             .into_iter()
             .map(|cell| (cell, self.candidates(cell)))
     }
 
-    /// Returns true if the cell is known or a given.
-    pub const fn is_known(&self, cell: Cell) -> bool {
-        self.knowns.has(cell)
+    /// Returns true if every cell on the board is solved (given or placed).
+    pub const fn is_fully_solved(&self) -> bool {
+        self.solved_cells.is_full()
     }
 
-    /// Returns the number of known cells in the puzzle, including givens.
-    pub const fn known_count(&self) -> usize {
-        self.knowns.len()
+    /// Returns true if the cell has a digit.
+    pub const fn is_solved(&self, cell: Cell) -> bool {
+        self.solved_cells.has(cell)
     }
 
-    /// Returns the set of all known cells, including givens.
-    pub const fn knowns(&self) -> CellSet {
-        self.knowns
+    /// Returns the number of solved cells in the puzzle, including givens.
+    pub const fn solved_count(&self) -> usize {
+        self.solved_cells.len()
     }
 
-    /// Returns the set of all cells solved with the known, including givens.
-    pub const fn known_cells(&self, known: Known) -> CellSet {
-        self.solved_cells_by_known[known.usize()]
+    /// Returns the set of all solved cells, including givens.
+    pub const fn solved(&self) -> CellSet {
+        self.solved_cells
     }
 
-    /// Returns an iterator of all known cells with their digit, including givens.
-    pub fn known_iter(&self) -> impl Iterator<Item = (Cell, Known)> + '_ {
-        self.knowns
+    /// Returns the set of all cells solved with the digit, including givens.
+    pub const fn solved_with(&self, digit: Digit) -> CellSet {
+        self.solved_cells_by_digit[digit.usize()]
+    }
+
+    /// Returns an iterator of all solved cells with their digit, including givens.
+    pub fn solved_iter(&self) -> impl Iterator<Item = (Cell, Digit)> + '_ {
+        self.solved_cells
             .into_iter()
-            .map(|cell| (cell, self.value(cell).known().unwrap()))
+            .map(|cell| (cell, self.value(cell).digit().unwrap()))
     }
 
-    /// Returns an iterator of the cells which are known with their digit, including givens.
-    pub fn knowns_iter(&self, cells: CellSet) -> impl Iterator<Item = (Cell, Known)> + '_ {
-        (cells & self.knowns)
+    /// Returns an iterator of a subset of solved cells with their digit, including givens.
+    pub fn solved_subset_iter(&self, cells: CellSet) -> impl Iterator<Item = (Cell, Digit)> + '_ {
+        (cells & self.solved_cells)
             .into_iter()
-            .map(|cell| (cell, self.value(cell).known().unwrap()))
+            .map(|cell| (cell, self.value(cell).digit().unwrap()))
     }
 
     /// Returns the set of digits to which any of the cells is set.
-    pub fn all_knowns(&self, cells: CellSet) -> KnownSet {
-        cells.iter().fold(KnownSet::empty(), |acc, cell| {
-            self.value(cell).known().map_or(acc, |k| acc + k)
+    pub fn solved_subset_digits(&self, cells: CellSet) -> DigitSet {
+        cells.iter().fold(DigitSet::empty(), |acc, cell| {
+            self.value(cell).digit().map_or(acc, |d| acc + d)
         })
     }
 
     /// Returns true if a cell in the house has the digit.
-    pub fn is_house_known(&self, house: House, known: Known) -> bool {
-        !(self.solved_cells_by_known[known.usize()] & house.cells()).is_empty()
+    pub fn house_has_digit(&self, house: House, digit: Digit) -> bool {
+        !(self.solved_cells_by_digit[digit.usize()] & house.cells()).is_empty()
     }
 
     /// Returns true if the cell is a given.
@@ -183,44 +188,39 @@ impl Board {
         self.givens
     }
 
-    /// Returns the set of all cells given the known.
-    pub fn given_cells(&self, known: Known) -> CellSet {
-        self.givens & self.solved_cells_by_known[known.usize()]
+    /// Returns the set of all cells given the digit.
+    pub fn givens_with(&self, digit: Digit) -> CellSet {
+        self.givens & self.solved_cells_by_digit[digit.usize()]
     }
 
-    /// Returns true if the cell could not have been solved by the known due to a peer with the given.
-    pub fn blocked_by_given(&self, cell: Cell, known: Known) -> bool {
-        !(cell.peers() & self.givens & self.solved_cells_by_known[known.usize()]).is_empty()
+    /// Returns true if the cell could not have been solved by the digit due to a peer with the same given.
+    pub fn blocked_by_given(&self, cell: Cell, digit: Digit) -> bool {
+        !(cell.peers() & self.givens & self.solved_cells_by_digit[digit.usize()]).is_empty()
     }
 
-    /// Returns true if every cell on the board has a digit.
-    pub const fn is_fully_solved(&self) -> bool {
-        self.knowns.is_full()
+    /// Returns true if the cell is placed.
+    pub const fn is_placed(&self, cell: Cell) -> bool {
+        self.solved_cells.has(cell) && !self.givens.has(cell)
     }
 
-    /// Returns true if the cell is solved but not given.
-    pub const fn is_solved(&self, cell: Cell) -> bool {
-        self.knowns.has(cell) && !self.givens.has(cell)
+    /// Returns the number of placed cells in the puzzle.
+    pub const fn placed_count(&self) -> usize {
+        self.solved_cells.len() - self.givens.len()
     }
 
-    /// Returns the number of solved cells in the puzzle, excluding givens.
-    pub const fn solved_count(&self) -> usize {
-        self.knowns.len() - self.givens.len()
+    /// Returns the set of all placed cells.
+    pub fn placed(&self) -> CellSet {
+        self.solved_cells - self.givens
     }
 
-    /// Returns the set of all solved cells, excluding givens.
-    pub fn solved(&self) -> CellSet {
-        self.knowns - self.givens
-    }
-
-    /// Returns the set of all cells solved with the known, excluding givens.
-    pub fn solved_cells(&self, known: Known) -> CellSet {
-        self.solved_cells_by_known[known.usize()] - self.givens
+    /// Returns the set of all placed cells for the digit.
+    pub fn placed_with(&self, digit: Digit) -> CellSet {
+        self.solved_cells_by_digit[digit.usize()] - self.givens
     }
 
     /// Returns true if every cell in the house has a digit.
     pub fn is_house_solved(&self, house: House) -> bool {
-        (!self.knowns & house.cells()).is_empty()
+        (!self.solved_cells & house.cells()).is_empty()
     }
 
     /// Returns the value of the cell, either a digit or unknown.
@@ -231,16 +231,16 @@ impl Board {
     /// Sets the cell to the candidate, marks it as a given,
     /// and returns true along with any follow-up actions found.
     ///
-    /// See [`Board::set_known()`] for more details.
-    pub fn set_given(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> Change {
-        let change = self.set_known(cell, known, effects);
+    /// See [`Board::set_digit()`] for more details.
+    pub fn set_given(&mut self, cell: Cell, digit: Digit, effects: &mut Effects) -> Change {
+        let change = self.set_digit(cell, digit, effects);
         if change.changed() {
             self.givens += cell;
         }
         change
     }
 
-    /// Sets the cell to the candidate and returns true
+    /// Sets the cell to the digit and returns true
     /// along with any follow-up actions found.
     ///
     /// The candidate is removed from the cell's peers
@@ -254,46 +254,46 @@ impl Board {
     /// state will be consistent.
     ///
     /// Returns false with no actions or errors
-    /// if the known is not a candidate for the cell.
-    pub fn set_known(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> Change {
-        if let Some(current) = self.value(cell).known() {
-            if current == known {
+    /// if the digit is not a candidate for the cell.
+    pub fn set_digit(&mut self, cell: Cell, digit: Digit, effects: &mut Effects) -> Change {
+        if let Some(current) = self.value(cell).digit() {
+            if current == digit {
                 return Change::None;
             } else {
-                effects.add_error(Error::AlreadySolved(cell, known, current));
+                effects.add_error(Error::AlreadySolved(cell, digit, current));
                 return Change::Invalid;
             }
-        } else if !self.is_candidate(cell, known) {
-            effects.add_error(Error::NotCandidate(cell, known));
+        } else if !self.is_candidate(cell, digit) {
+            effects.add_error(Error::NotCandidate(cell, digit));
             return Change::Invalid;
         }
 
-        if let Some(rectangles) = creates_deadly_rectangles(self, cell, known) {
+        if let Some(rectangles) = creates_deadly_rectangles(self, cell, digit) {
             rectangles.into_iter().for_each(|r| {
                 effects.add_error(Error::DeadlyRectangle(r));
             });
             // Do not return Invalid since the move itself is valid
         }
 
-        self.values[cell.usize()] = known.value();
-        self.knowns += cell;
-        self.solved_cells_by_known[known.usize()] += cell;
-        self.candidate_cells_by_known[known.usize()] -= cell;
+        self.values[cell.usize()] = digit.value();
+        self.solved_cells += cell;
+        self.solved_cells_by_digit[digit.usize()] += cell;
+        self.candidate_cells_by_digit[digit.usize()] -= cell;
 
         let mut change = Change::Valid;
-        let mut candidates = self.candidate_knowns_by_cell[cell.usize()];
-        self.candidate_knowns_by_cell[cell.usize()] = KnownSet::empty();
+        let mut candidates = self.candidate_digits_by_cell[cell.usize()];
+        self.candidate_digits_by_cell[cell.usize()] = DigitSet::empty();
         self.cells_with_n_candidates[candidates.len()] -= cell;
         self.cells_with_n_candidates[0] += cell;
-        candidates -= known;
-        for known in candidates {
-            self.candidate_cells_by_known[known.usize()] -= cell;
-            change &= self.remove_candidate_cell_from_houses(cell, known, effects);
+        candidates -= digit;
+        for candidate in candidates {
+            self.candidate_cells_by_digit[candidate.usize()] -= cell;
+            change &= self.remove_candidate_cell_from_houses(cell, candidate, effects);
         }
 
-        for peer in self.candidate_cells_by_known[known.usize()] & cell.peers() {
-            change &= self.remove_candidate(peer, known, effects);
-            // effects.add_erase(Strategy::Peer, peer, known)
+        for peer in self.candidate_cells_by_digit[digit.usize()] & cell.peers() {
+            change &= self.remove_candidate(peer, digit, effects);
+            // effects.add_erase(Strategy::Peer, peer, digit)
         }
 
         change
@@ -301,60 +301,61 @@ impl Board {
 
     /// Returns a new pseudo cell with the given cells and their candidates.
     pub fn pseudo_cell(&self, cells: CellSet) -> PseudoCell {
-        PseudoCell::new(cells, self.all_candidates(cells))
+        PseudoCell::new(cells, self.combined_candidates(cells))
     }
 
     /// Returns true if the cell has the candidate.
-    pub const fn is_candidate(&self, cell: Cell, known: Known) -> bool {
-        self.candidate_knowns_by_cell[cell.usize()].has(known)
+    pub const fn is_candidate(&self, cell: Cell, digit: Digit) -> bool {
+        self.candidate_digits_by_cell[cell.usize()].has(digit)
     }
 
     /// Returns the set of candidates for the cell.
-    pub const fn candidates(&self, cell: Cell) -> KnownSet {
-        self.candidate_knowns_by_cell[cell.usize()]
+    pub const fn candidates(&self, cell: Cell) -> DigitSet {
+        self.candidate_digits_by_cell[cell.usize()]
     }
 
     /// Returns the set of combined candidates for the cells.
-    pub fn all_candidates(&self, cells: CellSet) -> KnownSet {
+    pub fn combined_candidates(&self, cells: CellSet) -> DigitSet {
         cells
             .iter()
-            .fold(KnownSet::empty(), |acc, cell| acc | self.candidates(cell))
+            .fold(DigitSet::empty(), |acc, cell| acc | self.candidates(cell))
     }
 
     /// Returns the set of common candidates for the cells.
-    pub fn common_candidates(&self, cells: CellSet) -> KnownSet {
+    pub fn common_candidates(&self, cells: CellSet) -> DigitSet {
         if cells.is_empty() {
-            return KnownSet::empty();
+            return DigitSet::empty();
         }
         cells
             .iter()
-            .fold(KnownSet::full(), |acc, cell| acc & self.candidates(cell))
+            .fold(DigitSet::full(), |acc, cell| acc & self.candidates(cell))
     }
 
     /// Returns all cells that have N candidates.
     pub const fn cells_with_n_candidates(&self, n: usize) -> CellSet {
+        // TODO All calls are n <= 3, so maybe only track up to 3 candidates?
         debug_assert!(n <= 9);
         self.cells_with_n_candidates[n]
     }
 
     /// Returns an iterator of unknown cells with N candidates with their candidates.
-    pub fn cell_candidates_with_n_candidates(
+    pub fn cells_with_n_candidates_iter(
         &self,
         n: usize,
-    ) -> impl Iterator<Item = (Cell, KnownSet)> + '_ {
+    ) -> impl Iterator<Item = (Cell, DigitSet)> + '_ {
         self.cells_with_n_candidates(n)
             .iter()
             .map(|cell| (cell, self.candidates(cell)))
     }
 
     /// Returns the set of cells that have the candidate.
-    pub const fn candidate_cells(&self, known: Known) -> CellSet {
-        self.candidate_cells_by_known[known.usize()]
+    pub const fn candidate_cells(&self, digit: Digit) -> CellSet {
+        self.candidate_cells_by_digit[digit.usize()]
     }
 
     /// Returns the set of cells in the house that have the candidate.
-    pub fn house_candidate_cells(&self, house: House, known: Known) -> CellSet {
-        house.cells() & self.candidate_cells(known)
+    pub fn house_candidate_cells(&self, house: House, digit: Digit) -> CellSet {
+        house.cells() & self.candidate_cells(digit)
     }
 
     /// Removes the candidate from the cell and returns true
@@ -368,31 +369,31 @@ impl Board {
     /// state will be consistent.
     ///
     /// Returns false with no actions or errors
-    /// if the known is not a candidate for the cell.
-    pub fn remove_candidate(&mut self, cell: Cell, known: Known, effects: &mut Effects) -> Change {
-        let knowns = &mut self.candidate_knowns_by_cell[cell.usize()];
-        if !knowns[known] {
+    /// if the digit is not a candidate for the cell.
+    pub fn remove_candidate(&mut self, cell: Cell, digit: Digit, effects: &mut Effects) -> Change {
+        let digits = &mut self.candidate_digits_by_cell[cell.usize()];
+        if !digits[digit] {
             return Change::None;
         }
 
-        let size = knowns.len();
-        *knowns -= known;
+        let size = digits.len();
+        *digits -= digit;
         self.cells_with_n_candidates[size] -= cell;
         self.cells_with_n_candidates[size - 1] += cell;
-        self.candidate_cells_by_known[known.usize()] -= cell;
+        self.candidate_cells_by_digit[digit.usize()] -= cell;
 
         let mut change = Change::Valid;
-        if knowns.is_empty() {
+        if digits.is_empty() {
             effects.add_error(Error::UnsolvableCell(cell));
             change = Change::Invalid;
-        } else if let Some(single) = knowns.as_single() {
+        } else if let Some(single) = digits.as_single() {
             effects.add_set(Strategy::NakedSingle, cell, single);
         }
 
-        change & self.remove_candidate_cell_from_houses(cell, known, effects)
+        change & self.remove_candidate_cell_from_houses(cell, digit, effects)
     }
 
-    /// Removes the cell as a candidate for the known
+    /// Removes the cell as a candidate for the digit
     /// from its three houses and returns true
     /// along with any follow-up actions found.
     ///
@@ -403,23 +404,23 @@ impl Board {
     fn remove_candidate_cell_from_houses(
         &mut self,
         cell: Cell,
-        known: Known,
+        digit: Digit,
         effects: &mut Effects,
     ) -> Change {
         let mut change = Change::None;
 
         for house in cell.houses() {
-            if self.is_house_known(house, known) {
+            if self.house_has_digit(house, digit) {
                 continue;
             }
 
             change &= Change::Valid;
-            let candidates = self.house_candidate_cells(house, known);
+            let candidates = self.house_candidate_cells(house, digit);
             if candidates.is_empty() {
-                effects.add_error(Error::UnsolvableHouse(house, known));
+                effects.add_error(Error::UnsolvableHouse(house, digit));
                 change &= Change::Invalid;
             } else if let Some(single) = candidates.as_single() {
-                effects.add_set(Strategy::HiddenSingle, single, known);
+                effects.add_set(Strategy::HiddenSingle, single, digit);
             }
         }
 
@@ -433,11 +434,11 @@ impl Board {
     pub fn remove_candidates(
         &mut self,
         cell: Cell,
-        knowns: KnownSet,
+        digits: DigitSet,
         effects: &mut Effects,
     ) -> Change {
-        knowns.iter().fold(Change::None, |change, known| {
-            change & self.remove_candidate(cell, known, effects)
+        digits.iter().fold(Change::None, |change, digit| {
+            change & self.remove_candidate(cell, digit, effects)
         })
     }
 
@@ -448,11 +449,11 @@ impl Board {
     pub fn remove_candidate_from_cells(
         &mut self,
         cells: CellSet,
-        known: Known,
+        digit: Digit,
         effects: &mut Effects,
     ) -> Change {
         cells.iter().fold(Change::None, |change, cell| {
-            change & self.remove_candidate(cell, known, effects)
+            change & self.remove_candidate(cell, digit, effects)
         })
     }
 
@@ -463,13 +464,13 @@ impl Board {
     pub fn remove_candidates_from_cells(
         &mut self,
         cells: CellSet,
-        knowns: KnownSet,
+        digits: DigitSet,
         effects: &mut Effects,
     ) -> Change {
         cells.iter().fold(Change::None, |change, cell| {
             change
-                & knowns.iter().fold(Change::None, |change, known| {
-                    change & self.remove_candidate(cell, known, effects)
+                & digits.iter().fold(Change::None, |change, digit| {
+                    change & self.remove_candidate(cell, digit, effects)
                 })
         })
     }
@@ -477,13 +478,13 @@ impl Board {
     /// Returns a new board with the digits of this board
     /// set as givens for the specified cells.
     ///
-    /// If any specified cell is not known in this board,
+    /// If any specified cell is not solved in this board,
     /// it is left unknown in the returned board.
     pub fn with_givens(&self, pattern: CellSet) -> (Board, Effects) {
-        (pattern & self.knowns()).iter().fold(
+        (pattern & self.solved()).iter().fold(
             (Board::new(), Effects::new()),
             |(mut b, mut e), c| {
-                b.set_given(c, self.value(c).known().unwrap(), &mut e);
+                b.set_given(c, self.value(c).digit().unwrap(), &mut e);
                 (b, e)
             },
         )
@@ -492,10 +493,10 @@ impl Board {
     /// Returns a new board with the digits of this board
     /// except for the one in the given cell.
     pub fn without(&self, cell: Cell) -> (Board, Effects) {
-        self.known_iter().filter(|(c, _)| *c != cell).fold(
+        self.solved_iter().filter(|(c, _)| *c != cell).fold(
             (Board::new(), Effects::new()),
-            |(mut b, mut e), (c, k)| {
-                b.set_given(c, k, &mut e);
+            |(mut b, mut e), (c, d)| {
+                b.set_given(c, d, &mut e);
                 (b, e)
             },
         )
@@ -563,36 +564,36 @@ mod test {
     fn test_new() {
         let f = Board::new();
 
-        assert_eq!(f.unknown_count(), 81);
-        assert_eq!(f.unknowns(), all_cells![]);
-        assert_eq!(f.known_count(), 0);
-        assert_eq!(f.knowns(), cells![]);
-        assert_eq!(f.all_knowns(all_cells![]), knowns![]);
+        assert_eq!(f.unsolved_count(), 81);
+        assert_eq!(f.unsolved(), all_cells![]);
+        assert_eq!(f.solved_count(), 0);
+        assert_eq!(f.solved(), cells![]);
+        assert_eq!(f.solved_subset_digits(all_cells![]), digits![]);
 
         assert_eq!(f.given_count(), 0);
         assert_eq!(f.givens(), cells![]);
 
         assert_eq!(f.is_fully_solved(), false);
-        assert_eq!(f.solved_count(), 0);
-        assert_eq!(f.solved(), cells![]);
+        assert_eq!(f.placed_count(), 0);
+        assert_eq!(f.placed(), cells![]);
 
         for cell in Cell::iter() {
-            assert_eq!(f.is_unknown(cell), true);
-            assert_eq!(f.is_known(cell), false);
-            assert_eq!(f.is_given(cell), false);
+            assert_eq!(f.is_unsolved(cell), true);
             assert_eq!(f.is_solved(cell), false);
+            assert_eq!(f.is_given(cell), false);
+            assert_eq!(f.is_placed(cell), false);
             assert_eq!(f.value(cell), Value::unknown());
-            assert_eq!(f.candidates(cell), KnownSet::full());
+            assert_eq!(f.candidates(cell), DigitSet::full());
         }
 
-        for known in Known::iter() {
-            assert_eq!(f.candidate_cells(known), all_cells![]);
+        for digit in Digit::iter() {
+            assert_eq!(f.candidate_cells(digit), all_cells![]);
         }
 
         for house in House::iter() {
             assert_eq!(f.is_house_solved(house), false);
-            for known in Known::iter() {
-                assert_eq!(f.is_house_known(house, known), false);
+            for digit in Digit::iter() {
+                assert_eq!(f.house_has_digit(house, digit), false);
             }
         }
     }
@@ -611,26 +612,26 @@ mod test {
             J1 J2 J3 J7
         ];
 
-        assert_eq!(f.unknown_count(), 81 - solved.len());
-        assert_eq!(f.unknowns(), all_cells![] - solved);
-        assert_eq!(f.known_count(), solved.len());
-        assert_eq!(f.knowns(), solved);
-        assert_eq!(f.all_knowns(all_cells![]), KnownSet::full());
+        assert_eq!(f.unsolved_count(), 81 - solved.len());
+        assert_eq!(f.unsolved(), all_cells![] - solved);
+        assert_eq!(f.solved_count(), solved.len());
+        assert_eq!(f.solved(), solved);
+        assert_eq!(f.solved_subset_digits(all_cells![]), DigitSet::full());
 
         assert_eq!(f.given_count(), 0);
         assert_eq!(f.givens(), cells![]);
 
         assert_eq!(f.is_fully_solved(), false);
-        assert_eq!(f.solved_count(), solved.len());
-        assert_eq!(f.solved(), solved);
+        assert_eq!(f.placed_count(), solved.len());
+        assert_eq!(f.placed(), solved);
 
         for cell in solved {
-            assert_eq!(f.is_unknown(cell), false);
-            assert_eq!(f.is_known(cell), true);
-            assert_eq!(f.is_given(cell), false);
+            assert_eq!(f.is_unsolved(cell), false);
             assert_eq!(f.is_solved(cell), true);
-            assert_eq!(f.value(cell).is_known(), true);
-            assert_eq!(f.candidates(cell), knowns![]);
+            assert_eq!(f.is_given(cell), false);
+            assert_eq!(f.is_placed(cell), true);
+            assert_eq!(f.value(cell).is_digit(), true);
+            assert_eq!(f.candidates(cell), digits![]);
         }
     }
 
@@ -638,52 +639,60 @@ mod test {
     fn test_is_candidate() {
         let f = fixture();
 
-        assert_eq!(f.is_candidate(cell!(A1), known!(4)), true);
-        assert_eq!(f.is_candidate(cell!(A1), known!(8)), true);
-        assert_eq!(f.is_candidate(cell!(C3), known!(4)), true);
-        assert_eq!(f.is_candidate(cell!(C3), known!(5)), true);
-        assert_eq!(f.is_candidate(cell!(C3), known!(6)), true);
-        assert_eq!(f.is_candidate(cell!(C3), known!(8)), true);
-        assert_eq!(f.is_candidate(cell!(A1), known!(1)), false);
-        assert_eq!(f.is_candidate(cell!(A1), known!(2)), false);
-        assert_eq!(f.is_candidate(cell!(A1), known!(3)), false);
-        assert_eq!(f.is_candidate(cell!(A1), known!(5)), false);
-        assert_eq!(f.is_candidate(cell!(A1), known!(6)), false);
-        assert_eq!(f.is_candidate(cell!(A1), known!(7)), false);
-        assert_eq!(f.is_candidate(cell!(A1), known!(9)), false);
+        assert_eq!(f.is_candidate(cell!(A1), digit!(4)), true);
+        assert_eq!(f.is_candidate(cell!(A1), digit!(8)), true);
+        assert_eq!(f.is_candidate(cell!(C3), digit!(4)), true);
+        assert_eq!(f.is_candidate(cell!(C3), digit!(5)), true);
+        assert_eq!(f.is_candidate(cell!(C3), digit!(6)), true);
+        assert_eq!(f.is_candidate(cell!(C3), digit!(8)), true);
+        assert_eq!(f.is_candidate(cell!(A1), digit!(1)), false);
+        assert_eq!(f.is_candidate(cell!(A1), digit!(2)), false);
+        assert_eq!(f.is_candidate(cell!(A1), digit!(3)), false);
+        assert_eq!(f.is_candidate(cell!(A1), digit!(5)), false);
+        assert_eq!(f.is_candidate(cell!(A1), digit!(6)), false);
+        assert_eq!(f.is_candidate(cell!(A1), digit!(7)), false);
+        assert_eq!(f.is_candidate(cell!(A1), digit!(9)), false);
 
-        assert_eq!(f.is_candidate(cell!(H1), known!(5)), false);
-
-        assert_eq!(f.candidates(cell!(A1)), knowns![4 8]);
-        assert_eq!(f.candidates(cell!(C3)), knowns![4 5 6 8]);
-        assert_eq!(f.candidates(cell!(D1)), knowns![]);
+        assert_eq!(f.is_candidate(cell!(H1), digit!(5)), false);
     }
 
     #[test]
-    fn test_all_candidates() {
+    fn test_candidates() {
         let f = fixture();
 
-        assert_eq!(f.all_candidates(cells![]), knowns![]);
-        assert_eq!(f.all_candidates(all_cells![]), KnownSet::full());
-        assert_eq!(f.all_candidates(cells![A1 A2]), knowns![4 5 8 9]);
-        assert_eq!(f.all_candidates(cells![A1 A2 A3 A4]), knowns![1 4 5 8 9]);
+        assert_eq!(f.candidates(cell!(A1)), digits![4 8]);
+        assert_eq!(f.candidates(cell!(C3)), digits![4 5 6 8]);
+        assert_eq!(f.candidates(cell!(D1)), digits![]);
+    }
+
+    #[test]
+    fn test_combined_candidates() {
+        let f = fixture();
+
+        assert_eq!(f.combined_candidates(cells![]), digits![]);
+        assert_eq!(f.combined_candidates(all_cells![]), DigitSet::full());
+        assert_eq!(f.combined_candidates(cells![A1 A2]), digits![4 5 8 9]);
+        assert_eq!(
+            f.combined_candidates(cells![A1 A2 A3 A4]),
+            digits![1 4 5 8 9]
+        );
     }
 
     #[test]
     fn test_common_candidates() {
         let f = fixture();
 
-        assert_eq!(f.common_candidates(cells![]), knowns![]);
-        assert_eq!(f.common_candidates(all_cells![]), knowns![]);
-        assert_eq!(f.common_candidates(cells![A2 A4]), knowns![5 9]);
-        assert_eq!(f.common_candidates(cells![A1 A2 A3 A4]), knowns![]);
+        assert_eq!(f.common_candidates(cells![]), digits![]);
+        assert_eq!(f.common_candidates(all_cells![]), digits![]);
+        assert_eq!(f.common_candidates(cells![A2 A4]), digits![5 9]);
+        assert_eq!(f.common_candidates(cells![A1 A2 A3 A4]), digits![]);
     }
 
     #[test]
     fn test_cells_with_n_candidates() {
         let f = fixture();
 
-        assert_eq!(f.cells_with_n_candidates(0), f.knowns());
+        assert_eq!(f.cells_with_n_candidates(0), f.solved());
         assert_eq!(
             f.cells_with_n_candidates(0),
             cells![
@@ -749,28 +758,26 @@ mod test {
     }
 
     #[test]
-    fn test_cell_candidates_with_n_candidates() {
+    fn test_cells_with_n_candidates_iter() {
         let f = fixture();
 
         assert_eq!(
-            f.cell_candidates_with_n_candidates(5).collect_vec(),
+            f.cells_with_n_candidates_iter(5).collect_vec(),
             vec![
-                (cell!(B4), knowns![2 4 6 7 9]),
-                (cell!(C5), knowns![1 2 6 7 8]),
-                (cell!(C6), knowns![1 2 5 6 8]),
-                (cell!(E9), knowns![2 5 7 8 9]),
-                (cell!(F3), knowns![1 4 5 6 8]),
-                (cell!(J6), knowns![3 5 6 8 9]),
+                (cell!(B4), digits![2 4 6 7 9]),
+                (cell!(C5), digits![1 2 6 7 8]),
+                (cell!(C6), digits![1 2 5 6 8]),
+                (cell!(E9), digits![2 5 7 8 9]),
+                (cell!(F3), digits![1 4 5 6 8]),
+                (cell!(J6), digits![3 5 6 8 9]),
             ]
         );
         assert_eq!(
-            f.cell_candidates_with_n_candidates(6).collect_vec(),
-            vec![(cell!(C4), knowns![1 2 4 5 6 7])]
+            f.cells_with_n_candidates_iter(6).collect_vec(),
+            vec![(cell!(C4), digits![1 2 4 5 6 7])]
         );
         assert_eq!(
-            f.cell_candidates_with_n_candidates(7)
-                .collect_vec()
-                .is_empty(),
+            f.cells_with_n_candidates_iter(7).collect_vec().is_empty(),
             true
         );
     }
@@ -780,7 +787,7 @@ mod test {
         let f = fixture();
 
         assert_eq!(
-            f.candidate_cells(known!(1)),
+            f.candidate_cells(digit!(1)),
             cells![
                 A4 A5 A6
                 C4 C5 C6 C7
@@ -797,7 +804,7 @@ mod test {
         let f = fixture();
 
         assert_eq!(
-            f.house_candidate_cells(row!(C), known!(1)),
+            f.house_candidate_cells(row!(C), digit!(1)),
             cells![C4 C5 C6 C7]
         );
     }

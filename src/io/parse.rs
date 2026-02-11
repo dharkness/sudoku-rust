@@ -1,6 +1,6 @@
 use itertools::Itertools;
 
-use crate::layout::{Cell, Known, KnownSet};
+use crate::layout::{Cell, Digit, DigitSet};
 use crate::puzzle::{Board, ChangeResult, Changer, Effects, Options, Strategy};
 
 pub trait Parser {
@@ -12,7 +12,7 @@ pub trait Parser {
 
     /// Builds a new board using an input string to set some cells,
     /// and returns it along with any actions and errors that arise.
-    fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>);
+    fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Digit)>);
 }
 
 /// Provides helper methods for parsing puzzle strings into boards.
@@ -74,7 +74,7 @@ impl Parser for ParsePacked {
     /// - Use a digit (1 to 9) to set a cell's value.
     /// - Use whitespace, pipes, and underscores for readability.
     /// - Use any other character to leave a cell unsolved.
-    fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>) {
+    fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Digit)>) {
         let mut board = Board::new();
         let mut unapplied = Effects::new();
         let mut c = 0;
@@ -84,13 +84,13 @@ impl Parser for ParsePacked {
                 ' ' | '\r' | '\n' | '|' | '_' => continue,
                 '1'..='9' => {
                     let cell = Cell::new(c);
-                    let known = match char.to_string().parse::<Known>() {
-                        Ok(known) => known,
+                    let digit = match char.to_string().parse::<Digit>() {
+                        Ok(digit) => digit,
                         Err(_) => continue,
                     };
                     let current = board.value(cell);
-                    if current != known.value() {
-                        match self.changer.set_given(&board, Strategy::Given, cell, known) {
+                    if current != digit.value() {
+                        match self.changer.set_given(&board, Strategy::Given, cell, digit) {
                             ChangeResult::None => (),
                             ChangeResult::Valid(after, actions) => {
                                 board = *after;
@@ -99,7 +99,7 @@ impl Parser for ParsePacked {
                             ChangeResult::Invalid(before, _, _, mut errors) => {
                                 if self.changer.options.stop_on_error {
                                     errors.take_actions(unapplied);
-                                    return (*before, errors, Some((cell, known)));
+                                    return (*before, errors, Some((cell, digit)));
                                 }
                             }
                         }
@@ -137,18 +137,18 @@ impl ParseGrid {
 impl Parser for ParseGrid {
     /// Builds a new board using an input string to set some cells,
     /// and returns it along with any actions and errors that arise.
-    fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>) {
+    fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Digit)>) {
         let mut board = Board::new();
         let mut effects = Effects::new();
 
-        let mut candidates = [KnownSet::empty(); 81];
+        let mut candidates = [DigitSet::empty(); 81];
         let mut c: usize = 0;
         let mut collecting = false;
         for char in input.chars() {
             if ('1'..='9').contains(&char) {
                 collecting = true;
-                if let Ok(known) = char.to_string().parse::<Known>() {
-                    candidates[c] += known;
+                if let Ok(digit) = char.to_string().parse::<Digit>() {
+                    candidates[c] += digit;
                 }
             } else if collecting {
                 collecting = false;
@@ -159,21 +159,21 @@ impl Parser for ParseGrid {
             }
         }
 
-        for (c, knowns) in candidates.iter().enumerate() {
+        for (c, digits) in candidates.iter().enumerate() {
             let cell = Cell::new(c as u8);
 
-            if let Some(solved) = knowns.as_single() {
-                if board.set_known(cell, solved, &mut effects).changed() {
+            if let Some(solved) = digits.as_single() {
+                if board.set_digit(cell, solved, &mut effects).changed() {
                     if effects.has_errors() && self.stop_on_error {
                         return (board, effects, Some((cell, solved)));
                     }
                     effects.clear_actions();
                 }
             } else {
-                for known in knowns.inverted() {
-                    if board.remove_candidate(cell, known, &mut effects).changed() {
+                for digit in digits.inverted() {
+                    if board.remove_candidate(cell, digit, &mut effects).changed() {
                         if effects.has_errors() && self.stop_on_error {
-                            return (board, effects, Some((cell, known)));
+                            return (board, effects, Some((cell, digit)));
                         }
                         effects.clear_actions();
                     }
@@ -208,7 +208,7 @@ impl ParseWiki {
 impl Parser for ParseWiki {
     /// Builds a new board using an input string to set some cells,
     /// and returns it along with any actions and errors that arise.
-    fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Known)>) {
+    fn parse(&self, input: &str) -> (Board, Effects, Option<(Cell, Digit)>) {
         let mut board = Board::new();
         let mut effects = Effects::new();
 
@@ -223,13 +223,13 @@ impl Parser for ParseWiki {
 
             let cell = Cell::new(c as u8);
             let given = value % 2 == 1;
-            let knowns = KnownSet::new(value >> 1);
+            let digits = DigitSet::new(value >> 1);
 
-            if let Some(solved) = knowns.as_single() {
+            if let Some(solved) = digits.as_single() {
                 if given {
                     board.set_given(cell, solved, &mut effects)
                 } else {
-                    board.set_known(cell, solved, &mut effects)
+                    board.set_digit(cell, solved, &mut effects)
                 };
                 if effects.has_errors() && self.stop_on_error {
                     return (board, effects, Some((cell, solved)));
@@ -239,10 +239,10 @@ impl Parser for ParseWiki {
                 if given {
                     break;
                 }
-                for known in knowns.inverted() {
-                    board.remove_candidate(cell, known, &mut effects);
+                for digit in digits.inverted() {
+                    board.remove_candidate(cell, digit, &mut effects);
                     if effects.has_errors() && self.stop_on_error {
-                        return (board, effects, Some((cell, known)));
+                        return (board, effects, Some((cell, digit)));
                     }
                     effects.clear_actions();
                 }

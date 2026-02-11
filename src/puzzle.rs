@@ -8,7 +8,7 @@
 //!
 //! A [`Changer`] may be used to apply actions to a board as well as any follow-on actions
 //! configured to be applied automatically via its [`Options`]. At this time, the board
-//! automatically removes candidates from all neighbor cells when a cell becomes known.
+//! automatically removes candidates from all neighbor cells when a cell becomes solved.
 //! While this could be made optional, I doubt most players find erasing obvious pencil marks
 //! to be the highlight of their playing time.
 //!

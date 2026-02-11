@@ -4,7 +4,7 @@ use super::*;
 pub fn find_extended_unique_rectangles(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    let knowns = board.knowns();
+    let solved_cells = board.solved();
 
     for (main, cross, blocks) in [
         (Shape::Row, Shape::Column, [0, 1, 2]),
@@ -24,15 +24,15 @@ pub fn find_extended_unique_rectangles(board: &Board, single: bool) -> Option<Ef
                             let (left_cross, right_cross) = crosses.as_pair().unwrap();
                             let main_cells = top.cells() | middle.cells() | bottom.cells();
                             let left_cells = main_cells & left_cross.cells();
-                            if knowns.has_any(left_cells) {
+                            if solved_cells.has_any(left_cells) {
                                 continue;
                             }
                             let right_cells = main_cells & right_cross.cells();
-                            if knowns.has_any(right_cells) {
+                            if solved_cells.has_any(right_cells) {
                                 continue;
                             }
-                            let left_candidates = board.all_candidates(left_cells);
-                            let right_candidates = board.all_candidates(right_cells);
+                            let left_candidates = board.combined_candidates(left_cells);
+                            let right_candidates = board.combined_candidates(right_cells);
                             let common = left_candidates & right_candidates;
                             if common.len() < 3 {
                                 continue;
@@ -50,7 +50,7 @@ pub fn find_extended_unique_rectangles(board: &Board, single: bool) -> Option<Ef
                                     && cells
                                         .iter()
                                         .map(|c| (c, board.candidates(c) - subset))
-                                        .filter(|(_, ks)| !ks.is_empty())
+                                        .filter(|(_, ds)| !ds.is_empty())
                                         .count()
                                         == 1
                             }) {
@@ -59,9 +59,9 @@ pub fn find_extended_unique_rectangles(board: &Board, single: bool) -> Option<Ef
                                 (left_cells | right_cells).iter().for_each(|c| {
                                     let candidates = board.candidates(c);
                                     if !(candidates - common).is_empty() {
-                                        action.erase_knowns(c, candidates & common);
+                                        action.erase_digits(c, candidates & common);
                                     } else {
-                                        action.clue_cell_for_knowns(
+                                        action.clue_cell_for_digits(
                                             Verdict::Primary,
                                             c,
                                             candidates,
@@ -76,7 +76,7 @@ pub fn find_extended_unique_rectangles(board: &Board, single: bool) -> Option<Ef
                                 // type 4
                                 for out in mains {
                                     let in_cells = (mains - out).cells() & crosses.cells();
-                                    let in_all = board.all_candidates(in_cells);
+                                    let in_all = board.combined_candidates(in_cells);
                                     if in_all.len() != 3 {
                                         continue;
                                     }
@@ -85,12 +85,12 @@ pub fn find_extended_unique_rectangles(board: &Board, single: bool) -> Option<Ef
                                         let out_cells = out.cells() & crosses.cells();
                                         let origin = out_cells.first().unwrap();
                                         if let Some(keep) =
-                                            board.all_candidates(in_cells).iter().find(|k| {
+                                            board.combined_candidates(in_cells).iter().find(|d| {
                                                 [origin.row(), origin.column(), origin.block()]
                                                     .into_iter()
                                                     .any(|h| {
                                                         out_cells
-                                                            == board.house_candidate_cells(h, *k)
+                                                            == board.house_candidate_cells(h, *d)
                                                     })
                                             })
                                         {
@@ -99,14 +99,14 @@ pub fn find_extended_unique_rectangles(board: &Board, single: bool) -> Option<Ef
                                                 let mut action =
                                                     Action::new(Strategy::ExtendedUniqueRectangle);
                                                 in_cells.iter().for_each(|c| {
-                                                    action.clue_cell_for_knowns(
+                                                    action.clue_cell_for_digits(
                                                         Verdict::Primary,
                                                         c,
                                                         board.candidates(c),
                                                     );
                                                 });
                                                 out_cells.iter().for_each(|c| {
-                                                    action.clue_cell_for_known(
+                                                    action.clue_cell_for_digit(
                                                         Verdict::Secondary,
                                                         c,
                                                         keep,
@@ -156,10 +156,10 @@ mod tests {
 
         if let Some(got) = find_extended_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::ExtendedUniqueRectangle);
-            action.erase_knowns(cell!(C1), knowns![1 5]);
-            action.clue_cells_for_known(Verdict::Primary, cells![C3 E1 E3 G1 G3], known!(1));
-            action.clue_cells_for_known(Verdict::Primary, cells![E1 E3 G1 G3], known!(3));
-            action.clue_cells_for_known(Verdict::Primary, cells![C3 E1 G1 G3], known!(5));
+            action.erase_digits(cell!(C1), digits![1 5]);
+            action.clue_cells_for_digit(Verdict::Primary, cells![C3 E1 E3 G1 G3], digit!(1));
+            action.clue_cells_for_digit(Verdict::Primary, cells![E1 E3 G1 G3], digit!(3));
+            action.clue_cells_for_digit(Verdict::Primary, cells![C3 E1 G1 G3], digit!(5));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
@@ -178,10 +178,10 @@ mod tests {
 
         if let Some(got) = find_extended_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::ExtendedUniqueRectangle);
-            action.erase_knowns(cell!(D2), knowns![3 8]);
-            action.clue_cells_for_known(Verdict::Primary, cells![D6 D7 E2 E6 E7], known!(3));
-            action.clue_cells_for_known(Verdict::Primary, cells![D6 D7 E6 E7], known!(7));
-            action.clue_cells_for_known(Verdict::Primary, cells![D7 E2 E7], known!(8));
+            action.erase_digits(cell!(D2), digits![3 8]);
+            action.clue_cells_for_digit(Verdict::Primary, cells![D6 D7 E2 E6 E7], digit!(3));
+            action.clue_cells_for_digit(Verdict::Primary, cells![D6 D7 E6 E7], digit!(7));
+            action.clue_cells_for_digit(Verdict::Primary, cells![D7 E2 E7], digit!(8));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
@@ -200,12 +200,12 @@ mod tests {
 
         if let Some(got) = find_extended_unique_rectangles(&board, true) {
             let mut action = Action::new(Strategy::ExtendedUniqueRectangle);
-            action.erase_cells(cells![D7 F7], known!(3));
-            action.clue_cells_for_known(Verdict::Primary, cells![D5 F5], known!(1));
-            action.clue_cells_for_known(Verdict::Secondary, cells![D7 F7], known!(1));
-            action.clue_cells_for_known(Verdict::Primary, cells![D3 F3], known!(3));
-            action.clue_cells_for_known(Verdict::Primary, cells![D3 D5], known!(4));
-            action.clue_cells_for_known(Verdict::Primary, cells![F3 F5], known!(4));
+            action.erase_cells(cells![D7 F7], digit!(3));
+            action.clue_cells_for_digit(Verdict::Primary, cells![D5 F5], digit!(1));
+            action.clue_cells_for_digit(Verdict::Secondary, cells![D7 F7], digit!(1));
+            action.clue_cells_for_digit(Verdict::Primary, cells![D3 F3], digit!(3));
+            action.clue_cells_for_digit(Verdict::Primary, cells![D3 D5], digit!(4));
+            action.clue_cells_for_digit(Verdict::Primary, cells![F3 F5], digit!(4));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

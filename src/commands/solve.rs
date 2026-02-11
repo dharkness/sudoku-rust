@@ -7,9 +7,9 @@ use itertools::Itertools;
 
 use crate::io::{
     format_for_wiki, format_number, format_runtime, print_all_and_single_candidates,
-    print_known_values, Cancelable, Parse, ParsePacked, Parser, SUDOKUWIKI_URL,
+    print_solved_values, Cancelable, Parse, ParsePacked, Parser, SUDOKUWIKI_URL,
 };
-use crate::layout::{Cell, Known};
+use crate::layout::{Cell, Digit};
 use crate::puzzle::{Action, Board, Changer, Difficulty, Effects, Options, Strategy};
 use crate::solve::{Reporter, Resolution, Solver, Timings};
 
@@ -103,9 +103,9 @@ impl ParserSolver<'_> {
         let runtime = Instant::now();
         let (start, effects, failure) = self.parser.parse(givens);
 
-        if let Some((cell, known)) = failure {
+        if let Some((cell, digit)) = failure {
             self.reporter
-                .invalid(givens, &start, &effects, cell, known, runtime.elapsed());
+                .invalid(givens, &start, &effects, cell, digit, runtime.elapsed());
             return false;
         }
 
@@ -168,12 +168,12 @@ impl Reporter for DetailedReporter {
         partial: &Board,
         errors: &Effects,
         cell: Cell,
-        known: Known,
+        digit: Digit,
         runtime: Duration,
     ) {
         println!("invalid in {} µs\n", format_runtime(runtime));
         print_all_and_single_candidates(partial);
-        println!("\nsetting {} to {} will cause errors\n", cell, known);
+        println!("\nsetting {} to {} will cause errors\n", cell, digit);
         errors.print_errors();
     }
 
@@ -234,7 +234,7 @@ impl Reporter for DetailedReporter {
             format_runtime(runtime),
             solution.packed_string()
         );
-        print_known_values(solution);
+        print_solved_values(solution);
         println!();
         self.print_counts(counts);
         println!();
@@ -295,10 +295,10 @@ impl Reporter for CSVReporter {
         _partial: &Board,
         _errors: &Effects,
         cell: Cell,
-        known: Known,
+        digit: Digit,
         _runtime: Duration,
     ) {
-        eprintln!("invalid: cannot set {} to {} for {}", cell, known, givens);
+        eprintln!("invalid: cannot set {} to {} for {}", cell, digit, givens);
     }
 
     fn failed(

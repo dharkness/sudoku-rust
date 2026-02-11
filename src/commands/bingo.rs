@@ -4,7 +4,7 @@ use std::time::Instant;
 use clap::Args;
 
 use crate::io::{
-    format_for_wiki, format_runtime, print_all_and_single_candidates, print_known_values, Parse,
+    format_for_wiki, format_runtime, print_all_and_single_candidates, print_solved_values, Parse,
     Parser, SUDOKUWIKI_URL,
 };
 use crate::puzzle::{ChangeResult, Changer, Options};
@@ -39,9 +39,9 @@ pub fn bingo(args: BingoArgs) {
         println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&board));
     }
 
-    if let Some((cell, known)) = failure {
+    if let Some((cell, digit)) = failure {
         println!("\ninvalid puzzle");
-        println!("\nsetting {} to {} will cause errors\n", cell, known);
+        println!("\nsetting {} to {} will cause errors\n", cell, digit);
         effects.print_errors();
         return;
     }
@@ -56,7 +56,7 @@ pub fn bingo(args: BingoArgs) {
     let (label, empty_cells, solution, solutions) =
         match find_brute_force(&board, args.log, args.pause, args.max) {
             BruteForceResult::AlreadySolved => ("already solved in".to_string(), None, None, None),
-            BruteForceResult::TooFewKnowns => {
+            BruteForceResult::TooFewDigits => {
                 ("not enough givens in".to_string(), None, None, None)
             }
             BruteForceResult::UnsolvableCells(cells) => {
@@ -88,14 +88,14 @@ pub fn bingo(args: BingoArgs) {
     } else if let Some(solutions) = solutions {
         for (i, solution) in solutions.iter().take(10).enumerate() {
             println!("\nsolution {}\n", i + 1);
-            print_known_values(solution);
+            print_solved_values(solution);
             println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(solution));
         }
     }
 
     if board.is_fully_solved() {
         println!();
-        print_known_values(&board);
+        print_solved_values(&board);
         println!("\n=> {}{}", SUDOKUWIKI_URL, format_for_wiki(&board));
     }
 }

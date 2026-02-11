@@ -6,15 +6,15 @@ pub fn find_singles_chains(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
     let ignore = board.cells_with_n_candidates(1);
 
-    for (known, possibles) in Known::iter()
-        .map(|known| (known, board.candidate_cells(known) - ignore))
+    for (digit, possibles) in Digit::iter()
+        .map(|digit| (digit, board.candidate_cells(digit) - ignore))
         .filter(|(_, candidates)| !candidates.is_empty())
     {
         let mut nodes = CellSet::empty();
         let mut edges: HashMap<Cell, CellSet> = HashMap::new();
 
         for cells in House::iter()
-            .map(|house| board.house_candidate_cells(house, known))
+            .map(|house| board.house_candidate_cells(house, digit))
             .filter(|cells| cells.len() == 2)
         {
             // println!("house {}, cells {}", house, cells);
@@ -95,7 +95,7 @@ pub fn find_singles_chains(board: &Board, single: bool) -> Option<Effects> {
 
         for (_, cells) in grouped {
             let mut action = Action::new(Strategy::SinglesChain);
-            action.erase_cells(cells, known);
+            action.erase_cells(cells, digit);
 
             if effects.add_action(action) && single {
                 return Some(effects);

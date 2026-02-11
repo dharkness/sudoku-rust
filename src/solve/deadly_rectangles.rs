@@ -1,4 +1,4 @@
-use crate::layout::{Cell, Known, Rectangle};
+use crate::layout::{Cell, Digit, Rectangle};
 use crate::puzzle::Board;
 
 /// Finds all existing deadly rectangles in the board.
@@ -24,7 +24,7 @@ use crate::puzzle::Board;
 /// J ·········
 /// ```
 pub fn find_deadly_rectangles(board: &Board) -> Option<Vec<Rectangle>> {
-    let solved = board.solved();
+    let solved = board.placed();
     let found: Vec<Rectangle> = Rectangle::iter()
         .filter(|r| solved.has_all(r.cells))
         .filter(|r| board.value(r.top_left) == board.value(r.bottom_right))
@@ -42,14 +42,14 @@ pub fn find_deadly_rectangles(board: &Board) -> Option<Vec<Rectangle>> {
 pub fn creates_deadly_rectangles(
     board: &Board,
     cell: Cell,
-    known: Known,
+    digit: Digit,
 ) -> Option<Vec<Rectangle>> {
-    if !board.is_candidate(cell, known) || board.is_known(cell) {
+    if !board.is_candidate(cell, digit) || board.is_solved(cell) {
         return None;
     }
 
-    let value = known.value();
-    let solved = board.solved();
+    let value = digit.value();
+    let solved = board.placed();
     let found: Vec<Rectangle> = Rectangle::iter()
         .filter(|r| r.cells.has(cell))
         .filter(|r| (r.cells - solved).len() == 1)
@@ -93,14 +93,14 @@ mod tests {
             let mut board = Board::new();
             let mut effects = Effects::new();
 
-            board.set_known(tl, known!(1), &mut effects);
+            board.set_digit(tl, digit!(1), &mut effects);
             if givens {
-                board.set_given(tr, known!(2), &mut effects);
+                board.set_given(tr, digit!(2), &mut effects);
             } else {
-                board.set_known(tr, known!(2), &mut effects);
+                board.set_digit(tr, digit!(2), &mut effects);
             }
-            board.set_known(br, known!(1), &mut effects);
-            board.set_known(bl, known!(2), &mut effects);
+            board.set_digit(br, digit!(1), &mut effects);
+            board.set_digit(bl, digit!(2), &mut effects);
 
             let found = find_deadly_rectangles(&board);
             if givens {
@@ -128,7 +128,7 @@ mod tests {
 
     fn test_creates(givens: bool) {
         fn test(givens: bool, rectangle: Rectangle) {
-            let knowns: [Known; 4] = [known!(1), known!(2), known!(1), known!(2)];
+            let digits: [Digit; 4] = [digit!(1), digit!(2), digit!(1), digit!(2)];
             let cells = [
                 rectangle.top_left,
                 rectangle.top_right,
@@ -145,15 +145,15 @@ mod tests {
                 for j in 0..4 {
                     if i != j {
                         if first {
-                            board.set_given(cells[j], knowns[j], &mut effects);
+                            board.set_given(cells[j], digits[j], &mut effects);
                             first = false;
                         } else {
-                            board.set_known(cells[j], knowns[j], &mut effects);
+                            board.set_digit(cells[j], digits[j], &mut effects);
                         }
                     }
                 }
 
-                let found = creates_deadly_rectangles(&board, cells[i], knowns[i]);
+                let found = creates_deadly_rectangles(&board, cells[i], digits[i]);
                 if givens {
                     assert!(found.is_none());
                 } else {

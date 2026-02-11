@@ -5,7 +5,7 @@ Guidance for agentic coding assistants working in this repo.
 ## Repository Summary
 - CLI Sudoku generator/solver/player written in Rust (edition 2021).
 - Core modules: `layout/`, `puzzle/`, `solve/`, `io/`, `commands/`, `build/`.
-- Heavy use of bitset-style types (`CellSet`, `KnownSet`, `Bit`).
+- Heavy use of bitset-style types (`CellSet`, `DigitSet`, `Bit`).
 
 ## Build, Test, Lint
 - Build (release): `bin/build.sh`
@@ -29,26 +29,26 @@ Guidance for agentic coding assistants working in this repo.
 ## Imports and Module Layout
 - Import order: standard library, external crates, then `crate::` or `super::`.
 - Separate import groups with a blank line.
-- Use explicit imports for frequently used types (e.g., `Cell`, `Known`).
+- Use explicit imports for frequently used types (e.g., `Cell`, `Digit`).
 - Use `super::*` inside solver algorithm submodules when consistent with neighbors.
 - Re-export public APIs in module root files (see `src/puzzle.rs`, `src/io.rs`).
 - Prefer `pub use` in top-level module files rather than deep re-exports.
 
 ## Naming and Conventions
-- Types/traits/enums use `CamelCase` (`Board`, `KnownSet`, `Strategy`).
+- Types/traits/enums use `CamelCase` (`Board`, `DigitSet`, `Strategy`).
 - Functions, methods, and modules use `snake_case`.
 - Constants use `SCREAMING_SNAKE_CASE`.
 - Prefer descriptive names; avoid one-letter names unless in tiny iterators.
-- Use domain types (`Cell`, `Known`, `House`) over raw integers.
+- Use domain types (`Cell`, `Digit`, `House`) over raw integers.
 - Convert domain types with helpers like `.usize()` when indexing arrays.
 - Keep functions small and focused; solver functions usually return `Option<Effects>`.
 - Avoid public fields unless required by other modules.
 
 ## Types and Data Structures
 - Use bitset operations for speed: `|` (union), `&` (intersection), `-` (difference).
-- Favor `CellSet`/`KnownSet` operations over manual loops.
+- Favor `CellSet`/`DigitSet` operations over manual loops.
 - Prefer `const fn` where values are compile-time friendly.
-- Use `Value::unknown()` and `KnownSet::full()` for initialization.
+- Use `Value::unknown()` and `DigitSet::full()` for initialization.
 - Avoid heap allocations in hot solver paths.
 - Prefer iterators that borrow from the board rather than collecting.
 

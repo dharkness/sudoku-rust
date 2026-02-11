@@ -2,7 +2,7 @@ use rand::rngs::ThreadRng;
 use rand::seq::SliceRandom;
 
 use crate::io::{show_progress, Cancelable};
-use crate::layout::{Cell, Known, KnownSet};
+use crate::layout::{Cell, Digit, DigitSet};
 use crate::puzzle::{Board, ChangeResult, Changer, Strategy};
 use crate::solve::find_intersection_removals;
 
@@ -32,7 +32,7 @@ impl Generator {
         stack.push(Entry {
             board: Board::new(),
             cell: cells[0],
-            candidates: self.shuffle_candidates(KnownSet::full()),
+            candidates: self.shuffle_candidates(DigitSet::full()),
         });
 
         while let Some(Entry {
@@ -51,10 +51,10 @@ impl Generator {
                 continue;
             }
 
-            let known = candidates.pop().unwrap();
-            let mut clone = match changer.set_known(&board, Strategy::BruteForce, cell, known) {
+            let digit = candidates.pop().unwrap();
+            let mut clone = match changer.set_digit(&board, Strategy::BruteForce, cell, digit) {
                 ChangeResult::None => {
-                    // failed to set known which we know is a candidate
+                    // failed to set digit which we know is a candidate
                     return Some(board);
                 }
                 ChangeResult::Valid(after, _) => *after,
@@ -80,7 +80,7 @@ impl Generator {
                 }
 
                 let next = cells[stack.len()];
-                if !clone.is_known(next) {
+                if !clone.is_solved(next) {
                     stack.push(Entry {
                         board: clone,
                         cell: next,
@@ -112,8 +112,8 @@ impl Generator {
         cells
     }
 
-    fn shuffle_candidates(&mut self, candidates: KnownSet) -> Vec<Known> {
-        let mut shuffled = candidates.iter().collect::<Vec<Known>>();
+    fn shuffle_candidates(&mut self, candidates: DigitSet) -> Vec<Digit> {
+        let mut shuffled = candidates.iter().collect::<Vec<Digit>>();
         shuffled.shuffle(&mut self.rng);
         shuffled
     }
@@ -122,5 +122,5 @@ impl Generator {
 struct Entry {
     board: Board,
     cell: Cell,
-    candidates: Vec<Known>,
+    candidates: Vec<Digit>,
 }

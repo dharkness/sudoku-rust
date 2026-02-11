@@ -195,9 +195,9 @@ fn parse_puzzle_or_exit(solution: String) -> Board {
     let parser = Parse::packed_with_player(changer);
     let (board, effects, failure) = parser.parse(&solution);
 
-    if let Some((cell, known)) = failure {
+    if let Some((cell, digit)) = failure {
         print_all_and_single_candidates(&board);
-        eprintln!("\n==> Setting {} to {} will cause errors\n", cell, known);
+        eprintln!("\n==> Setting {} to {} will cause errors\n", cell, digit);
         effects.print_errors();
         exit(1);
     }

@@ -6,21 +6,21 @@ pub fn find_avoidable_rectangles(board: &Board, single: bool) -> Option<Effects>
     let mut effects = Effects::new();
 
     let givens = board.givens();
-    let solved = board.solved();
+    let solved = board.placed();
 
     // type 1
-    for (r, c, k) in Rectangle::iter()
+    for (r, c, d) in Rectangle::iter()
         .filter(|r| !r.cells.has_any(givens))
         .map(|r| (r, r.cells - solved))
         .filter_map(|(r, cs)| cs.as_single().map(|c| (r.with_origin(c), c)))
         .filter(|(r, _)| board.value(r.top_right) == board.value(r.bottom_left))
-        .filter_map(|(r, c)| board.value(r.bottom_right).known().map(|k| (r, c, k)))
-        .filter(|(_, c, k)| board.candidates(*c).has(*k))
+        .filter_map(|(r, c)| board.value(r.bottom_right).digit().map(|d| (r, c, d)))
+        .filter(|(_, c, d)| board.candidates(*c).has(*d))
     {
-        let mut action = Action::new_erase(Strategy::AvoidableRectangle, c, k);
+        let mut action = Action::new_erase(Strategy::AvoidableRectangle, c, d);
         board
-            .knowns_iter(r.cells & solved)
-            .for_each(|(cell, known)| action.clue_cell_for_known(Verdict::Primary, cell, known));
+            .solved_subset_iter(r.cells & solved)
+            .for_each(|(cell, digit)| action.clue_cell_for_digit(Verdict::Primary, cell, digit));
 
         if effects.add_action(action) && single {
             return Some(effects);
@@ -32,7 +32,7 @@ pub fn find_avoidable_rectangles(board: &Board, single: bool) -> Option<Effects>
             continue;
         }
 
-        let unsolved = rect.cells - board.knowns();
+        let unsolved = rect.cells - board.solved();
         if let Some((c1, c2)) = unsolved.as_pair() {
             let houses = c1.common_houses(c2);
             if houses.is_empty() {
@@ -41,32 +41,32 @@ pub fn find_avoidable_rectangles(board: &Board, single: bool) -> Option<Effects>
 
             let mut action = Action::new(Strategy::AvoidableRectangle);
             if let Some((c3, c4)) = (rect.cells - unsolved).as_pair() {
-                let ks1 = board.candidates(c1);
-                let ks2 = board.candidates(c2);
-                let k3 = board.value(c3).known().unwrap();
-                let k4 = board.value(c4).known().unwrap();
-                if !(ks1.has(k4) && ks2.has(k3)) {
+                let ds1 = board.candidates(c1);
+                let ds2 = board.candidates(c2);
+                let d3 = board.value(c3).digit().unwrap();
+                let d4 = board.value(c4).digit().unwrap();
+                if !(ds1.has(d4) && ds2.has(d3)) {
                     continue;
                 }
-                action.clue_cell_for_known(Verdict::Primary, c3, k3);
-                action.clue_cell_for_known(Verdict::Primary, c4, k4);
+                action.clue_cell_for_digit(Verdict::Primary, c3, d3);
+                action.clue_cell_for_digit(Verdict::Primary, c4, d4);
             } else {
                 continue;
             }
 
             let mut pseudo = board.pseudo_cell(unsolved);
-            let solved = board.all_knowns(rect.cells - unsolved);
-            pseudo.knowns -= solved;
+            let solved = board.solved_subset_digits(rect.cells - unsolved);
+            pseudo.digits -= solved;
 
             unsolved.iter().for_each(|c| {
                 let cs = board.candidates(c);
-                action.clue_cell_for_knowns(Verdict::Primary, c, cs & solved);
-                action.clue_cell_for_knowns(Verdict::Secondary, c, cs - solved);
+                action.clue_cell_for_digits(Verdict::Primary, c, cs & solved);
+                action.clue_cell_for_digits(Verdict::Secondary, c, cs - solved);
             });
-            if let Some(k) = pseudo.knowns.as_single() {
+            if let Some(d) = pseudo.digits.as_single() {
                 // type 2 - naked single
                 for house in houses {
-                    action.erase_cells(board.house_candidate_cells(house, k) - unsolved, k);
+                    action.erase_cells(board.house_candidate_cells(house, d) - unsolved, d);
                 }
 
                 if effects.add_action(action) && single {
@@ -80,35 +80,35 @@ pub fn find_avoidable_rectangles(board: &Board, single: bool) -> Option<Effects>
                         peers
                             .iter()
                             .map(|cell| (cell, board.candidates(cell)))
-                            .filter(|(_, knowns)| !knowns.has_any(solved))
-                            .filter(|(_, knowns)| (2..=size).contains(&knowns.len()))
+                            .filter(|(_, digits)| !digits.has_any(solved))
+                            .filter(|(_, digits)| (2..=size).contains(&digits.len()))
                             .combinations(size - 1)
-                            .for_each(|peer_knowns| {
-                                let known_sets: Vec<KnownSet> = peer_knowns
+                            .for_each(|peer_digits| {
+                                let digit_sets: Vec<DigitSet> = peer_digits
                                     .iter()
-                                    .map(|(_, ks)| *ks)
-                                    .chain([pseudo.knowns])
+                                    .map(|(_, ds)| *ds)
+                                    .chain([pseudo.digits])
                                     .collect();
-                                let knowns = known_sets.iter().copied().union_knowns();
-                                if knowns.len() != size
-                                    || naked_tuples::is_degenerate(&known_sets, size, 2)
-                                    || naked_tuples::is_degenerate(&known_sets, size, 3)
+                                let digits = digit_sets.iter().copied().union_digits();
+                                if digits.len() != size
+                                    || naked_tuples::is_degenerate(&digit_sets, size, 2)
+                                    || naked_tuples::is_degenerate(&digit_sets, size, 3)
                                 {
                                     return;
                                 }
 
-                                let tuple_cells = peer_knowns.iter().map(|(c, _)| *c).union_cells();
+                                let tuple_cells = peer_digits.iter().map(|(c, _)| *c).union_cells();
                                 let erase_cells = peers - tuple_cells;
 
                                 tuple_cells.iter().for_each(|c| {
-                                    action.clue_cell_for_knowns(
+                                    action.clue_cell_for_digits(
                                         Verdict::Secondary,
                                         c,
-                                        knowns & board.candidates(c),
+                                        digits & board.candidates(c),
                                     );
                                 });
-                                knowns.iter().for_each(|k| {
-                                    action.erase_cells(erase_cells & board.candidate_cells(k), k)
+                                digits.iter().for_each(|d| {
+                                    action.erase_cells(erase_cells & board.candidate_cells(d), d)
                                 });
                             });
                     }
@@ -120,7 +120,7 @@ pub fn find_avoidable_rectangles(board: &Board, single: bool) -> Option<Effects>
 
                 // degenerates should create actions
                 // normally, when looking for a naked triple, finding two cells
-                // that collectively can only be two of the knowns
+                // that collectively can only be two of the digits
                 // would be found by looking for naked pairs,
                 // but since a pseudo cell is involved, it wouldn't be found.
                 // thus, this should report them, maybe combining it with the triple
@@ -154,9 +154,9 @@ mod tests {
 
         if let Some(got) = find_avoidable_rectangles(&board, true) {
             let mut action = Action::new(Strategy::AvoidableRectangle);
-            action.erase(cell!(B9), known!(9));
-            action.clue_cells_for_known(Verdict::Primary, cells![A1], known!(9));
-            action.clue_cells_for_known(Verdict::Primary, cells![A9 B1], known!(7));
+            action.erase(cell!(B9), digit!(9));
+            action.clue_cells_for_digit(Verdict::Primary, cells![A1], digit!(9));
+            action.clue_cells_for_digit(Verdict::Primary, cells![A9 B1], digit!(7));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
@@ -175,10 +175,10 @@ mod tests {
 
         if let Some(got) = find_avoidable_rectangles(&board, true) {
             let mut action = Action::new(Strategy::AvoidableRectangle);
-            action.erase(cell!(E9), known!(2));
-            action.clue_cells_for_known(Verdict::Primary, cells![F9 H7], known!(1));
-            action.clue_cells_for_known(Verdict::Primary, cells![F7 H9], known!(3));
-            action.clue_cells_for_known(Verdict::Secondary, cells![F9 H9], known!(2));
+            action.erase(cell!(E9), digit!(2));
+            action.clue_cells_for_digit(Verdict::Primary, cells![F9 H7], digit!(1));
+            action.clue_cells_for_digit(Verdict::Primary, cells![F7 H9], digit!(3));
+            action.clue_cells_for_digit(Verdict::Secondary, cells![F9 H9], digit!(2));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {
@@ -197,25 +197,25 @@ mod tests {
 
         if let Some(got) = find_avoidable_rectangles(&board, true) {
             let mut action = Action::new(Strategy::AvoidableRectangle);
-            action.erase_knowns(cell!(H1), knowns![4 5]);
-            action.clue_cells_for_knowns(
+            action.erase_digits(cell!(H1), digits![4 5]);
+            action.clue_cells_for_digits(
                 Verdict::Secondary,
                 CellSet::from(cell!(A1)),
-                knowns![5 9],
+                digits![5 9],
             );
-            action.clue_cells_for_known(Verdict::Secondary, cells![C1], known!(5));
-            action.clue_cells_for_knowns(
+            action.clue_cells_for_digit(Verdict::Secondary, cells![C1], digit!(5));
+            action.clue_cells_for_digits(
                 Verdict::Secondary,
                 CellSet::from(cell!(D1)),
-                knowns![4 9],
+                digits![4 9],
             );
-            action.clue_cells_for_knowns(
+            action.clue_cells_for_digits(
                 Verdict::Secondary,
                 CellSet::from(cell!(G1)),
-                knowns![4 5],
+                digits![4 5],
             );
-            action.clue_cells_for_known(Verdict::Primary, cells![A1 C5], known!(7));
-            action.clue_cells_for_known(Verdict::Primary, cells![A5 C1], known!(6));
+            action.clue_cells_for_digit(Verdict::Primary, cells![A1 C5], digit!(7));
+            action.clue_cells_for_digit(Verdict::Primary, cells![A5 C1], digit!(6));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

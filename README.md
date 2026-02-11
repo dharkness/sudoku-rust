@@ -84,7 +84,7 @@ and display a menu of available commands.
   N                   - start or input a new puzzle
   C                   - create a new random puzzle
 
-  P [G | K | digit]   - print the full puzzle, givens, knowns, or a single candidate
+  P [G | K | digit]   - print the full puzzle, givens, solved cells, or a single candidate
   X [char]            - export the puzzle with optional character for unsolved cells
   W                   - print URL to play on SudokuWiki.org
   M                   - print the puzzle as a grid suitable for email

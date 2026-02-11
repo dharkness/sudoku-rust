@@ -1,12 +1,12 @@
 //! Defines the individual pieces that combine to produce a Sudoku
 //! [`Board`][`crate::puzzle::Board`], holding 81 cells in a 9x9 grid.
 //!
-//! Each [`Cell`] holds a single [`Value`] which will be [`Known`] if given as a clue
+//! Each [`Cell`] holds a single [`Value`] which will be [`Digit`] if given as a clue
 //! or later solved to a digit (1 through 9). Until then, it will be considered unknown.
 //!
-//! The board uses [`CellSet`]s to track the cells that are given, known,
-//! have each known value as a candidate, have N candidates remaining,
-//! or have been given or solved to each known.
+//! The board uses [`CellSet`]s to track the cells that are given, solved,
+//! have each digit value as a candidate, have N candidates remaining,
+//! or have been given or solved to each digit.
 //! This is an 81-bit bitset, with each bit representing a cell on the board.
 //! It uses a 128-bit integer to hold the bits for maximum efficiency and provides
 //! basic set-manipulation operations required for the board and strategies.
@@ -14,8 +14,8 @@
 //! The [`Rectangle`] holds four cells and is used for detecting deadly rectangles and
 //! avoidable rectangles and by the Unique Rectangle strategy.
 //!
-//! The board uses [`KnownSet`]s to track the remaining candidates for each unknown cell.
-//! This is a 9-bit bitset, with each bit representing a known value.
+//! The board uses [`DigitSet`]s to track the remaining candidates for each unknown cell.
+//! This is a 9-bit bitset, with each bit representing a digit value.
 //! It has nearly the identical interface and features as [`CellSet`].
 //!
 //! Cells are grouped into [`House`]s containing 9 cells and defined by its [`Shape`],
@@ -38,7 +38,7 @@ pub use cells::{Cell, CellIteratorUnion, CellSet, CellSetIteratorUnion, Rectangl
 pub use houses::{
     Coord, CoordSet, House, HouseIteratorUnion, HouseSet, HouseSetIteratorUnion, Shape,
 };
-pub use values::{Known, KnownIteratorUnion, KnownSet, KnownSetIteratorUnion, Value};
+pub use values::{Digit, DigitIteratorUnion, DigitSet, DigitSetIteratorUnion, Value};
 
 pub mod cells;
 pub mod houses;

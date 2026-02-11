@@ -1,7 +1,7 @@
 use core::fmt;
 use std::collections::HashMap;
 
-use crate::layout::{Cell, CellSet, Known, KnownSet};
+use crate::layout::{Cell, CellSet, Digit, DigitSet};
 
 use super::{Action, Board, Change, Error, Strategy};
 
@@ -89,35 +89,35 @@ impl Effects {
         }
     }
 
-    pub fn add_set(&mut self, strategy: Strategy, cell: Cell, known: Known) {
-        self.add_action(Action::new_set(strategy, cell, known));
+    pub fn add_set(&mut self, strategy: Strategy, cell: Cell, digit: Digit) {
+        self.add_action(Action::new_set(strategy, cell, digit));
     }
 
-    pub fn add_erase(&mut self, strategy: Strategy, cell: Cell, known: Known) {
-        self.add_action(Action::new_erase(strategy, cell, known));
+    pub fn add_erase(&mut self, strategy: Strategy, cell: Cell, digit: Digit) {
+        self.add_action(Action::new_erase(strategy, cell, digit));
     }
 
-    pub fn add_erase_cells(&mut self, strategy: Strategy, cells: CellSet, known: Known) {
-        self.add_action(Action::new_erase_cells(strategy, cells, known));
+    pub fn add_erase_cells(&mut self, strategy: Strategy, cells: CellSet, digit: Digit) {
+        self.add_action(Action::new_erase_cells(strategy, cells, digit));
     }
 
-    pub fn add_erase_knowns(&mut self, strategy: Strategy, cell: Cell, knowns: KnownSet) {
-        self.add_action(Action::new_erase_knowns(strategy, cell, knowns));
+    pub fn add_erase_digits(&mut self, strategy: Strategy, cell: Cell, digits: DigitSet) {
+        self.add_action(Action::new_erase_digits(strategy, cell, digits));
     }
 
-    pub fn erases(&self, cell: Cell, known: Known) -> bool {
-        self.actions.iter().any(|action| action.erases(cell, known))
+    pub fn erases(&self, cell: Cell, digit: Digit) -> bool {
+        self.actions.iter().any(|action| action.erases(cell, digit))
     }
 
-    pub fn erases_from_cells(&self, known: Known) -> CellSet {
+    pub fn erases_from_cells(&self, digit: Digit) -> CellSet {
         self.actions.iter().fold(CellSet::empty(), |acc, action| {
-            acc | action.erases_from_cells(known)
+            acc | action.erases_from_cells(digit)
         })
     }
 
-    pub fn erases_knowns_from(&self, cell: Cell) -> KnownSet {
-        self.actions.iter().fold(KnownSet::empty(), |acc, action| {
-            acc | action.erases_knowns_from(cell)
+    pub fn erases_digits_from(&self, cell: Cell) -> DigitSet {
+        self.actions.iter().fold(DigitSet::empty(), |acc, action| {
+            acc | action.erases_digits_from(cell)
         })
     }
 
@@ -131,10 +131,10 @@ impl Effects {
         effects
     }
 
-    pub fn affecting_known(&self, known: Known) -> Self {
+    pub fn affecting_digit(&self, digit: Digit) -> Self {
         let mut effects = Self::new();
         for action in self.actions.iter() {
-            if action.affects_known(known) {
+            if action.affects_digit(digit) {
                 effects.add_action(action.clone());
             }
         }

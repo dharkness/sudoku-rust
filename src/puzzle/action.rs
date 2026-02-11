@@ -6,8 +6,8 @@ use std::vec::IntoIter;
 
 use itertools::Itertools;
 
-use crate::layout::{Cell, CellSet, Known, KnownSet};
-use crate::symbols::{EMPTY_SET, REMOVE_CANDIDATE, SET_KNOWN};
+use crate::layout::{Cell, CellSet, Digit, DigitSet};
+use crate::symbols::{EMPTY_SET, REMOVE_CANDIDATE, SET_DIGIT};
 
 use super::{Board, Change, Clues, Effects, Strategy, Verdict};
 
@@ -15,8 +15,8 @@ use super::{Board, Change, Clues, Effects, Strategy, Verdict};
 #[derive(Clone, Eq, PartialEq)]
 pub struct Action {
     strategy: Strategy,
-    set: HashMap<Cell, Known>,      // [CellSet; 9], [Value; 81]
-    erase: HashMap<Cell, KnownSet>, // [CellSet; 9], [KnownSet; 81]
+    set: HashMap<Cell, Digit>,      // [CellSet; 9], [Value; 81]
+    erase: HashMap<Cell, DigitSet>, // [CellSet; 9], [DigitSet; 81]
     clues: Clues,
 }
 
@@ -30,41 +30,41 @@ impl Action {
         }
     }
 
-    pub fn new_set(strategy: Strategy, cell: Cell, known: Known) -> Self {
+    pub fn new_set(strategy: Strategy, cell: Cell, digit: Digit) -> Self {
         Self {
             strategy,
-            set: HashMap::from([(cell, known)]),
+            set: HashMap::from([(cell, digit)]),
             erase: HashMap::new(),
             clues: Clues::new(),
         }
     }
 
-    pub fn new_erase(strategy: Strategy, cell: Cell, known: Known) -> Self {
+    pub fn new_erase(strategy: Strategy, cell: Cell, digit: Digit) -> Self {
         Self {
             strategy,
             set: HashMap::new(),
-            erase: HashMap::from([(cell, KnownSet::of(known))]),
+            erase: HashMap::from([(cell, DigitSet::of(digit))]),
             clues: Clues::new(),
         }
     }
 
-    pub fn new_erase_cells(strategy: Strategy, cells: CellSet, known: Known) -> Self {
+    pub fn new_erase_cells(strategy: Strategy, cells: CellSet, digit: Digit) -> Self {
         Self {
             strategy,
             set: HashMap::new(),
             erase: cells
                 .iter()
-                .map(|cell| (cell, KnownSet::of(known)))
+                .map(|cell| (cell, DigitSet::of(digit)))
                 .collect(),
             clues: Clues::new(),
         }
     }
 
-    pub fn new_erase_knowns(strategy: Strategy, cell: Cell, knowns: KnownSet) -> Self {
+    pub fn new_erase_digits(strategy: Strategy, cell: Cell, digits: DigitSet) -> Self {
         Self {
             strategy,
             set: HashMap::new(),
-            erase: HashMap::from([(cell, knowns)]),
+            erase: HashMap::from([(cell, digits)]),
             clues: Clues::new(),
         }
     }
@@ -81,59 +81,59 @@ impl Action {
         self.strategy == strategy
     }
 
-    pub fn set(&mut self, cell: Cell, known: Known) {
-        self.set.insert(cell, known);
+    pub fn set(&mut self, cell: Cell, digit: Digit) {
+        self.set.insert(cell, digit);
     }
 
-    pub fn sets(&self, cell: Cell, known: Known) -> bool {
+    pub fn sets(&self, cell: Cell, digit: Digit) -> bool {
         match self.set.get(&cell) {
-            Some(k) => *k == known,
+            Some(d) => *d == digit,
             None => false,
         }
     }
 
-    pub fn collect_sets(&self) -> IntoIter<(Cell, Known)> {
+    pub fn collect_sets(&self) -> IntoIter<(Cell, Digit)> {
         self.set
             .iter()
-            .map(|(cell, known)| (*cell, *known))
+            .map(|(cell, digit)| (*cell, *digit))
             .sorted_by(|a, b| match a.0.cmp(&b.0) {
                 Ordering::Equal => a.1.cmp(&b.1),
                 result => result,
             })
     }
 
-    pub fn erase(&mut self, cell: Cell, known: Known) {
-        *self.erase.entry(cell).or_insert_with(KnownSet::empty) += known;
+    pub fn erase(&mut self, cell: Cell, digit: Digit) {
+        *self.erase.entry(cell).or_insert_with(DigitSet::empty) += digit;
     }
 
-    pub fn erase_cells(&mut self, cells: CellSet, known: Known) {
-        cells.iter().for_each(|cell| self.erase(cell, known));
+    pub fn erase_cells(&mut self, cells: CellSet, digit: Digit) {
+        cells.iter().for_each(|cell| self.erase(cell, digit));
     }
 
-    pub fn erase_knowns(&mut self, cell: Cell, knowns: KnownSet) {
-        knowns.iter().for_each(|known| self.erase(cell, known));
+    pub fn erase_digits(&mut self, cell: Cell, digits: DigitSet) {
+        digits.iter().for_each(|digit| self.erase(cell, digit));
     }
 
     pub fn affects_cell(&self, cell: Cell) -> bool {
         self.erase.contains_key(&cell) || self.set.contains_key(&cell)
     }
 
-    pub fn affects_known(&self, known: Known) -> bool {
-        self.erase.values().any(|ks| ks.has(known)) || self.set.values().any(|k| *k == known)
+    pub fn affects_digit(&self, digit: Digit) -> bool {
+        self.erase.values().any(|ds| ds.has(digit)) || self.set.values().any(|d| *d == digit)
     }
 
-    pub fn erases(&self, cell: Cell, known: Known) -> bool {
+    pub fn erases(&self, cell: Cell, digit: Digit) -> bool {
         match self.erase.get(&cell) {
-            Some(knowns) => knowns.has(known),
+            Some(digits) => digits.has(digit),
             None => false,
         }
     }
 
-    pub fn erases_from_cells(&self, known: Known) -> CellSet {
+    pub fn erases_from_cells(&self, digit: Digit) -> CellSet {
         self.erase
             .iter()
-            .fold(CellSet::empty(), |cells, (cell, knowns)| {
-                if knowns.has(known) {
+            .fold(CellSet::empty(), |cells, (cell, digits)| {
+                if digits.has(digit) {
                     cells + *cell
                 } else {
                     cells
@@ -141,34 +141,34 @@ impl Action {
             })
     }
 
-    pub fn erases_knowns_from(&self, cell: Cell) -> KnownSet {
+    pub fn erases_digits_from(&self, cell: Cell) -> DigitSet {
         self.erase[&cell]
     }
 
-    pub fn collect_erases(&self) -> IntoIter<(Cell, KnownSet)> {
+    pub fn collect_erases(&self) -> IntoIter<(Cell, DigitSet)> {
         self.erase
             .iter()
-            .map(|(cell, knowns)| (*cell, *knowns))
+            .map(|(cell, digits)| (*cell, *digits))
             .sorted_by(|a, b| match a.0.cmp(&b.0) {
                 Ordering::Equal => a.1.cmp(&b.1),
                 result => result,
             })
     }
 
-    pub fn clue_cell_for_known(&mut self, color: Verdict, cell: Cell, known: Known) {
-        self.clues.clue_cell_for_known(color, cell, known);
+    pub fn clue_cell_for_digit(&mut self, color: Verdict, cell: Cell, digit: Digit) {
+        self.clues.clue_cell_for_digit(color, cell, digit);
     }
 
-    pub fn clue_cells_for_known(&mut self, color: Verdict, cells: CellSet, known: Known) {
-        self.clues.clue_cells_for_known(color, cells, known);
+    pub fn clue_cells_for_digit(&mut self, color: Verdict, cells: CellSet, digit: Digit) {
+        self.clues.clue_cells_for_digit(color, cells, digit);
     }
 
-    pub fn clue_cell_for_knowns(&mut self, color: Verdict, cell: Cell, knowns: KnownSet) {
-        self.clues.clue_cell_for_knowns(color, cell, knowns);
+    pub fn clue_cell_for_digits(&mut self, color: Verdict, cell: Cell, digits: DigitSet) {
+        self.clues.clue_cell_for_digits(color, cell, digits);
     }
 
-    pub fn clue_cells_for_knowns(&mut self, color: Verdict, cells: CellSet, knowns: KnownSet) {
-        self.clues.clue_cells_for_knowns(color, cells, knowns);
+    pub fn clue_cells_for_digits(&mut self, color: Verdict, cells: CellSet, digits: DigitSet) {
+        self.clues.clue_cells_for_digits(color, cells, digits);
     }
 
     pub fn has_clues(&self) -> bool {
@@ -179,11 +179,11 @@ impl Action {
         &self.clues
     }
 
-    pub fn collect_clues(&self) -> IntoIter<(Cell, Known, Verdict)> {
+    pub fn collect_clues(&self) -> IntoIter<(Cell, Digit, Verdict)> {
         self.clues
             .collect()
             .iter()
-            .flat_map(|(cell, map)| map.iter().map(|(known, color)| (*cell, *known, *color)))
+            .flat_map(|(cell, map)| map.iter().map(|(digit, color)| (*cell, *digit, *color)))
             .sorted_by(|a, b| match a.0.cmp(&b.0) {
                 Ordering::Equal => match a.1.cmp(&b.1) {
                     Ordering::Equal => a.2.cmp(&b.2),
@@ -193,31 +193,31 @@ impl Action {
             })
     }
 
-    pub fn collect_verdicts(&self) -> HashMap<Cell, HashMap<Known, Verdict>> {
+    pub fn collect_verdicts(&self) -> HashMap<Cell, HashMap<Digit, Verdict>> {
         let mut verdicts = self.clues.collect();
-        for (cell, knowns) in &self.erase {
+        for (cell, digits) in &self.erase {
             let map = verdicts.entry(*cell).or_default();
-            for known in *knowns {
-                map.insert(known, Verdict::Erase);
+            for digit in *digits {
+                map.insert(digit, Verdict::Erase);
             }
         }
-        for (cell, known) in &self.set {
+        for (cell, digit) in &self.set {
             verdicts
                 .entry(*cell)
                 .or_default()
-                .insert(*known, Verdict::Set);
+                .insert(*digit, Verdict::Set);
         }
         verdicts
     }
 
-    pub fn collect_verdicts_for_known(&self, known: Known) -> HashMap<Cell, Verdict> {
-        let mut verdicts = self.clues.collect_for_known(known);
-        for (cell, knowns) in &self.erase {
-            if knowns.has(known) {
+    pub fn collect_verdicts_for_digit(&self, digit: Digit) -> HashMap<Cell, Verdict> {
+        let mut verdicts = self.clues.collect_for_digit(digit);
+        for (cell, digits) in &self.erase {
+            if digits.has(digit) {
                 verdicts.insert(*cell, Verdict::Erase);
             }
         }
-        for (cell, _) in self.set.iter().filter(|(_, k)| **k == known) {
+        for (cell, _) in self.set.iter().filter(|(_, d)| **d == digit) {
             verdicts.insert(*cell, Verdict::Set);
         }
         verdicts
@@ -226,22 +226,22 @@ impl Action {
     pub fn apply(&self, board: &mut Board, effects: &mut Effects) -> Change {
         let mut change = Change::None;
 
-        for (cell, knowns) in &self.erase {
-            for known in knowns.iter() {
-                // println!("erase {} from {}", known, cell);
-                change &= board.remove_candidate(*cell, known, effects);
+        for (cell, digits) in &self.erase {
+            for digit in digits.iter() {
+                // println!("erase {} from {}", digit, cell);
+                change &= board.remove_candidate(*cell, digit, effects);
             }
         }
 
         if matches!(self.strategy, Strategy::Given) {
-            for (cell, known) in &self.set {
-                // println!("give {} to {}", cell, known);
-                change &= board.set_given(*cell, *known, effects);
+            for (cell, digit) in &self.set {
+                // println!("give {} to {}", cell, digit);
+                change &= board.set_given(*cell, *digit, effects);
             }
         } else {
-            for (cell, known) in &self.set {
-                // println!("set {} to {}", cell, known);
-                change &= board.set_known(*cell, *known, effects);
+            for (cell, digit) in &self.set {
+                // println!("set {} to {}", cell, digit);
+                change &= board.set_digit(*cell, *digit, effects);
             }
         }
 
@@ -256,14 +256,14 @@ impl fmt::Debug for Action {
             f.write_char(' ')?;
             f.write_char(EMPTY_SET)
         } else {
-            for (cell, knowns) in self.collect_erases() {
-                f.write_str(&format!("\n- {} {} {}", cell, REMOVE_CANDIDATE, knowns))?;
+            for (cell, digits) in self.collect_erases() {
+                f.write_str(&format!("\n- {} {} {}", cell, REMOVE_CANDIDATE, digits))?;
             }
-            for (cell, known) in self.collect_sets() {
-                f.write_str(&format!("\n- {} {} {}", cell, SET_KNOWN, known))?;
+            for (cell, digit) in self.collect_sets() {
+                f.write_str(&format!("\n- {} {} {}", cell, SET_DIGIT, digit))?;
             }
-            for (cell, known, color) in self.collect_clues() {
-                f.write_str(&format!("\n- {} {} {:?}", cell, known, color))?;
+            for (cell, digit, color) in self.collect_clues() {
+                f.write_str(&format!("\n- {} {} {:?}", cell, digit, color))?;
             }
             Ok(())
         }
@@ -277,13 +277,13 @@ impl fmt::Display for Action {
             f.write_char(EMPTY_SET)
         } else {
             let mut first = true;
-            for (knowns, cells) in self
+            for (digits, cells) in self
                 .erase
                 .iter()
                 .fold(
                     HashMap::new(),
-                    |mut map: HashMap<KnownSet, CellSet>, (cell, knowns)| {
-                        *map.entry(*knowns).or_default() += *cell;
+                    |mut map: HashMap<DigitSet, CellSet>, (cell, digits)| {
+                        *map.entry(*digits).or_default() += *cell;
                         map
                     },
                 )
@@ -295,18 +295,18 @@ impl fmt::Display for Action {
                 } else {
                     f.write_str(", ")?;
                 }
-                for known in knowns.iter() {
-                    f.write_char(known.label())?;
+                for digit in digits.iter() {
+                    f.write_char(digit.label())?;
                 }
                 write!(f, " {} {}", REMOVE_CANDIDATE, cells)?;
             }
-            for (known, cells) in self
+            for (digit, cells) in self
                 .set
                 .iter()
                 .fold(
                     HashMap::new(),
-                    |mut map: HashMap<Known, CellSet>, (cell, known)| {
-                        *map.entry(*known).or_default() += *cell;
+                    |mut map: HashMap<Digit, CellSet>, (cell, digit)| {
+                        *map.entry(*digit).or_default() += *cell;
                         map
                     },
                 )
@@ -318,7 +318,7 @@ impl fmt::Display for Action {
                 } else {
                     f.write_str(", ")?;
                 }
-                write!(f, "{} {} {}", known, SET_KNOWN, cells)?;
+                write!(f, "{} {} {}", digit, SET_DIGIT, cells)?;
             }
             Ok(())
         }

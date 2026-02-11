@@ -36,8 +36,8 @@ fn check_houses(
     cross: Shape,
     effects: &mut Effects,
 ) -> bool {
-    for known in Known::iter() {
-        let candidate_cells = board.candidate_cells(known);
+    for digit in Digit::iter() {
+        let candidate_cells = board.candidate_cells(digit);
 
         let mut check_candidate = |f1: Cell, c1: Cell, f2: Cell, c2: Cell| -> bool {
             if c1.house(cross) == c2.house(cross) {
@@ -55,18 +55,18 @@ fn check_houses(
             }
 
             let mut action = Action::new(Strategy::Skyscraper);
-            action.erase_cells(candidates, known);
-            action.clue_cell_for_known(Verdict::Secondary, f1, known);
-            action.clue_cell_for_known(Verdict::Secondary, c2, known);
-            action.clue_cell_for_known(Verdict::Tertiary, f2, known);
-            action.clue_cell_for_known(Verdict::Tertiary, c1, known);
+            action.erase_cells(candidates, digit);
+            action.clue_cell_for_digit(Verdict::Secondary, f1, digit);
+            action.clue_cell_for_digit(Verdict::Secondary, c2, digit);
+            action.clue_cell_for_digit(Verdict::Tertiary, f2, digit);
+            action.clue_cell_for_digit(Verdict::Tertiary, c1, digit);
 
             effects.add_action(action) && single
         };
 
         for pair in houses
             .iter()
-            .map(|house| board.house_candidate_cells(house, known))
+            .map(|house| board.house_candidate_cells(house, digit))
             .filter(|cells| cells.len() == 2)
             .combinations(2)
         {

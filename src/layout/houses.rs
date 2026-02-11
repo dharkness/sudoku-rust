@@ -2,7 +2,8 @@
 //! that make up the [`Board`][crate::puzzle::Board].
 //!
 //! Each [`House`] has a [`Shape`] and a unique [`Coord`].
-//! In a valid puzzle, each `House` must contain exactly one of each [`Known`][crate::layout::Known].
+//! In a valid puzzle, each [`House`] must contain exactly
+//! one of each [`Digit`][crate::layout::Digit].
 
 pub mod coord;
 pub mod coord_set;

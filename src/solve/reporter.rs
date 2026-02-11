@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::time::Duration;
 
-use crate::layout::{Cell, Known};
+use crate::layout::{Cell, Digit};
 use crate::puzzle::{Action, Board, Difficulty, Effects, Strategy};
 
 /// One of these methods is called for each puzzle run through the solver.
@@ -13,7 +13,7 @@ pub trait Reporter {
         start: &Board,
         errors: &Effects,
         cell: Cell,
-        known: Known,
+        digit: Digit,
         runtime: Duration,
     );
 

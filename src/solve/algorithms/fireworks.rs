@@ -4,26 +4,27 @@ use super::*;
 pub fn find_fireworks(board: &Board, single: bool) -> Option<Effects> {
     let mut effects = Effects::new();
 
-    for pivot in board.unknowns() {
+    for pivot in board.unsolved() {
         let row_cells = pivot.row().cells();
         let column_cells = pivot.column().cells();
         let block_cells = pivot.block().cells();
         let disjoint_cells = (row_cells | column_cells) - block_cells;
         let full_cells = disjoint_cells + pivot;
-        let candidates = board.all_candidates(row_cells) & board.all_candidates(column_cells);
+        let candidates =
+            board.combined_candidates(row_cells) & board.combined_candidates(column_cells);
         for combos in candidates
             .iter()
-            .filter_map(|known| {
-                let set = board.candidate_cells(known);
+            .filter_map(|digit| {
+                let set = board.candidate_cells(digit);
                 if set.has_any(row_cells) && set.has_any(column_cells) {
-                    Some((known, set))
+                    Some((digit, set))
                 } else {
                     None
                 }
             })
-            .map(|(known, set)| {
+            .map(|(digit, set)| {
                 (
-                    known,
+                    digit,
                     set & block_cells,
                     set & disjoint_cells,
                     set & full_cells,
@@ -34,7 +35,7 @@ pub fn find_fireworks(board: &Board, single: bool) -> Option<Effects> {
             })
             .combinations(3)
         {
-            let triple = combos.iter().map(|(known, ..)| *known).union_knowns();
+            let triple = combos.iter().map(|(digit, ..)| *digit).union_digits();
             if triple.len() != 3 {
                 continue;
             }
@@ -49,8 +50,8 @@ pub fn find_fireworks(board: &Board, single: bool) -> Option<Effects> {
                 }
 
                 let cells = wings + pivot;
-                let all_knowns = board.all_candidates(cells);
-                if !all_knowns.has_all(triple) {
+                let all_digits = board.combined_candidates(cells);
+                if !all_digits.has_all(triple) {
                     continue;
                 }
 
@@ -64,9 +65,9 @@ pub fn find_fireworks(board: &Board, single: bool) -> Option<Effects> {
 
                 let mut action = Action::new(Strategy::Fireworks);
                 cells.iter().for_each(|cell| {
-                    let knowns = board.candidates(cell);
-                    action.erase_knowns(cell, knowns - triple);
-                    action.clue_cell_for_knowns(Verdict::Secondary, cell, triple & knowns);
+                    let digits = board.candidates(cell);
+                    action.erase_digits(cell, digits - triple);
+                    action.clue_cell_for_digits(Verdict::Secondary, cell, triple & digits);
                 });
 
                 if effects.add_action(action) && single {
@@ -101,10 +102,10 @@ mod tests {
 
         if let Some(got) = find_fireworks(&board, true) {
             let mut action = Action::new(Strategy::Fireworks);
-            action.erase_knowns(cell!(C4), knowns![4 5 6]);
-            action.clue_cells_for_known(Verdict::Secondary, cells![C4 F4], known!(3));
-            action.clue_cells_for_known(Verdict::Secondary, cells![C4 F1 F4], known!(7));
-            action.clue_cells_for_known(Verdict::Secondary, cells![F1 F4], known!(8));
+            action.erase_digits(cell!(C4), digits![4 5 6]);
+            action.clue_cells_for_digit(Verdict::Secondary, cells![C4 F4], digit!(3));
+            action.clue_cells_for_digit(Verdict::Secondary, cells![C4 F1 F4], digit!(7));
+            action.clue_cells_for_digit(Verdict::Secondary, cells![F1 F4], digit!(8));
 
             assert_eq!(format!("{:?}", action), format!("{:?}", got.actions()[0]));
         } else {

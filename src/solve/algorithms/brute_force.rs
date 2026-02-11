@@ -19,11 +19,11 @@ pub fn find_brute_force(
     if board.is_fully_solved() {
         return BruteForceResult::AlreadySolved;
     }
-    if board.known_count() < MINIMUM_KNOWNS_TO_BE_UNIQUELY_SOLVABLE {
-        return BruteForceResult::TooFewKnowns;
+    if board.solved_count() < MINIMUM_KNOWNS_TO_BE_UNIQUELY_SOLVABLE {
+        return BruteForceResult::TooFewDigits;
     }
 
-    let empty = board.unknowns() & board.cells_with_n_candidates(0);
+    let empty = board.unsolved() & board.cells_with_n_candidates(0);
     if !empty.is_empty() {
         return BruteForceResult::UnsolvableCells(empty);
     }
@@ -65,8 +65,8 @@ pub fn find_brute_force(
             println!("\ncell {} candidates {}\n", cell, candidates);
         };
 
-        let known = candidates.pop().unwrap();
-        let action = Action::new_set(Strategy::BruteForce, *cell, known);
+        let digit = candidates.pop().unwrap();
+        let action = Action::new_set(Strategy::BruteForce, *cell, digit);
         if log {
             println!("try {}\n", action);
             if pause > 0 {
@@ -117,7 +117,7 @@ pub fn find_brute_force(
 
 pub enum BruteForceResult {
     AlreadySolved,
-    TooFewKnowns,
+    TooFewDigits,
     UnsolvableCells(CellSet),
     Canceled,
     Unsolvable,
@@ -134,12 +134,12 @@ impl BruteForceResult {
 struct Entry {
     board: Board,
     cell: Cell,
-    candidates: KnownSet,
+    candidates: DigitSet,
 }
 
 impl Entry {
     pub fn new(board: Board) -> Self {
-        let cell = board.unknowns().first().unwrap();
+        let cell = board.unsolved().first().unwrap();
         let candidates = board.candidates(cell);
 
         Self {

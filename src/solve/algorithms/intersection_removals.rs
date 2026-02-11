@@ -49,16 +49,16 @@ fn check_intersection(
     houses: HouseSet,
     effects: &mut Effects,
 ) -> bool {
-    for known in Known::iter() {
+    for digit in Digit::iter() {
         for house in houses.iter() {
             let block_cells = block.cells();
             let intersection_cells = block_cells & house.cells();
             let box_cells = block_cells - intersection_cells;
-            let box_candidates = board.all_candidates(box_cells);
+            let box_candidates = board.combined_candidates(box_cells);
             let line_cells = house.cells() - intersection_cells;
-            let line_candidates = board.all_candidates(line_cells);
+            let line_candidates = board.combined_candidates(line_cells);
 
-            let candidate_cells = board.candidate_cells(known);
+            let candidate_cells = board.candidate_cells(digit);
             let intersection_candidate_cells = intersection_cells & candidate_cells;
             let intersection_candidate_cells_count = intersection_candidate_cells.len();
             if intersection_candidate_cells_count < 2 {
@@ -66,21 +66,21 @@ fn check_intersection(
                 continue;
             }
 
-            if box_candidates[known] {
-                if !line_candidates[known] {
+            if box_candidates[digit] {
+                if !line_candidates[digit] {
                     let erase = box_cells & candidate_cells;
                     if !erase.is_empty() {
                         let mut action = Action::new(Strategy::BoxLineReduction);
-                        action.erase_cells(erase, known);
-                        action.clue_cells_for_known(
+                        action.erase_cells(erase, digit);
+                        action.clue_cells_for_digit(
                             Verdict::Secondary,
                             intersection_candidate_cells,
-                            known,
+                            digit,
                         );
-                        action.clue_cells_for_known(
+                        action.clue_cells_for_digit(
                             Verdict::Related,
-                            line_cells - board.knowns(),
-                            known,
+                            line_cells - board.solved(),
+                            digit,
                         );
 
                         if effects.add_action(action) && single {
@@ -88,7 +88,7 @@ fn check_intersection(
                         }
                     }
                 }
-            } else if line_candidates[known] {
+            } else if line_candidates[digit] {
                 let erase = line_cells & candidate_cells;
                 if !erase.is_empty() {
                     let mut strategy = Strategy::PointingPair;
@@ -96,16 +96,16 @@ fn check_intersection(
                         strategy = Strategy::PointingTriple;
                     }
                     let mut action = Action::new(strategy);
-                    action.erase_cells(erase, known);
-                    action.clue_cells_for_known(
+                    action.erase_cells(erase, digit);
+                    action.clue_cells_for_digit(
                         Verdict::Secondary,
                         intersection_candidate_cells,
-                        known,
+                        digit,
                     );
-                    action.clue_cells_for_known(
+                    action.clue_cells_for_digit(
                         Verdict::Related,
-                        block_cells - intersection_cells - board.knowns(),
-                        known,
+                        block_cells - intersection_cells - board.solved(),
+                        digit,
                     );
 
                     if effects.add_action(action) && single {
@@ -143,14 +143,14 @@ mod tests {
         );
 
         let found = find_intersection_removals(&board, false).unwrap_or(Effects::new());
-        assert_eq!(cells![B8 B9], found.erases_from_cells(known!(1)));
-        assert_eq!(cells![], found.erases_from_cells(known!(2)));
-        assert_eq!(cells![D5 E5 F5], found.erases_from_cells(known!(3)));
-        assert_eq!(cells![D5 E5 F5], found.erases_from_cells(known!(4)));
-        assert_eq!(cells![B9 C9], found.erases_from_cells(known!(5)));
-        assert_eq!(cells![], found.erases_from_cells(known!(6)));
-        assert_eq!(cells![], found.erases_from_cells(known!(7)));
-        assert_eq!(cells![A5 B5 C5], found.erases_from_cells(known!(8)));
-        assert_eq!(cells![D1 E1 F1], found.erases_from_cells(known!(9)));
+        assert_eq!(cells![B8 B9], found.erases_from_cells(digit!(1)));
+        assert_eq!(cells![], found.erases_from_cells(digit!(2)));
+        assert_eq!(cells![D5 E5 F5], found.erases_from_cells(digit!(3)));
+        assert_eq!(cells![D5 E5 F5], found.erases_from_cells(digit!(4)));
+        assert_eq!(cells![B9 C9], found.erases_from_cells(digit!(5)));
+        assert_eq!(cells![], found.erases_from_cells(digit!(6)));
+        assert_eq!(cells![], found.erases_from_cells(digit!(7)));
+        assert_eq!(cells![A5 B5 C5], found.erases_from_cells(digit!(8)));
+        assert_eq!(cells![D1 E1 F1], found.erases_from_cells(digit!(9)));
     }
 }

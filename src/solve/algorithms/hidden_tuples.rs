@@ -24,8 +24,8 @@ pub fn find_hidden_tuples(
 
     for house in House::iter() {
         let house_cells = house.cells();
-        for candidates in Known::iter()
-            .map(|k| (k, house_cells & board.candidate_cells(k)))
+        for candidates in Digit::iter()
+            .map(|d| (d, house_cells & board.candidate_cells(d)))
             .filter(|(_, cells)| (2..=size).contains(&cells.len()))
             .combinations(size)
         {
@@ -38,21 +38,21 @@ pub fn find_hidden_tuples(
                 continue;
             }
 
-            let tuple_knowns = candidates.iter().map(|(k, _)| *k).union_knowns();
+            let tuple_digits = candidates.iter().map(|(d, _)| *d).union_digits();
             let mut action = Action::new(strategy);
 
             tuple_cells
                 .iter()
-                .for_each(|c| action.erase_knowns(c, board.candidates(c) - tuple_knowns));
-            tuple_knowns.iter().for_each(|k| {
-                action.clue_cells_for_known(
+                .for_each(|c| action.erase_digits(c, board.candidates(c) - tuple_digits));
+            tuple_digits.iter().for_each(|d| {
+                action.clue_cells_for_digit(
                     Verdict::Secondary,
-                    board.house_candidate_cells(house, k),
-                    k,
+                    board.house_candidate_cells(house, d),
+                    d,
                 );
             });
             (house_cells - tuple_cells).iter().for_each(|c| {
-                action.clue_cell_for_knowns(Verdict::Related, c, tuple_knowns);
+                action.clue_cell_for_digits(Verdict::Related, c, tuple_digits);
             });
 
             // TODO check for dupes (same pair in block and row or column)
@@ -91,18 +91,18 @@ mod tests {
         let mut effects = Effects::new();
 
         let cells = cells![A1 A2 A4 A5 A6 A8 A9];
-        let knowns = knowns![1 2];
-        board.remove_candidates_from_cells(cells, knowns, &mut effects);
+        let digits = digits![1 2];
+        board.remove_candidates_from_cells(cells, digits, &mut effects);
 
         find_hidden_pairs(&board, false)
             .unwrap()
             .apply_all(&mut board);
 
-        assert_eq!(knowns, board.candidates(cell!(A3)));
-        assert_eq!(knowns, board.candidates(cell!(A7)));
-        assert_eq!(!knowns, board.candidates(cell!(A2)));
-        assert_eq!(!knowns, board.candidates(cell!(A6)));
-        assert_eq!(!knowns, board.candidates(cell!(A9)));
+        assert_eq!(digits, board.candidates(cell!(A3)));
+        assert_eq!(digits, board.candidates(cell!(A7)));
+        assert_eq!(!digits, board.candidates(cell!(A2)));
+        assert_eq!(!digits, board.candidates(cell!(A6)));
+        assert_eq!(!digits, board.candidates(cell!(A9)));
     }
 
     #[test]
@@ -111,19 +111,19 @@ mod tests {
         let mut effects = Effects::new();
 
         let cells = cells![A1 A2 A4 A6 A8 A9];
-        let knowns = knowns![1 2 3];
-        board.remove_candidates_from_cells(cells, knowns, &mut effects);
+        let digits = digits![1 2 3];
+        board.remove_candidates_from_cells(cells, digits, &mut effects);
 
         find_hidden_triples(&board, false)
             .unwrap()
             .apply_all(&mut board);
 
-        assert_eq!(knowns, board.candidates(cell!(A3)));
-        assert_eq!(knowns, board.candidates(cell!(A5)));
-        assert_eq!(knowns, board.candidates(cell!(A7)));
-        assert_eq!(!knowns, board.candidates(cell!(A2)));
-        assert_eq!(!knowns, board.candidates(cell!(A6)));
-        assert_eq!(!knowns, board.candidates(cell!(A9)));
+        assert_eq!(digits, board.candidates(cell!(A3)));
+        assert_eq!(digits, board.candidates(cell!(A5)));
+        assert_eq!(digits, board.candidates(cell!(A7)));
+        assert_eq!(!digits, board.candidates(cell!(A2)));
+        assert_eq!(!digits, board.candidates(cell!(A6)));
+        assert_eq!(!digits, board.candidates(cell!(A9)));
     }
 
     #[test]
@@ -132,19 +132,19 @@ mod tests {
         let mut effects = Effects::new();
 
         let cells = cells![A2 A4 A6 A8 A9];
-        let knowns = knowns![1 2 3 4];
-        board.remove_candidates_from_cells(cells, knowns, &mut effects);
+        let digits = digits![1 2 3 4];
+        board.remove_candidates_from_cells(cells, digits, &mut effects);
 
         find_hidden_quads(&board, false)
             .unwrap()
             .apply_all(&mut board);
 
-        assert_eq!(knowns, board.candidates(cell!(A1)));
-        assert_eq!(knowns, board.candidates(cell!(A3)));
-        assert_eq!(knowns, board.candidates(cell!(A5)));
-        assert_eq!(knowns, board.candidates(cell!(A7)));
-        assert_eq!(!knowns, board.candidates(cell!(A2)));
-        assert_eq!(!knowns, board.candidates(cell!(A6)));
-        assert_eq!(!knowns, board.candidates(cell!(A9)));
+        assert_eq!(digits, board.candidates(cell!(A1)));
+        assert_eq!(digits, board.candidates(cell!(A3)));
+        assert_eq!(digits, board.candidates(cell!(A5)));
+        assert_eq!(digits, board.candidates(cell!(A7)));
+        assert_eq!(!digits, board.candidates(cell!(A2)));
+        assert_eq!(!digits, board.candidates(cell!(A6)));
+        assert_eq!(!digits, board.candidates(cell!(A9)));
     }
 }

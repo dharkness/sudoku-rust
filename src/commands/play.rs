@@ -9,9 +9,9 @@ use crate::build::{Finder, Generator};
 use crate::io::{
     format_for_fancy_console, format_for_wiki, format_grid, format_packed, format_runtime,
     print_all_and_single_candidates, print_all_and_single_candidates_with_highlight,
-    print_candidate, print_givens, print_known_values, Cancelable, Parse, Parser, SUDOKUWIKI_URL,
+    print_candidate, print_givens, print_solved_values, Cancelable, Parse, Parser, SUDOKUWIKI_URL,
 };
-use crate::layout::{Cell, CellSet, Known, KnownSet};
+use crate::layout::{Cell, CellSet, Digit, DigitSet};
 use crate::puzzle::{Board, ChangeResult, Changer, Effects, Options, Strategy};
 use crate::solve::{find_brute_force, BruteForceResult, TECHNIQUES};
 use crate::symbols::{MISSING, UNKNOWN_VALUE};
@@ -81,10 +81,10 @@ pub fn start_player(args: PlayArgs) {
             let (board, effects, failure) = parser.parse(&clues);
 
             boards.push(board);
-            if let Some((cell, known)) = failure {
+            if let Some((cell, digit)) = failure {
                 println!();
                 print_all_and_single_candidates(&board);
-                println!("\n==> Setting {} to {} will cause errors\n", cell, known);
+                println!("\n==> Setting {} to {} will cause errors\n", cell, digit);
                 effects.print_errors();
                 println!();
             } else {
@@ -102,7 +102,7 @@ pub fn start_player(args: PlayArgs) {
         if show_board {
             show_board = false;
             if board.is_fully_solved() {
-                print_known_values(board);
+                print_solved_values(board);
                 println!("\n==> Congratulations!\n");
             } else if let Some(action) = &highlight {
                 print_all_and_single_candidates_with_highlight(board, action);
@@ -115,8 +115,8 @@ pub fn start_player(args: PlayArgs) {
 
         print!(
             "[ {} solved - {} unsolved ] ",
-            board.known_count(),
-            board.unknown_count()
+            board.solved_count(),
+            board.unsolved_count()
         );
         let _ = stdout().flush();
         let mut input = String::new();
@@ -210,12 +210,12 @@ pub fn start_player(args: PlayArgs) {
                         println!();
                     } else if c == 'K' {
                         println!();
-                        print_known_values(board);
+                        print_solved_values(board);
                         println!();
                     } else if ('1'..='9').contains(&c) {
                         println!();
-                        match c.to_string().parse::<Known>() {
-                            Ok(known) => print_candidate(board, known),
+                        match c.to_string().parse::<Digit>() {
+                            Ok(digit) => print_candidate(board, digit),
                             Err(_) => println!("\n==> Invalid candidate \"{}\"\n", c),
                         }
                         println!();
@@ -224,7 +224,7 @@ pub fn start_player(args: PlayArgs) {
                     }
                 } else if board.is_fully_solved() {
                     println!();
-                    print_known_values(board);
+                    print_solved_values(board);
                     println!();
                 } else {
                     println!();
@@ -264,8 +264,8 @@ pub fn start_player(args: PlayArgs) {
                         continue;
                     }
                 };
-                let known = match input[2].parse::<Known>() {
-                    Ok(known) => known,
+                let digit = match input[2].parse::<Digit>() {
+                    Ok(digit) => digit,
                     Err(e) => {
                         println!("\n==> Bad input: {}\n", e);
                         continue;
@@ -274,9 +274,9 @@ pub fn start_player(args: PlayArgs) {
                 let mut changed = false;
                 let mut clone = *board;
                 for cell in cells {
-                    match changer.set_given(&clone, Strategy::Given, cell, known) {
+                    match changer.set_given(&clone, Strategy::Given, cell, digit) {
                         ChangeResult::None => {
-                            println!("\n==> {} is not a candidate for {}\n", known, cell);
+                            println!("\n==> {} is not a candidate for {}\n", digit, cell);
                         }
                         ChangeResult::Valid(after, _) => {
                             clone = *after;
@@ -308,8 +308,8 @@ pub fn start_player(args: PlayArgs) {
                         continue;
                     }
                 };
-                let known = match input[2].parse::<Known>() {
-                    Ok(known) => known,
+                let digit = match input[2].parse::<Digit>() {
+                    Ok(digit) => digit,
                     Err(e) => {
                         println!("\n==> Bad input: {}\n", e);
                         continue;
@@ -318,9 +318,9 @@ pub fn start_player(args: PlayArgs) {
                 let mut clone = *board;
                 let mut changed = false;
                 for cell in cells {
-                    match changer.set_known(&clone, Strategy::Solve, cell, known) {
+                    match changer.set_digit(&clone, Strategy::Solve, cell, digit) {
                         ChangeResult::None => {
-                            println!("\n==> {} is not a candidate for {}\n", known, cell);
+                            println!("\n==> {} is not a candidate for {}\n", digit, cell);
                         }
                         ChangeResult::Valid(after, _) => {
                             clone = *after;
@@ -353,8 +353,8 @@ pub fn start_player(args: PlayArgs) {
                         continue;
                     }
                 };
-                let knowns = match KnownSet::try_from(input[2]) {
-                    Ok(knowns) => knowns,
+                let digits = match DigitSet::try_from(input[2]) {
+                    Ok(digits) => digits,
                     Err(e) => {
                         println!("\n==> Bad input: {}\n", e);
                         continue;
@@ -363,10 +363,10 @@ pub fn start_player(args: PlayArgs) {
                 let mut clone = *board;
                 let mut changed = false;
                 for cell in cells {
-                    for known in knowns {
-                        match changer.remove_candidate(&clone, Strategy::Erase, cell, known) {
+                    for digit in digits {
+                        match changer.remove_candidate(&clone, Strategy::Erase, cell, digit) {
                             ChangeResult::None => {
-                                println!("\n==> {} is not a candidate for {}", known, cell);
+                                println!("\n==> {} is not a candidate for {}", digit, cell);
                             }
                             ChangeResult::Valid(after, _) => {
                                 clone = *after;
@@ -395,7 +395,7 @@ pub fn start_player(args: PlayArgs) {
                     BruteForceResult::AlreadySolved => {
                         println!("\n==> The puzzle is already solved\n");
                     }
-                    BruteForceResult::TooFewKnowns => {
+                    BruteForceResult::TooFewDigits => {
                         println!("\n==> The puzzle needs at least 17 solved cells to verify\n");
                     }
                     BruteForceResult::UnsolvableCells(cells) => {
@@ -446,12 +446,12 @@ pub fn start_player(args: PlayArgs) {
                 }
 
                 let mut affecting_cell = None;
-                let mut affecting_known = None;
+                let mut affecting_digit = None;
                 if input.len() == 2 {
                     match input[1].len() {
                         1 => {
-                            if let Ok(known) = input[1].parse::<Known>() {
-                                affecting_known = Some(known);
+                            if let Ok(digit) = input[1].parse::<Digit>() {
+                                affecting_digit = Some(digit);
                             } else {
                                 println!("\n==> Invalid digit: {}\n", input[1]);
                                 continue;
@@ -481,16 +481,16 @@ pub fn start_player(args: PlayArgs) {
                             pluralize(filtered.action_count(), "deduction"),
                             cell
                         );
-                    } else if let Some(known) = affecting_known {
-                        let filtered = found.affecting_known(known);
+                    } else if let Some(digit) = affecting_digit {
+                        let filtered = found.affecting_digit(digit);
                         if filtered.is_empty() {
-                            println!("\n==> No deductions found affecting {}\n", known);
+                            println!("\n==> No deductions found affecting {}\n", digit);
                             continue;
                         }
                         println!(
                             "\n==> Found {} affecting {}\n",
                             pluralize(filtered.action_count(), "deduction"),
-                            known
+                            digit
                         );
                     } else {
                         println!(
@@ -506,8 +506,8 @@ pub fn start_player(args: PlayArgs) {
                             if action.affects_cell(cell) {
                                 found = Some(action);
                             }
-                        } else if let Some(known) = affecting_known {
-                            if action.affects_known(known) {
+                        } else if let Some(digit) = affecting_digit {
+                            if action.affects_digit(digit) {
                                 found = Some(action);
                             }
                         } else {
@@ -639,7 +639,7 @@ pub fn start_player(args: PlayArgs) {
                     BruteForceResult::AlreadySolved => {
                         println!("\n==> The puzzle is already solved\n");
                     }
-                    BruteForceResult::TooFewKnowns => {
+                    BruteForceResult::TooFewDigits => {
                         println!("\n==> The puzzle needs at least 17 solved cells to verify\n");
                     }
                     BruteForceResult::UnsolvableCells(cells) => {
@@ -684,8 +684,8 @@ pub fn start_player(args: PlayArgs) {
             "R" => {
                 let mut reset = Board::new();
                 let mut effects = Effects::new();
-                for (cell, known) in board.known_iter() {
-                    reset.set_given(cell, known, &mut effects);
+                for (cell, digit) in board.solved_iter() {
+                    reset.set_given(cell, digit, &mut effects);
                 }
                 if effects.has_errors() {
                     println!("\n==> Invalid board\n");
@@ -729,7 +729,7 @@ fn print_help() {
         "  N                   - start or input a new puzzle\n",
         "  C                   - create a new random puzzle\n",
         "\n",
-        "  P [G | K | digit]   - print the full puzzle, givens, knowns, or a single candidate\n",
+        "  P [G | K | digit]   - print the full puzzle, givens, digits, or a single candidate\n",
         "  X [char]            - export the puzzle with optional character for unsolved cells\n",
         "  W                   - print URL to play on SudokuWiki.org\n",
         "  M                   - print the puzzle as a grid suitable for email\n",
@@ -796,10 +796,10 @@ fn create_new_puzzle(changer: Changer) -> Option<Board> {
         if let Some(parser) = parser {
             let (board, effects, failure) = parser.parse(&input);
 
-            if let Some((cell, known)) = failure {
+            if let Some((cell, digit)) = failure {
                 println!();
                 print_all_and_single_candidates(&board);
-                println!("\n==> Setting {} to {} will cause errors\n", cell, known);
+                println!("\n==> Setting {} to {} will cause errors\n", cell, digit);
                 effects.print_errors();
             } else {
                 println!();
