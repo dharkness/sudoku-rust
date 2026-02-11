@@ -272,6 +272,7 @@ impl Board {
             rectangles.into_iter().for_each(|r| {
                 effects.add_error(Error::DeadlyRectangle(r));
             });
+            // Do not return Invalid since the move itself is valid
         }
 
         self.values[cell.usize()] = known.value();
@@ -281,10 +282,10 @@ impl Board {
 
         let mut change = Change::Valid;
         let mut candidates = self.candidate_knowns_by_cell[cell.usize()];
+        self.candidate_knowns_by_cell[cell.usize()] = KnownSet::empty();
         self.cells_with_n_candidates[candidates.len()] -= cell;
         self.cells_with_n_candidates[0] += cell;
         candidates -= known;
-        self.candidate_knowns_by_cell[cell.usize()] = KnownSet::empty();
         for known in candidates {
             self.candidate_cells_by_known[known.usize()] -= cell;
             change &= self.remove_candidate_cell_from_houses(cell, known, effects);
@@ -417,8 +418,7 @@ impl Board {
             if candidates.is_empty() {
                 effects.add_error(Error::UnsolvableHouse(house, known));
                 change &= Change::Invalid;
-            } else if candidates.len() == 1 {
-                let single = candidates.as_single().unwrap();
+            } else if let Some(single) = candidates.as_single() {
                 effects.add_set(Strategy::HiddenSingle, single, known);
             }
         }
