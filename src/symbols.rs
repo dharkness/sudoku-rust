@@ -1,4 +1,4 @@
-pub const UNKNOWN_VALUE: char = '∘';
+pub const UNSOLVED: char = '∘';
 pub const CANDIDATE: char = '⌾';
 
 pub const MISSING: char = '·';

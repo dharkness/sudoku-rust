@@ -7,7 +7,7 @@
 //! **Packed**
 //!
 //! The packed string format is an 81-character string with a digit for each
-//! solved cell and a period for each unknown cell. It cannot distinguish between
+//! solved cell and a period for each unsolved cell. It cannot distinguish between
 //! given and solved cells, but it is the most compact format. Parsing one will
 //! ignore all other characters, and formatting one has an option to place
 //! spaces between each row of 9 cells.

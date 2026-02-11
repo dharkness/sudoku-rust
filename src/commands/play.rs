@@ -14,7 +14,7 @@ use crate::io::{
 use crate::layout::{Cell, CellSet, Digit, DigitSet};
 use crate::puzzle::{Board, ChangeResult, Changer, Effects, Options, Strategy};
 use crate::solve::{find_brute_force, BruteForceResult, TECHNIQUES};
-use crate::symbols::{MISSING, UNKNOWN_VALUE};
+use crate::symbols::{MISSING, UNSOLVED};
 
 const MAXIMUM_SOLUTIONS: usize = 100;
 
@@ -208,7 +208,7 @@ pub fn start_player(args: PlayArgs) {
                         println!();
                         print_givens(board);
                         println!();
-                    } else if c == 'K' {
+                    } else if c == 'S' {
                         println!();
                         print_solved_values(board);
                         println!();
@@ -235,11 +235,7 @@ pub fn start_player(args: PlayArgs) {
                 if input.len() >= 2 {
                     println!(
                         "\n==> {}\n",
-                        format_packed(
-                            board,
-                            input[1].chars().next().unwrap_or(UNKNOWN_VALUE),
-                            true
-                        )
+                        format_packed(board, input[1].chars().next().unwrap_or(UNSOLVED), true)
                     );
                 } else {
                     println!("\n==> {}\n", format_for_fancy_console(board));
@@ -729,14 +725,14 @@ fn print_help() {
         "  N                   - start or input a new puzzle\n",
         "  C                   - create a new random puzzle\n",
         "\n",
-        "  P [G | K | digit]   - print the full puzzle, givens, digits, or a single candidate\n",
+        "  P [G | S | digit]   - print the full puzzle (or givens, solutions, or single candidate)\n",
         "  X [char]            - export the puzzle with optional character for unsolved cells\n",
         "  W                   - print URL to play on SudokuWiki.org\n",
         "  M                   - print the puzzle as a grid suitable for email\n",
         "\n",
-        "  G <cells> <digit>   - set the given (clue) for a cell\n",
-        "  S <cells> <digit>   - solve a cell\n",
-        "  E <cells> <digits>  - erase one or more candidates\n",
+        "  G <cells> <digit>   - set the given (clue) for the cell(s)\n",
+        "  S <cells> <digit>   - solve the cell(s)\n",
+        "  E <cells> <digits>  - erase the candidate(s) from the cell(s)\n",
         "\n",
         "  F [cell | digit]    - find deductions\n",
         "  H <num>             - highlight a single deduction\n",

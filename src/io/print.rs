@@ -29,7 +29,7 @@ pub fn print_givens(board: &Board) {
 pub fn write_givens(board: &Board) -> Vec<String> {
     write_single_value(|cell, line: &mut String| {
         let value = board.value(cell);
-        if value.is_unknown() {
+        if value.is_none() {
             line.push(' ');
         } else if board.is_given(cell) {
             line.push(value.label());
@@ -48,7 +48,7 @@ pub fn print_solved_values(board: &Board) {
 pub fn write_solved_values(board: &Board) -> Vec<String> {
     write_single_value(|cell, line: &mut String| {
         let value = board.value(cell);
-        if value.is_unknown() {
+        if value.is_none() {
             line.push(' ');
         } else {
             line.push(value.label());
@@ -68,7 +68,7 @@ pub fn write_candidate(board: &Board, candidate: Digit) -> Vec<String> {
             line.push(GIVEN);
         } else {
             let value = board.value(cell);
-            if value.is_unknown() {
+            if value.is_none() {
                 line.push(' ');
             } else if value == candidate.value() {
                 line.push(value.label());
@@ -90,7 +90,7 @@ pub fn write_candidate_with_highlight(
             line.push_str(verdict.color_char(GIVEN).as_str());
         } else {
             let value = board.value(cell);
-            if value.is_unknown() {
+            if value.is_none() {
                 line.push(' ');
             } else if value == candidate.value() {
                 line.push_str(verdict.color_char(value.label()).as_str());

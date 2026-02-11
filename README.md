@@ -3,22 +3,23 @@
 Sudoku puzzle generator, solver and player console-based application built in Rust.
 
 <!-- TOC -->
-* [Sudoku Rust](#sudoku-rust)
-  * [Goals](#goals)
-  * [Running Locally](#running-locally)
-    * [Docker](#docker)
-    * [Rust](#rust)
-  * [Interactive Player](#interactive-player)
-    * [Getting Started](#getting-started)
-    * [The Rules of Sudoku](#the-rules-of-sudoku)
-    * [Reading the Board](#reading-the-board)
-    * [Printing the Board](#printing-the-board)
-    * [Playing the Puzzle](#playing-the-puzzle)
-    * [Using the Solver](#using-the-solver)
-  * [Puzzle Tools](#puzzle-tools)
-  * [Exploring the Code](#exploring-the-code)
-<!-- TOC -->
 
+* [Sudoku Rust](#sudoku-rust)
+    * [Goals](#goals)
+    * [Running Locally](#running-locally)
+        * [Docker](#docker)
+        * [Rust](#rust)
+    * [Interactive Player](#interactive-player)
+        * [Getting Started](#getting-started)
+        * [The Rules of Sudoku](#the-rules-of-sudoku)
+        * [Reading the Board](#reading-the-board)
+        * [Printing the Board](#printing-the-board)
+        * [Playing the Puzzle](#playing-the-puzzle)
+        * [Using the Solver](#using-the-solver)
+    * [Puzzle Tools](#puzzle-tools)
+    * [Exploring the Code](#exploring-the-code)
+
+<!-- TOC -->
 
 ## Goals
 
@@ -33,7 +34,6 @@ Having accomplished those tasks and more, I have added some stretch goals.
 - [ ] Build an API to create and solve puzzles for the webapp
 - [ ] Store generated puzzles into the webapp's database
 - [ ] Serve the React webapp directly from the Rust application
-
 
 ## Running Locally
 
@@ -58,7 +58,7 @@ docker run -it sudoku-rust
 ### Rust
 
 If you want to use the puzzle tools, you'll need to install Rust
-and build the application yourself. 
+and build the application yourself.
 
 I recommend using [rustup](https://rustup.rs/) to install Rust
 as it's one command and makes keeping up-to-date a breeze.
@@ -73,7 +73,6 @@ bin/build.sh
 ./sudoku-rust
 ```
 
-
 ## Interactive Player
 
 The application will start the interactive player by default
@@ -84,30 +83,32 @@ and display a menu of available commands.
   N                   - start or input a new puzzle
   C                   - create a new random puzzle
 
-  P [G | K | digit]   - print the full puzzle, givens, solved cells, or a single candidate
+  P [G | S | digit]   - print the full puzzle (or givens, solutions, or single candidate)
   X [char]            - export the puzzle with optional character for unsolved cells
   W                   - print URL to play on SudokuWiki.org
   M                   - print the puzzle as a grid suitable for email
 
-  G <cell> <digit>    - set the given (clue) for a cell
-  S <cell> <digit>    - solve a cell
-  E <cell> <digits>   - erase one or more candidates
+  G <cells> <digit>   - set the given (clue) for the cell(s)
+  S <cells> <digit>   - solve the cell(s)
+  E <cells> <digits>  - erase the candidate(s) from the cell(s)
 
+  F [cell | digit]    - find deductions
+  H <num>             - highlight a single deduction
+  A [num]             - apply a single or all deductions
   V                   - verify that puzzle is solvable
-  F [cell or digit]   - find deductions
-  A <num>             - apply a single or all deductions
   B                   - use Bowman's Bingo to solve the puzzle if possible
   R                   - reset candidates based on solved cells
   Z                   - undo last change
 
-  H                   - this help message
+  ?                   - this help message
   Q                   - quit
 
-      <option> - P, N or H
+      <option> - H, N or I
       <cell>   - A1 to J9
       <digit>  - 1 to 9
       <num>    - any positive number
       <char>   - any single character
+      [...]    - optional
 
   Commands and cells are not case-sensitive - "s a2 4" and "E D8 6" are fine
 ```
@@ -219,7 +220,7 @@ J │       │ •   • │ •   • │ J
 ```
 
 You can use `P G` to print only the given clues, or `P K` to print
-all known (given or solved) cells.
+all solved (given or placed) cells.
 
 There are several commands to allow sharing a puzzle or playing it
 on any site that accepts one of the following formats.
@@ -269,12 +270,11 @@ if you've reached an impasse.
 ### Using the Solver
 
 If you get stuck, use `F` to print a list of deductions found by the strategies
-known to the solver, and `A` to apply one or all of them.
+supported by the solver, and `A` to apply one or all of them.
 
 Lastly, if you wish to waive the white flag and give up, use `B` to solve
 the puzzle using Bowman's Bingo, a.k.a. brute force trying all possibilities,
 or `Q` to quit the program.
-
 
 ## Puzzle Tools
 
@@ -330,7 +330,6 @@ Options:
   -V, --version              Print version
 ```
 
-
 ## Exploring the Code
 
 The code is organized into several modules, each with a specific purpose.
@@ -350,6 +349,6 @@ These are some of the more interesting files with the gory details:
 - [`board.rs`](src/puzzle/board.rs) - The board itself and its methods
 - [`algorithms`](src/solve/algorithms) - Where the real fun happens
 
-
 [sudokuwiki]: https://www.sudokuwiki.org/
+
 [example]: https://www.sudokuwiki.org/sudoku.htm?bd=3681m6n4n8nc0e280h09kim6mkuguk11a0a6340g243kbo03g141ac82210hl2t8t8c805d886118e6ieoeocoaog141g8o8jg05ro8o03b88242c209lglk21pgd60h05118103m048g848g14aea7k7g7kcu9ode

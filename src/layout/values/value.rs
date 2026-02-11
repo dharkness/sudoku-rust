@@ -5,15 +5,15 @@ use crate::symbols::MISSING;
 
 use super::Digit;
 
-/// Holds the value stored in a cell, either unknown or one of the nine digits.
+/// Holds the value stored in a cell, either unsolved or one of the nine digits.
 #[derive(Clone, Copy, Default, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Value(u8);
 
 impl Value {
-    pub const UNKNOWN: u8 = 0;
+    pub const NONE: u8 = 0;
 
-    pub const fn unknown() -> Self {
-        Self(Self::UNKNOWN)
+    pub const fn none() -> Self {
+        Self(Self::NONE)
     }
 
     pub const fn new(value: u8) -> Self {
@@ -21,12 +21,12 @@ impl Value {
         Self(value)
     }
 
-    pub const fn is_unknown(&self) -> bool {
-        self.0 == Self::UNKNOWN
+    pub const fn is_none(&self) -> bool {
+        self.0 == Self::NONE
     }
 
     pub const fn is_digit(&self) -> bool {
-        self.0 != Self::UNKNOWN
+        self.0 != Self::NONE
     }
 
     pub const fn digit(&self) -> Option<Digit> {
@@ -42,7 +42,7 @@ impl Value {
     }
 
     pub const fn label(&self) -> char {
-        if self.is_unknown() {
+        if self.is_none() {
             MISSING
         } else {
             (b'0' + self.0) as char
@@ -65,7 +65,7 @@ impl From<u8> for Value {
 impl From<char> for Value {
     fn from(label: char) -> Self {
         if !('1'..='9').contains(&label) {
-            Value::unknown();
+            Value::none();
         }
         Value::new(label as u8 - b'0')
     }
@@ -81,7 +81,7 @@ impl Not for Value {
     type Output = bool;
 
     fn not(self) -> bool {
-        self.is_unknown()
+        self.is_none()
     }
 }
 

@@ -708,7 +708,7 @@ macro_rules! all_cells {
 /// Creates a [`CellSet`] from case-insensitive cell labels.
 ///
 /// This macro is intended for use in tests and compile-time constants where
-/// cell labels are known to be valid. It will panic if any label is invalid.
+/// cell labels are assumed to be valid. It will panic if any label is invalid.
 /// For runtime parsing of user input, use [`CellSet::try_from`] instead.
 ///
 /// # Examples

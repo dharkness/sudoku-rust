@@ -67,7 +67,7 @@ pub struct Board {
     /// Every solved (given or placed) cell for each digit.
     solved_cells_by_digit: [CellSet; 9],
 
-    /// Value of each cell, either a digit or unknown.
+    /// Value of each cell, either a digit or none.
     values: [Value; 81],
 
     /// Set of available digits that may still be set for each cell.
@@ -88,7 +88,7 @@ impl Board {
             givens: CellSet::empty(),
             solved_cells: CellSet::empty(),
             solved_cells_by_digit: [CellSet::empty(); 9],
-            values: [Value::unknown(); 81],
+            values: [Value::none(); 81],
             candidate_digits_by_cell: [DigitSet::full(); 81],
             candidate_cells_by_digit: [CellSet::full(); 9],
             cells_with_n_candidates: [
@@ -223,7 +223,7 @@ impl Board {
         (!self.solved_cells & house.cells()).is_empty()
     }
 
-    /// Returns the value of the cell, either a digit or unknown.
+    /// Returns the value of the cell, either a digit or none.
     pub const fn value(&self, cell: Cell) -> Value {
         self.values[cell.usize()]
     }
@@ -338,7 +338,7 @@ impl Board {
         self.cells_with_n_candidates[n]
     }
 
-    /// Returns an iterator of unknown cells with N candidates with their candidates.
+    /// Returns an iterator of unsolved cells with N candidates with their candidates.
     pub fn cells_with_n_candidates_iter(
         &self,
         n: usize,
@@ -479,7 +479,7 @@ impl Board {
     /// set as givens for the specified cells.
     ///
     /// If any specified cell is not solved in this board,
-    /// it is left unknown in the returned board.
+    /// it is left unsolved in the returned board.
     pub fn with_givens(&self, pattern: CellSet) -> (Board, Effects) {
         (pattern & self.solved()).iter().fold(
             (Board::new(), Effects::new()),
@@ -503,7 +503,7 @@ impl Board {
     }
 
     /// Returns the packed string format of the digits of this board
-    /// with a period for each unknown cell and no spacing between rows.
+    /// with a period for each unsolved cell and no spacing between rows.
     pub fn packed_string(&self) -> String {
         let mut result = String::new();
         House::rows_iter().for_each(|row| {
@@ -582,7 +582,7 @@ mod test {
             assert_eq!(f.is_solved(cell), false);
             assert_eq!(f.is_given(cell), false);
             assert_eq!(f.is_placed(cell), false);
-            assert_eq!(f.value(cell), Value::unknown());
+            assert_eq!(f.value(cell), Value::none());
             assert_eq!(f.candidates(cell), DigitSet::full());
         }
 

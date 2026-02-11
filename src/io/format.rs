@@ -25,8 +25,8 @@ pub fn format_for_wiki(board: &Board) -> String {
 }
 
 /// Formats a [`Board`] into a packed string.
-pub fn format_packed(board: &Board, unknown: char, spaces: bool) -> String {
-    let mut formatter = FormatPacked::new(unknown);
+pub fn format_packed(board: &Board, unsolved: char, spaces: bool) -> String {
+    let mut formatter = FormatPacked::new(unsolved);
     if spaces {
         formatter = formatter.spaces();
     }
@@ -68,21 +68,21 @@ impl Format {
 /// with a configured character for all unsolved cells
 /// and optional space separating rows.
 pub struct FormatPacked {
-    pub unknown: char,
+    pub unsolved: char,
     pub spaces: bool,
 }
 
 impl FormatPacked {
-    pub const fn new(unknown: char) -> Self {
+    pub const fn new(unsolved: char) -> Self {
         FormatPacked {
-            unknown,
+            unsolved,
             spaces: false,
         }
     }
 
     /// Changes the character used for unsolved cells.
-    pub const fn unknown(mut self, unknown: char) -> Self {
-        self.unknown = unknown;
+    pub const fn unsolved(mut self, unsolved: char) -> Self {
+        self.unsolved = unsolved;
         self
     }
 
@@ -104,7 +104,7 @@ impl FormatPacked {
                 if value.is_digit() {
                     result.push(value.label());
                 } else {
-                    result.push(self.unknown);
+                    result.push(self.unsolved);
                 }
             })
         });

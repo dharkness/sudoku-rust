@@ -2,7 +2,7 @@
 //! [`Board`][`crate::puzzle::Board`], holding 81 cells in a 9x9 grid.
 //!
 //! Each [`Cell`] holds a single [`Value`] which will be [`Digit`] if given as a clue
-//! or later solved to a digit (1 through 9). Until then, it will be considered unknown.
+//! or later solved to a digit (1 through 9). Until then, it will be considered unsolved.
 //!
 //! The board uses [`CellSet`]s to track the cells that are given, solved,
 //! have each digit value as a candidate, have N candidates remaining,
@@ -14,7 +14,7 @@
 //! The [`Rectangle`] holds four cells and is used for detecting deadly rectangles and
 //! avoidable rectangles and by the Unique Rectangle strategy.
 //!
-//! The board uses [`DigitSet`]s to track the remaining candidates for each unknown cell.
+//! The board uses [`DigitSet`]s to track the remaining candidates for each unsolved cell.
 //! This is a 9-bit bitset, with each bit representing a digit value.
 //! It has nearly the identical interface and features as [`CellSet`].
 //!
