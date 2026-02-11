@@ -31,7 +31,7 @@ impl Value {
 
     pub const fn known(&self) -> Option<Known> {
         if self.is_known() {
-            Some(Known::new(self.0))
+            Some(Known::from_ordinal(self.0))
         } else {
             None
         }

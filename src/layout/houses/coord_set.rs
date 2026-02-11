@@ -7,7 +7,7 @@ use std::ops::{
 use crate::io::ordinal_suffix;
 use crate::symbols::{EMPTY_SET, MISSING};
 
-use super::{Coord, CoordError};
+use super::{Coord, CoordError, House};
 
 type Bits = u16;
 type Size = u8;
@@ -49,49 +49,16 @@ impl CoordSet {
         Self(bits)
     }
 
-    pub const fn new_triple(first: u8, second: u8, third: u8) -> Self {
+    pub const fn new_single(coord: u8) -> Self {
+        Self(Coord::from_ordinal(coord).bit())
+    }
+
+    pub const fn new_triple(coord1: u8, coord2: u8, coord3: u8) -> Self {
         Self(
-            Coord::from_digit(first).bit()
-                | Coord::from_digit(second).bit()
-                | Coord::from_digit(third).bit(),
+            Coord::from_ordinal(coord1).bit()
+                | Coord::from_ordinal(coord2).bit()
+                | Coord::from_ordinal(coord3).bit(),
         )
-    }
-
-    pub const fn from_coord(coord: Coord) -> Self {
-        Self(coord.bit())
-    }
-
-    pub const fn from_digit(digit: u8) -> Self {
-        Self::from_coord(Coord::from_digit(digit))
-    }
-
-    pub const fn from_index(index: u32) -> Self {
-        Self::from_coord(Coord::from_index(index))
-    }
-
-    pub const fn from_labels(labels: &str) -> Self {
-        let bytes = labels.as_bytes();
-        let mut bits: Bits = 0;
-        let mut i = 0;
-
-        while i < bytes.len() {
-            let c = bytes[i] as char;
-            debug_assert!('1' <= c && c <= '9');
-            bits += 1 << (c as Size - b'1');
-            i += 1;
-        }
-        Self::new(bits)
-    }
-
-    pub const fn from_coords(mut coords: i32) -> Self {
-        let mut bits: Bits = 0;
-
-        while coords > 0 {
-            let c = coords % 10;
-            coords /= 10;
-            bits += 1 << (c - 1);
-        }
-        Self::new(bits)
     }
 
     pub const fn bits(&self) -> Bits {
@@ -130,7 +97,7 @@ impl CoordSet {
         if self.len() != 1 {
             None
         } else {
-            Some(Coord::from_index(self.bits().trailing_zeros()))
+            Some(Coord::new(self.bits().trailing_zeros() as u8))
         }
     }
 
@@ -139,9 +106,9 @@ impl CoordSet {
             None
         } else {
             let mut bits = self.bits();
-            let first = Coord::from_index(bits.trailing_zeros());
+            let first = Coord::new(bits.trailing_zeros() as u8);
             bits -= first.bit();
-            let second = Coord::from_index(bits.trailing_zeros());
+            let second = Coord::new(bits.trailing_zeros() as u8);
             Some((first, second))
         }
     }
@@ -151,11 +118,11 @@ impl CoordSet {
             None
         } else {
             let mut bits = self.bits();
-            let first = Coord::from_index(bits.trailing_zeros());
+            let first = Coord::new(bits.trailing_zeros() as u8);
             bits -= first.bit();
-            let second = Coord::from_index(bits.trailing_zeros());
+            let second = Coord::new(bits.trailing_zeros() as u8);
             bits -= second.bit();
-            let third = Coord::from_index(bits.trailing_zeros());
+            let third = Coord::new(bits.trailing_zeros() as u8);
             Some((first, second, third))
         }
     }
@@ -252,6 +219,30 @@ impl CoordSet {
             self.len(),
             self.bits().reverse_bits() >> (16 - 9)
         )
+    }
+}
+
+impl From<Coord> for CoordSet {
+    fn from(coord: Coord) -> Self {
+        Self(coord.bit())
+    }
+}
+
+impl From<&Coord> for CoordSet {
+    fn from(coord: &Coord) -> Self {
+        Self(coord.bit())
+    }
+}
+
+impl From<House> for CoordSet {
+    fn from(house: House) -> Self {
+        Self::from(house.coord())
+    }
+}
+
+impl From<&House> for CoordSet {
+    fn from(house: &House) -> Self {
+        Self::from(house.coord())
     }
 }
 
@@ -551,8 +542,8 @@ mod tests {
 
         assert!(set.is_empty());
         assert_eq!(0, set.len());
-        for i in 1..=9 {
-            assert!(!set[Coord::from_digit(i)]);
+        for i in 0..9 {
+            assert!(!set[Coord::new(i)]);
         }
     }
 
@@ -562,8 +553,8 @@ mod tests {
 
         assert!(!set.is_empty());
         assert_eq!(9, set.len());
-        for i in 1..=9 {
-            assert!(set[Coord::from_digit(i)]);
+        for i in 0..9 {
+            assert!(set[Coord::new(i)]);
         }
     }
 
@@ -573,8 +564,8 @@ mod tests {
 
         assert!(!set.is_empty());
         assert_eq!(5, set.len());
-        for i in 1..=9 {
-            assert_eq!(i % 2 == 1, set[Coord::from_digit(i)]);
+        for i in 0..9 {
+            assert_eq!(i % 2 == 0, set[Coord::new(i)]);
         }
     }
 
@@ -587,14 +578,8 @@ mod tests {
 
     #[test]
     fn as_pair_returns_pair() {
-        assert_eq!(
-            (Coord::from_digit(2), Coord::from_digit(5)),
-            coords![2 5].as_pair().unwrap()
-        );
-        assert_eq!(
-            (Coord::from_digit(1), Coord::from_digit(9)),
-            coords![9 1].as_pair().unwrap()
-        );
+        assert_eq!((coord!(2), coord!(5)), coords![2 5].as_pair().unwrap());
+        assert_eq!((coord!(1), coord!(9)), coords![9 1].as_pair().unwrap());
     }
 
     #[test]
@@ -607,19 +592,11 @@ mod tests {
     #[test]
     fn as_triple_returns_triple() {
         assert_eq!(
-            (
-                Coord::from_digit(2),
-                Coord::from_digit(5),
-                Coord::from_digit(8)
-            ),
+            (coord!(2), coord!(5), coord!(8)),
             coords![2 5 8].as_triple().unwrap()
         );
         assert_eq!(
-            (
-                Coord::from_digit(1),
-                Coord::from_digit(5),
-                Coord::from_digit(9)
-            ),
+            (coord!(1), coord!(5), coord!(9)),
             coords![9 5 1].as_triple().unwrap()
         );
     }

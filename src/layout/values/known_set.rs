@@ -56,7 +56,7 @@ impl KnownSet {
     }
 
     pub const fn of(known: Known) -> Self {
-        KnownSet::new(known.bit())
+        Self::new(known.bit())
     }
 
     pub const fn is_empty(&self) -> bool {
@@ -95,7 +95,7 @@ impl KnownSet {
         if self.len() != 1 {
             None
         } else {
-            Some(Known::from_index(self.bits().trailing_zeros()))
+            Some(Known::new(self.bits().trailing_zeros()))
         }
     }
 
@@ -104,9 +104,9 @@ impl KnownSet {
             None
         } else {
             let mut bits = self.bits();
-            let first = Known::from_index(bits.trailing_zeros());
+            let first = Known::new(bits.trailing_zeros());
             bits -= first.bit();
-            let second = Known::from_index(bits.trailing_zeros());
+            let second = Known::new(bits.trailing_zeros());
             Some((first, second))
         }
     }
@@ -116,11 +116,11 @@ impl KnownSet {
             None
         } else {
             let mut bits = self.bits();
-            let first = Known::from_index(bits.trailing_zeros());
+            let first = Known::new(bits.trailing_zeros());
             bits -= first.bit();
-            let second = Known::from_index(bits.trailing_zeros());
+            let second = Known::new(bits.trailing_zeros());
             bits -= second.bit();
-            let third = Known::from_index(bits.trailing_zeros());
+            let third = Known::new(bits.trailing_zeros());
             Some((first, second, third))
         }
     }
@@ -145,7 +145,7 @@ impl KnownSet {
         if self.is_empty() {
             None
         } else {
-            Some(Known::from_index(self.bits().trailing_zeros()))
+            Some(Known::new(self.bits().trailing_zeros()))
         }
     }
 
@@ -153,7 +153,7 @@ impl KnownSet {
         if self.is_empty() {
             None
         } else {
-            let known = Known::from_index(self.bits().trailing_zeros());
+            let known = Known::new(self.bits().trailing_zeros());
             self.remove(known);
             Some(known)
         }
@@ -213,6 +213,20 @@ impl KnownSet {
             self.len(),
             self.bits().reverse_bits() >> (16 - 9)
         )
+    }
+}
+
+impl From<Known> for KnownSet {
+    /// Returns a set containing the single known.
+    fn from(known: Known) -> Self {
+        KnownSet::empty().with(known)
+    }
+}
+
+impl From<&Known> for KnownSet {
+    /// Returns a set containing the single known.
+    fn from(known: &Known) -> Self {
+        KnownSet::empty().with(*known)
     }
 }
 
@@ -503,7 +517,7 @@ impl Iterator for Iter {
         } else {
             let bit = 1 << self.bits.trailing_zeros();
             self.bits &= !bit;
-            Some(Known::from_index(bit.trailing_zeros()))
+            Some(Known::new(bit.trailing_zeros()))
         }
     }
 }
@@ -524,7 +538,7 @@ mod tests {
         assert!(set.is_empty());
         assert_eq!(0, set.len());
         for i in 1..=9 {
-            assert!(!set[Known::new(i)]);
+            assert!(!set[Known::from_ordinal(i)]);
         }
     }
 
@@ -535,7 +549,7 @@ mod tests {
         assert!(!set.is_empty());
         assert_eq!(9, set.len());
         for i in 1..=9 {
-            assert!(set[Known::new(i)]);
+            assert!(set[Known::from_ordinal(i)]);
         }
     }
 
@@ -546,7 +560,7 @@ mod tests {
         assert!(!set.is_empty());
         assert_eq!(5, set.len());
         for i in 1..=9 {
-            assert_eq!(i % 2 == 1, set[Known::new(i)]);
+            assert_eq!(i % 2 == 1, set[Known::from_ordinal(i)]);
         }
     }
 
@@ -559,14 +573,8 @@ mod tests {
 
     #[test]
     fn as_pair_returns_pair() {
-        assert_eq!(
-            (Known::new(2), Known::new(5)),
-            knowns![2 5].as_pair().unwrap()
-        );
-        assert_eq!(
-            (Known::new(1), Known::new(9)),
-            knowns![9 1].as_pair().unwrap()
-        );
+        assert_eq!((known!(2), known!(5)), knowns![2 5].as_pair().unwrap());
+        assert_eq!((known!(1), known!(9)), knowns![9 1].as_pair().unwrap());
     }
 
     #[test]
@@ -579,11 +587,11 @@ mod tests {
     #[test]
     fn as_triple_returns_triple() {
         assert_eq!(
-            (Known::new(2), Known::new(5), Known::new(8)),
+            (known!(2), known!(5), known!(8)),
             knowns![2 5 8].as_triple().unwrap()
         );
         assert_eq!(
-            (Known::new(1), Known::new(5), Known::new(9)),
+            (known!(1), known!(5), known!(9)),
             knowns![9 5 1].as_triple().unwrap()
         );
     }

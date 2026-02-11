@@ -226,6 +226,30 @@ impl House {
     }
 }
 
+impl From<House> for Shape {
+    fn from(house: House) -> Self {
+        house.shape()
+    }
+}
+
+impl From<&House> for Shape {
+    fn from(house: &House) -> Self {
+        house.shape()
+    }
+}
+
+impl From<House> for Coord {
+    fn from(house: House) -> Self {
+        house.coord()
+    }
+}
+
+impl From<&House> for Coord {
+    fn from(house: &House) -> Self {
+        house.coord()
+    }
+}
+
 impl PartialOrd<Self> for House {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         match self.shape.partial_cmp(&other.shape) {
@@ -469,15 +493,15 @@ pub const INTERSECTIONS: [[[[CellSet; 9]; 3]; 9]; 3] = {
 };
 
 const ROW_ROWS: [HouseSet; 9] = [
-    HouseSet::new(Shape::Row, CoordSet::from_digit(1)),
-    HouseSet::new(Shape::Row, CoordSet::from_digit(2)),
-    HouseSet::new(Shape::Row, CoordSet::from_digit(3)),
-    HouseSet::new(Shape::Row, CoordSet::from_digit(4)),
-    HouseSet::new(Shape::Row, CoordSet::from_digit(5)),
-    HouseSet::new(Shape::Row, CoordSet::from_digit(6)),
-    HouseSet::new(Shape::Row, CoordSet::from_digit(7)),
-    HouseSet::new(Shape::Row, CoordSet::from_digit(8)),
-    HouseSet::new(Shape::Row, CoordSet::from_digit(9)),
+    HouseSet::new(Shape::Row, CoordSet::new_single(1)),
+    HouseSet::new(Shape::Row, CoordSet::new_single(2)),
+    HouseSet::new(Shape::Row, CoordSet::new_single(3)),
+    HouseSet::new(Shape::Row, CoordSet::new_single(4)),
+    HouseSet::new(Shape::Row, CoordSet::new_single(5)),
+    HouseSet::new(Shape::Row, CoordSet::new_single(6)),
+    HouseSet::new(Shape::Row, CoordSet::new_single(7)),
+    HouseSet::new(Shape::Row, CoordSet::new_single(8)),
+    HouseSet::new(Shape::Row, CoordSet::new_single(9)),
 ];
 
 const COLUMN_ROWS: [HouseSet; 9] = [House::all_rows(); 9];
@@ -498,15 +522,15 @@ const BLOCK_ROWS: [HouseSet; 9] = [
 const ROW_COLUMNS: [HouseSet; 9] = [House::all_columns(); 9];
 
 const COLUMN_COLUMNS: [HouseSet; 9] = [
-    HouseSet::new(Shape::Column, CoordSet::from_digit(1)),
-    HouseSet::new(Shape::Column, CoordSet::from_digit(2)),
-    HouseSet::new(Shape::Column, CoordSet::from_digit(3)),
-    HouseSet::new(Shape::Column, CoordSet::from_digit(4)),
-    HouseSet::new(Shape::Column, CoordSet::from_digit(5)),
-    HouseSet::new(Shape::Column, CoordSet::from_digit(6)),
-    HouseSet::new(Shape::Column, CoordSet::from_digit(7)),
-    HouseSet::new(Shape::Column, CoordSet::from_digit(8)),
-    HouseSet::new(Shape::Column, CoordSet::from_digit(9)),
+    HouseSet::new(Shape::Column, CoordSet::new_single(1)),
+    HouseSet::new(Shape::Column, CoordSet::new_single(2)),
+    HouseSet::new(Shape::Column, CoordSet::new_single(3)),
+    HouseSet::new(Shape::Column, CoordSet::new_single(4)),
+    HouseSet::new(Shape::Column, CoordSet::new_single(5)),
+    HouseSet::new(Shape::Column, CoordSet::new_single(6)),
+    HouseSet::new(Shape::Column, CoordSet::new_single(7)),
+    HouseSet::new(Shape::Column, CoordSet::new_single(8)),
+    HouseSet::new(Shape::Column, CoordSet::new_single(9)),
 ];
 
 #[rustfmt::skip]
@@ -547,15 +571,15 @@ const COLUMN_BLOCKS: [HouseSet; 9] = [
 ];
 
 const BLOCK_BLOCKS: [HouseSet; 9] = [
-    HouseSet::new(Shape::Block, CoordSet::from_digit(1)),
-    HouseSet::new(Shape::Block, CoordSet::from_digit(2)),
-    HouseSet::new(Shape::Block, CoordSet::from_digit(3)),
-    HouseSet::new(Shape::Block, CoordSet::from_digit(4)),
-    HouseSet::new(Shape::Block, CoordSet::from_digit(5)),
-    HouseSet::new(Shape::Block, CoordSet::from_digit(6)),
-    HouseSet::new(Shape::Block, CoordSet::from_digit(7)),
-    HouseSet::new(Shape::Block, CoordSet::from_digit(8)),
-    HouseSet::new(Shape::Block, CoordSet::from_digit(9)),
+    HouseSet::new(Shape::Block, CoordSet::new_single(1)),
+    HouseSet::new(Shape::Block, CoordSet::new_single(2)),
+    HouseSet::new(Shape::Block, CoordSet::new_single(3)),
+    HouseSet::new(Shape::Block, CoordSet::new_single(4)),
+    HouseSet::new(Shape::Block, CoordSet::new_single(5)),
+    HouseSet::new(Shape::Block, CoordSet::new_single(6)),
+    HouseSet::new(Shape::Block, CoordSet::new_single(7)),
+    HouseSet::new(Shape::Block, CoordSet::new_single(8)),
+    HouseSet::new(Shape::Block, CoordSet::new_single(9)),
 ];
 
 #[cfg(test)]
@@ -584,7 +608,7 @@ mod tests {
                 }
 
                 let mut house_cells = CellSet::empty();
-                (1..=9).for_each(|c| {
+                (0..9).for_each(|c| {
                     let cell = house.cell(c.into());
                     assert_eq!(house, cell.house(houses.shape()));
                     house_cells += cell

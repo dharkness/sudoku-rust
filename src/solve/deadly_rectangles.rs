@@ -127,9 +127,8 @@ mod tests {
     }
 
     fn test_creates(givens: bool) {
-        const KNOWNS: [Known; 4] = [Known::new(1), Known::new(2), Known::new(1), Known::new(2)];
-
         fn test(givens: bool, rectangle: Rectangle) {
+            let knowns: [Known; 4] = [known!(1), known!(2), known!(1), known!(2)];
             let cells = [
                 rectangle.top_left,
                 rectangle.top_right,
@@ -146,15 +145,15 @@ mod tests {
                 for j in 0..4 {
                     if i != j {
                         if first {
-                            board.set_given(cells[j], KNOWNS[j], &mut effects);
+                            board.set_given(cells[j], knowns[j], &mut effects);
                             first = false;
                         } else {
-                            board.set_known(cells[j], KNOWNS[j], &mut effects);
+                            board.set_known(cells[j], knowns[j], &mut effects);
                         }
                     }
                 }
 
-                let found = creates_deadly_rectangles(&board, cells[i], KNOWNS[i]);
+                let found = creates_deadly_rectangles(&board, cells[i], knowns[i]);
                 if givens {
                     assert!(found.is_none());
                 } else {

@@ -437,9 +437,23 @@ impl From<Cell> for CellSet {
     }
 }
 
+impl From<&Cell> for CellSet {
+    /// Returns a set containing the single cell.
+    fn from(cell: &Cell) -> Self {
+        CellSet::empty().with(*cell)
+    }
+}
+
 impl From<House> for CellSet {
     /// Returns a set containing the cells in `house`.
     fn from(house: House) -> Self {
+        house.cells()
+    }
+}
+
+impl From<&House> for CellSet {
+    /// Returns a set containing the cells in `house`.
+    fn from(house: &House) -> Self {
         house.cells()
     }
 }

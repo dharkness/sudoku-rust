@@ -128,8 +128,7 @@ impl Cell {
 
     pub fn common_houses(&self, peer: Cell) -> Vec<House> {
         [self.row(), self.column(), self.block()]
-            .iter()
-            .copied()
+            .into_iter()
             .filter(|house| house.has(peer))
             .collect::<Vec<_>>()
     }

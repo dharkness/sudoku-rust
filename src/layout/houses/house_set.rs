@@ -79,13 +79,6 @@ impl HouseSet {
         }
     }
 
-    pub const fn from_coords(shape: Shape, coords: i32) -> Self {
-        HouseSet {
-            shape,
-            coords: CoordSet::from_coords(coords),
-        }
-    }
-
     pub const fn shape(&self) -> Shape {
         self.shape
     }
@@ -302,7 +295,16 @@ impl From<House> for HouseSet {
     fn from(house: House) -> Self {
         HouseSet {
             shape: house.shape(),
-            coords: CoordSet::from_coord(house.coord()),
+            coords: CoordSet::from(house.coord()),
+        }
+    }
+}
+
+impl From<&House> for HouseSet {
+    fn from(house: &House) -> Self {
+        HouseSet {
+            shape: house.shape(),
+            coords: CoordSet::from(house.coord()),
         }
     }
 }

@@ -33,14 +33,14 @@ impl Known {
         KnownIter::new()
     }
 
-    pub const fn new(value: u8) -> Self {
-        debug_assert!(1 <= value && value <= 9);
-        Self(value - 1)
-    }
-
-    pub const fn from_index(index: u32) -> Self {
+    pub const fn new(index: u32) -> Self {
         debug_assert!(index < 9);
         Self(index as u8)
+    }
+
+    pub const fn from_ordinal(digit: u8) -> Self {
+        debug_assert!(1 <= digit && digit <= 9);
+        Self(digit - 1)
     }
 
     pub const fn usize(&self) -> usize {
@@ -128,7 +128,7 @@ impl Iterator for KnownIter {
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.0 < 9 {
-            let known = Known::from_index(self.0.into());
+            let known = Known::new(self.0.into());
             self.0 += 1;
             Some(known)
         } else {

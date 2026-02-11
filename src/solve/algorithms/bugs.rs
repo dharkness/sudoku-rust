@@ -9,6 +9,8 @@ pub fn find_bugs(board: &Board, single: bool) -> Option<Effects> {
         return None;
     }
 
+    // TODO if !(board.unknowns() - pairs - triples).is_empty() { return None; }
+    // all calls to cells_with_n_candidates(n) pass 0, 1, 2, or 3, so we could track only n = 0..3 to save space
     for count in [1, 4, 5, 6, 7, 8, 9] {
         if !board.cells_with_n_candidates(count).is_empty() {
             return None;

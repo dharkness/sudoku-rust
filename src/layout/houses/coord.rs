@@ -26,19 +26,14 @@ impl std::error::Error for CoordError {}
 impl Coord {
     pub const COUNT: u8 = 9;
 
-    pub const fn new(coord: u8) -> Self {
-        debug_assert!(coord < 9);
-        Self(coord)
+    pub const fn new(index: u8) -> Self {
+        debug_assert!(index < 9);
+        Self(index)
     }
 
-    pub const fn from_digit(digit: u8) -> Self {
+    pub const fn from_ordinal(digit: u8) -> Self {
         debug_assert!(1 <= digit && digit <= 9);
         Self(digit - 1)
-    }
-
-    pub const fn from_index(index: u32) -> Self {
-        debug_assert!(index < 9);
-        Self(index as u8)
     }
 
     pub const fn u8(&self) -> u8 {
@@ -106,13 +101,6 @@ impl FromStr for Coord {
             }
             _ => Err(CoordError::InvalidValue(label.to_string())),
         }
-    }
-}
-
-impl From<i32> for Coord {
-    fn from(coord: i32) -> Self {
-        debug_assert!((1..=9).contains(&coord));
-        Self::new(coord as u8 - 1)
     }
 }
 
