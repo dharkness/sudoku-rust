@@ -1,9 +1,12 @@
-//! [`House`]s are the nine rows, columns and boxes (also called blocks)
-//! that make up the [`Board`][crate::puzzle::Board].
+//! Houses and house sets for unit-based strategy logic.
 //!
-//! Each [`House`] has a [`Shape`] and a unique [`Coord`].
-//! In a valid puzzle, each [`House`] must contain exactly
-//! one of each [`Digit`][crate::layout::Digit].
+//! A [`House`] is one row, column, or block. It is identified by a
+//! [`Shape`] and a [`Coord`], and provides direct access to its cells and
+//! intersections with other houses.
+//!
+//! [`HouseSet`] and [`CoordSet`] are compact 9-bit sets that make it easy
+//! to express patterns like "these two rows" or "all blocks touched by these
+//! cells" without allocating.
 
 pub mod coord;
 pub mod coord_set;

@@ -1,3 +1,19 @@
+//! Strategy implementations and the solver contract.
+//!
+//! This module collects all `find_*` routines that inspect a `Board` and
+//! return deductions as `Effects`. Each routine must be pure: no board
+//! mutation, no I/O, and deterministic results for the same input.
+//!
+//! Contract:
+//! - Signature: `fn find_xxx(board: &Board, single: bool) -> Option<Effects>`
+//! - Return `Some(effects)` only when at least one action is present.
+//! - Respect `single`: if an action is added and `single` is true, return early.
+//! - Use `Action` with the correct `Strategy` label and attach clue metadata.
+//!
+//! The solver orchestrates ordering and application. Keep algorithms focused,
+//! fast, and allocation-light; prefer `CellSet` and `DigitSet` algebra over
+//! temporary collections.
+
 use itertools::Itertools;
 
 pub use avoidable_rectangles::find_avoidable_rectangles;

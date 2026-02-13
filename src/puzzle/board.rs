@@ -44,17 +44,21 @@ impl BitAndAssign for Change {
     }
 }
 
-/// Tracks the full state of a puzzle in play.
+/// Tracks the full state of a puzzle for strategy evaluation.
 ///
-/// To allow solvers to run quickly, the state of the board
-/// is stored in several forms, duplicating data to provide
-/// performant read access at the cost of slower writes
-/// and increased memory consumption.
+/// `Board` is a read-optimized snapshot with cached views over solved cells,
+/// candidates per cell, and candidate cells per digit. These caches make
+/// common strategy queries fast at the cost of slower writes and more memory.
 ///
-/// The givens are cells that begin with a digit, the clues given
-/// by the puzzle creator to make it solvable. When a cell
-/// is either given as a clue or placed with a digit,
-/// it is called solved.
+/// Typical read patterns include:
+/// - `candidates(cell)` and `is_candidate(cell, digit)`
+/// - `candidate_cells(digit)` and `house_candidate_cells(house, digit)`
+/// - `solved()`, `unsolved()`, `givens()`, `placed()`
+/// - `cells_with_n_candidates(n)` and `combined_candidates(cells)`
+///
+/// Strategies should not mutate the board directly. Instead, create
+/// `Action`s and return them in `Effects`. Mutations are applied by
+/// `Action::apply` or `Changer`, and any errors are reported via `Effects`.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Board {
     /// Cells that were given a digit at the start,

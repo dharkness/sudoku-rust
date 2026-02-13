@@ -1,38 +1,25 @@
-//! Defines the individual pieces that combine to produce a Sudoku
-//! [`Board`][`crate::puzzle::Board`], holding 81 cells in a 9x9 grid.
+//! Geometry and value primitives for strategy authoring.
 //!
-//! Each [`Cell`] holds a single [`Value`] which will be [`Digit`] if given as a clue
-//! or later solved to a digit (1 through 9). Until then, it will be considered unsolved.
+//! This module defines the lightweight identifiers used by solvers:
+//! [`Cell`], [`House`], [`Shape`], [`Coord`], [`Digit`], and [`Value`]. These types
+//! are cheap to copy and provide direct access to structural relationships like
+//! peers, houses, and coordinates.
 //!
-//! The board uses [`CellSet`]s to track the cells that are given, solved,
-//! have each digit value as a candidate, have N candidates remaining,
-//! or have been given or solved to each digit.
-//! This is an 81-bit bitset, with each bit representing a cell on the board.
-//! It uses a 128-bit integer to hold the bits for maximum efficiency and provides
-//! basic set-manipulation operations required for the board and strategies.
+//! Strategy logic should primarily operate on the bitset types:
+//! [`CellSet`], [`HouseSet`], [`CoordSet`], and [`DigitSet`]. They provide fast
+//! union, intersection, and difference operations with deterministic iteration
+//! order, which makes it easy to express scans such as "candidate cells in this
+//! house" or "all peers of these cells" without allocating.
 //!
-//! The [`Rectangle`] holds four cells and is used for detecting deadly rectangles and
-//! avoidable rectangles and by the Unique Rectangle strategy.
+//! Common helpers:
+//! - [`Cell::peers`] and [`CellSet::peers`] for peer scans.
+//! - [`House::cells`] and [`HouseSet::cells`] for unit coverage.
+//! - [`Rectangle`] for deadly or avoidable rectangle patterns.
 //!
-//! The board uses [`DigitSet`]s to track the remaining candidates for each unsolved cell.
-//! This is a 9-bit bitset, with each bit representing a digit value.
-//! It has nearly the identical interface and features as [`CellSet`].
+//! The types here are pure and do not carry puzzle state. They are the
+//! vocabulary strategies use to talk about the board.
 //!
-//! Cells are grouped into [`House`]s containing 9 cells and defined by its [`Shape`],
-//! a row, column, or block. Blocks are 3x3 squares often called boxes, but `box`
-//! is a reserved word in Rust. There are 9 houses of each shape.
-//!
-//! Many strategies use [`HouseSet`]s when iterating over rows, columns, or blocks.
-//! This uses [`CoordSet`] (see below) along with a [`Shape`] identifying which houses it holds.
-//! It has nearly the identical interface and features as the other sets.
-//!
-//! The [`Coord`] tracks the location of a cell in each of its houses and the location
-//! of each house on the board. As there are 9 of each in all cases, the coord ranges
-//! from 1 to 9.
-//!
-//! [`HouseSet`] uses a [`CoordSet`] to track which houses it contains.
-//! This is another 9-bit bitset, with each bit representing one of the nine coordinates.
-//! It has nearly the identical interface and features as the other sets.
+//! See [`crate::puzzle::Board`] for stateful access to candidates and values.
 
 pub use cells::{Cell, CellIteratorUnion, CellSet, CellSetIteratorUnion, Rectangle};
 pub use houses::{

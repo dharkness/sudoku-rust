@@ -1,4 +1,12 @@
-//! Provides [`Cell`] and [`CellSet`] to track collections of cells and methods to manipulate them.
+//! Cell identifiers and bitset utilities for strategy scans.
+//!
+//! [`Cell`] is a stable, copyable address for a single square, with helpers
+//! for row/column/block membership and peer relationships.
+//!
+//! [`CellSet`] is an 81-bit set with fast set algebra and deterministic
+//! iteration, ideal for expressing strategy patterns and eliminations.
+//!
+//! [`Rectangle`] groups four cells for rectangle-based techniques.
 
 pub mod bit;
 pub mod cell;
