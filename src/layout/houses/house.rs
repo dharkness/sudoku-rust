@@ -364,7 +364,7 @@ impl ExactSizeIterator for HousesIter {
 /// # Examples
 ///
 /// ```
-/// use sudoku_rust::row;
+/// use sudoku_rust::{layout::{House, Shape}, row};
 ///
 /// let r = row!(1);
 /// let r = row!(A);
@@ -388,7 +388,7 @@ macro_rules! row {
 /// # Examples
 ///
 /// ```
-/// use sudoku_rust::col;
+/// use sudoku_rust::{col, layout::{House, Shape}};
 ///
 /// let c = col!(1);
 /// let c = col!(A);
@@ -412,7 +412,7 @@ macro_rules! col {
 /// # Examples
 ///
 /// ```
-/// use sudoku_rust::block;
+/// use sudoku_rust::{block, layout::{House, Shape}};
 ///
 /// let b = block!(1);
 /// let b = block!(5);

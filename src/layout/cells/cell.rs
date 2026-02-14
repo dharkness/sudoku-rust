@@ -250,7 +250,7 @@ impl ExactSizeIterator for CellIter {
 /// # Examples
 ///
 /// ```
-/// # use sudoku_rust::{Cell, cell};
+/// # use sudoku_rust::{cell, layout::Cell};
 /// let c = cell!(A1);
 /// assert_eq!(0, c.index());
 /// ```

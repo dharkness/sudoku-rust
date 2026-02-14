@@ -459,9 +459,9 @@ impl fmt::Debug for DigitSet {
 /// # Examples
 ///
 /// ```
-/// # use sudoku_rust::{DigitSet, all_digits};
+/// # use sudoku_rust::{all_digits, layout::DigitSet};
 /// let all = all_digits!();
-/// assert_eq!(81, all.len());
+/// assert_eq!(9, all.len());
 /// ```
 #[macro_export]
 macro_rules! all_digits {
@@ -478,7 +478,7 @@ macro_rules! all_digits {
 /// # Examples
 ///
 /// ```
-/// use sudoku_rust::digits;
+/// use sudoku_rust::{digits, layout::DigitSet};
 ///
 /// let empty = digits![];
 /// let set = digits![1 2 3];

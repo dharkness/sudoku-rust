@@ -151,7 +151,7 @@ impl ExactSizeIterator for DigitIter {
 /// # Examples
 ///
 /// ```
-/// use sudoku_rust::digit;
+/// use sudoku_rust::{digit, layout::Digit};
 ///
 /// let d = digit!(5);
 /// let d = digit!(9);

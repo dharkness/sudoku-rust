@@ -482,7 +482,7 @@ impl fmt::Debug for CoordSet {
 /// # Examples
 ///
 /// ```
-/// use sudoku_rust::coords;
+/// use sudoku_rust::{coords, layout::CoordSet};
 ///
 /// let empty = coords![];
 /// let rows = coords![A B C];

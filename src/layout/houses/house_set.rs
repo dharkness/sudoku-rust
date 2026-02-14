@@ -555,7 +555,7 @@ impl fmt::Debug for HouseSet {
 /// # Examples
 ///
 /// ```
-/// use sudoku_rust::rows;
+/// use sudoku_rust::{layout::{CoordSet, HouseSet, Shape}, rows};
 ///
 /// let empty = rows![];
 /// let set = rows![A C G];
@@ -585,7 +585,7 @@ macro_rules! rows {
 /// # Examples
 ///
 /// ```
-/// use sudoku_rust::cols;
+/// use sudoku_rust::{cols, layout::{CoordSet, HouseSet, Shape}};
 ///
 /// let empty = cols![];
 /// let set = cols![1 3 7];
@@ -614,7 +614,7 @@ macro_rules! cols {
 /// # Examples
 ///
 /// ```
-/// use sudoku_rust::blocks;
+/// use sudoku_rust::{blocks, layout::{CoordSet, HouseSet, Shape}};
 ///
 /// let empty = blocks![];
 /// let set = blocks![1 5 9];

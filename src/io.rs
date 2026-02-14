@@ -12,7 +12,7 @@
 //! ignore all other characters, and formatting one has an option to place
 //! spaces between each row of 9 cells.
 //!
-//! ```
+//! ```text
 //! ...3.5.7. .48.....1 ...71.... .5...6... .......9. ....531.4 .9..8.... ..2....47 .8.....2.
 //! ```
 //!
@@ -21,7 +21,7 @@
 //! This format was created Andrew Stuart of [SudokuWiki](https://www.sudokuwiki.org/)
 //! to provide the full puzzle state: given clues, solved cells, and cell candidates.
 //!
-//! ```
+//! ```text
 //! 811003080g44g02044090g21g002441080444104g0108020030g080g201004098040g10202g04021100g05088104800840g0030h1120g0090402211080400h10400h8005082003g12102800h41g0090410
 //! ```
 //!
@@ -31,7 +31,7 @@
 //! Each lone digit is either a given or solved cell while each group of digits
 //! represent a cell's remaining candidates.
 //!
-//! ```
+//! ```text
 //! +--------------------+-----------------------+-------------------+
 //! | 1     257    457   | 9     6        458    | 478    3     2478 |
 //! | 34679 3679   4679  | 2     13478    148    | 146789 4678  5    |

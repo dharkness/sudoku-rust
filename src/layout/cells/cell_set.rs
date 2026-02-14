@@ -694,7 +694,7 @@ impl fmt::Debug for CellSet {
 /// # Examples
 ///
 /// ```
-/// # use sudoku_rust::{CellSet, all_cells};
+/// # use sudoku_rust::{all_cells, layout::CellSet};
 /// let all = all_cells!();
 /// assert_eq!(81, all.len());
 /// ```
@@ -714,7 +714,7 @@ macro_rules! all_cells {
 /// # Examples
 ///
 /// ```
-/// # use sudoku_rust::{CellSet, cells};
+/// # use sudoku_rust::{cells, layout::CellSet};
 /// let empty = cells![];
 /// let single = cells![A1];
 /// let multiple = cells![A1 B2 C3];
@@ -727,7 +727,7 @@ macro_rules! all_cells {
 /// Panics if any cell label is invalid:
 ///
 /// ```should_panic
-/// # use sudoku_rust::cells;
+/// # use sudoku_rust::{cells, layout::CellSet};
 /// let invalid = cells![Z9];  // 'Z' is not a valid row
 /// ```
 ///
