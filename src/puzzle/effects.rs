@@ -141,6 +141,10 @@ impl Effects {
         effects
     }
 
+    pub fn pop_action(&mut self) -> Option<Action> {
+        self.actions.pop()
+    }
+
     pub fn without_action(&self, index: usize) -> Self {
         let mut effects = self.clone();
         effects.actions.remove(index);
