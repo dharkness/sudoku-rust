@@ -9,7 +9,8 @@ use clap::{Parser, Subcommand};
 
 use crate::commands::{
     bingo, create_puzzle, extract_patterns, find_solutions, profile_puzzles, solve_puzzles,
-    start_player, BingoArgs, CreateArgs, ExtractArgs, FindArgs, PlayArgs, ProfileArgs, SolveArgs,
+    start_player, start_tui, BingoArgs, CreateArgs, ExtractArgs, FindArgs, PlayArgs, ProfileArgs,
+    SolveArgs, TuiArgs,
 };
 use crate::io::create_signal;
 
@@ -43,6 +44,12 @@ enum Commands {
     /// All of the commands are displayed as a help menu upon startup.
     #[clap(alias = "p", verbatim_doc_comment)]
     Play(PlayArgs),
+
+    /// Start the interactive player in a TUI
+    ///
+    /// Uses the same commands and options as the console player.
+    #[clap(alias = "t", verbatim_doc_comment)]
+    Tui(TuiArgs),
 
     /// Generate a new complete puzzle and starting clues
     ///
@@ -117,6 +124,7 @@ fn main() {
     if let Some(command) = app.command {
         match command {
             Commands::Play(args) => start_player(args),
+            Commands::Tui(args) => start_tui(args),
             Commands::Create(args) => create_puzzle(args),
             Commands::Solve(args) => solve_puzzles(args),
             Commands::Bingo(args) => bingo(args),

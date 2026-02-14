@@ -84,6 +84,71 @@ impl Finder {
         (fewest_clues_board, fewest_clues_actions)
     }
 
+    pub fn backtracking_find_with_progress<F>(
+        &mut self,
+        board: Board,
+        mut progress: F,
+    ) -> (Board, Effects)
+    where
+        F: FnMut(usize),
+    {
+        let solver = Solver::new(false);
+        let runtime = std::time::Instant::now();
+
+        let mut timings = Timings::new();
+        let mut fewest_clues = 81;
+        let mut fewest_clues_board = board;
+        let mut fewest_clues_actions = Effects::new();
+
+        let mut stack = Vec::with_capacity(81);
+        stack.push(Entry {
+            board,
+            cells: self.shuffle_cells(board.solved()),
+        });
+
+        while !stack.is_empty() {
+            if self.bar {
+                progress(82 - stack.len());
+            }
+            if self.cancelable.is_canceled()
+                || fewest_clues <= self.clues
+                || runtime.elapsed().as_secs() >= self.time
+            {
+                break;
+            }
+
+            let entry = stack.last_mut().unwrap();
+            if entry.cells.is_empty() {
+                stack.pop();
+                continue;
+            }
+
+            let cell = entry.cells.pop().unwrap();
+            let (next, unapplied) = entry.board.without(cell);
+
+            match solver.solve(&next, &unapplied, &mut timings) {
+                Resolution::Canceled(..) => break,
+                Resolution::Solved(_, actions, _) => {
+                    if !find_brute_force(&board, false, 0, 2).is_solved() {
+                        continue;
+                    }
+                    if next.solved_count() < fewest_clues {
+                        fewest_clues = next.solved_count();
+                        fewest_clues_board = next;
+                        fewest_clues_actions = actions;
+                    }
+                    stack.push(Entry {
+                        board: next,
+                        cells: self.shuffle_cells(next.solved()),
+                    });
+                }
+                _ => continue,
+            }
+        }
+
+        (fewest_clues_board, fewest_clues_actions)
+    }
+
     fn shuffle_cells(&mut self, set: CellSet) -> Vec<Cell> {
         let mut cells = set.iter().collect::<Vec<Cell>>();
 

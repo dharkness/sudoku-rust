@@ -58,8 +58,10 @@ pub use format::{format_for_fancy_console, format_for_wiki, format_grid, format_
 pub use numbers::{format_number, format_runtime, ordinal_suffix};
 pub use parse::{Parse, ParsePacked, Parser};
 pub use print::{
-    print_all_and_single_candidates, print_all_and_single_candidates_with_highlight,
-    print_candidate, print_givens, print_solved_values,
+    add_all_candidates_labels, add_single_value_labels, print_all_and_single_candidates,
+    print_all_and_single_candidates_with_highlight, print_solved_values, write_candidate,
+    write_candidate_with_highlight, write_candidates, write_candidates_with_highlight,
+    write_givens, write_solved_values,
 };
 pub use progress::show_progress;
 
