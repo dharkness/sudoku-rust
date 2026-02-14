@@ -171,3 +171,81 @@ macro_rules! digit {
 }
 
 const HIGHLIGHT_LABELS: [char; 9] = ['❶', '❷', '❸', '❹', '❺', '❻', '❼', '❽', '❾'];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::iter::ExactSizeIterator;
+
+    #[test]
+    fn constructors_and_accessors_work() {
+        let digit = Digit::new(3);
+
+        assert_eq!(3, digit.usize());
+        assert_eq!(1u16 << 3, digit.bit());
+        assert_eq!(Value::new(4), digit.value());
+        assert_eq!('4', digit.label());
+        assert_eq!('❹', digit.highlight());
+    }
+
+    #[test]
+    fn from_ordinal_maps_to_index() {
+        let digit = Digit::from_ordinal(1);
+
+        assert_eq!(0, digit.usize());
+        assert_eq!('1', digit.label());
+    }
+
+    #[test]
+    fn iteration_visits_all_digits() {
+        let mut iter = Digit::iter();
+
+        assert_eq!(9, iter.len());
+        assert_eq!(Digit::from_ordinal(1), iter.next().unwrap());
+        assert_eq!(8, iter.len());
+        for _ in 0..8 {
+            iter.next();
+        }
+        assert_eq!(0, iter.len());
+        assert_eq!(None, iter.next());
+
+        let digits: Vec<Digit> = Digit::iter().collect();
+        assert_eq!(9, digits.len());
+        assert_eq!(Digit::from_ordinal(1), digits[0]);
+        assert_eq!(Digit::from_ordinal(9), digits[8]);
+    }
+
+    #[test]
+    fn try_from_and_parse_handle_valid_and_invalid() {
+        assert_eq!(Digit::from_ordinal(5), Digit::try_from('5').unwrap());
+        assert_eq!(Digit::from_ordinal(6), " 6 ".parse::<Digit>().unwrap());
+
+        let err = Digit::try_from('0').unwrap_err();
+        assert_eq!(DigitError::InvalidValue("0".to_string()), err);
+        assert_eq!("invalid digit '0'", err.to_string());
+        assert!("x".parse::<Digit>().is_err());
+        assert!("12".parse::<Digit>().is_err());
+    }
+
+    #[test]
+    fn add_and_negate_build_sets() {
+        let set = Digit::from_ordinal(2) + Digit::from_ordinal(5);
+
+        assert!(set[Digit::from_ordinal(2)]);
+        assert!(set[Digit::from_ordinal(5)]);
+        assert_eq!(2, set.len());
+
+        let negated = -Digit::from_ordinal(4);
+        assert!(!negated[Digit::from_ordinal(4)]);
+        assert_eq!(8, negated.len());
+    }
+
+    #[test]
+    fn display_and_macro_output() {
+        let digit = Digit::from_ordinal(9);
+        let macro_digit = crate::digit!(8);
+
+        assert_eq!("9", format!("{}", digit));
+        assert_eq!('8', macro_digit.label());
+    }
+}

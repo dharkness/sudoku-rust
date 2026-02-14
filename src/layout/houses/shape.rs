@@ -191,3 +191,96 @@ const CELL_SETS: [[CellSet; 9]; 3] = {
     sets[Shape::Block.usize()] = cell_sets(Shape::Block);
     sets
 };
+
+#[cfg(test)]
+mod tests {
+    use std::iter::ExactSizeIterator;
+
+    use crate::*;
+
+    use super::*;
+
+    #[test]
+    fn labels_and_flags() {
+        assert_eq!("Row", Shape::Row.label());
+        assert_eq!("Col", Shape::Column.label());
+        assert_eq!("Box", Shape::Block.label());
+
+        assert_eq!("row", Shape::Row.code_label());
+        assert_eq!("column", Shape::Column.code_label());
+        assert_eq!("block", Shape::Block.code_label());
+
+        assert!(Shape::Row.is_row());
+        assert!(Shape::Column.is_column());
+        assert!(Shape::Block.is_block());
+    }
+
+    #[test]
+    fn from_char_and_formatting() {
+        assert_eq!(Shape::Row, Shape::from('R'));
+        assert_eq!(Shape::Column, Shape::from('C'));
+        assert_eq!(Shape::Block, Shape::from('B'));
+
+        assert_eq!("row", format!("{}", Shape::Row));
+        assert_eq!("column", format!("{}", Shape::Column));
+        assert_eq!("block", format!("{}", Shape::Block));
+
+        assert_eq!("row", format!("{:?}", Shape::Row));
+        assert_eq!("column", format!("{:?}", Shape::Column));
+        assert_eq!("block", format!("{:?}", Shape::Block));
+    }
+
+    #[test]
+    #[should_panic]
+    fn from_char_panics_on_invalid() {
+        let _ = Shape::from('X');
+    }
+
+    #[test]
+    fn iter_and_len() {
+        let mut iter = Shape::iter();
+        assert_eq!(3, iter.len());
+        assert_eq!(Shape::Row, iter.next().unwrap());
+        assert_eq!(2, iter.len());
+        assert_eq!(Shape::Column, iter.next().unwrap());
+        assert_eq!(Shape::Block, iter.next().unwrap());
+        assert_eq!(0, iter.len());
+        assert!(iter.next().is_none());
+
+        let shapes: Vec<Shape> = Shape::iter().collect();
+        assert_eq!(vec![Shape::Row, Shape::Column, Shape::Block], shapes);
+    }
+
+    #[test]
+    fn house_cells_and_cell() {
+        let row = Shape::Row;
+        let row_house = row.house(Coord::new(0));
+        assert_eq!(House::row(Coord::new(0)), row_house);
+        assert_eq!(cell!(A1), row.cell(Coord::new(0), Coord::new(0)));
+        assert_eq!(row_house.cells(), row.cells(Coord::new(0)));
+
+        let column = Shape::Column;
+        assert_eq!(cell!(A1), column.cell(Coord::new(0), Coord::new(0)));
+        assert_eq!(cell!(J1), column.cell(Coord::new(0), Coord::new(8)));
+
+        let block = Shape::Block;
+        assert_eq!(cell!(A1), block.cell(Coord::new(0), Coord::new(0)));
+        assert_eq!(cell!(B2), block.cell(Coord::new(0), Coord::new(4)));
+        assert_eq!(
+            House::block(Coord::new(0)).cells(),
+            block.cells(Coord::new(0))
+        );
+    }
+
+    #[test]
+    fn house_iterates() {
+        let mut iter = Shape::Row.house_iter();
+        assert_eq!(9, iter.len());
+        assert_eq!(House::row(Coord::new(0)), iter.next().unwrap());
+        for _ in 0..8 {
+            iter.next();
+        }
+        assert_eq!(0, iter.len());
+        assert!(iter.next().is_none());
+    }
+}

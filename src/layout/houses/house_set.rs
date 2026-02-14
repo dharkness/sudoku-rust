@@ -715,4 +715,36 @@ mod tests {
             cols![4 1 2].as_triple().unwrap()
         );
     }
+
+    #[test]
+    fn display_and_debug() {
+        let empty = HouseSet::empty(Shape::Row);
+        assert_eq!("Row ∅", format!("{}", empty));
+
+        let set = rows![A C];
+        let display = format!("{}", set);
+        assert!(display.starts_with("Row"));
+        assert!(display.contains('1'));
+        assert!(display.contains('3'));
+
+        let debug = set.debug();
+        assert!(debug.starts_with("row "));
+    }
+
+    #[test]
+    fn try_from_with_shape_errors() {
+        let err = HouseSet::try_from_with_shape(Shape::Row, "Z").unwrap_err();
+        assert_eq!("invalid coord 'Z' for row (1st)", err.to_string());
+    }
+
+    #[test]
+    #[should_panic]
+    fn has_panics_for_mismatched_shape() {
+        rows![A].has(col!(1));
+    }
+
+    #[test]
+    fn inverted_returns_complement() {
+        assert_eq!(rows![C D E F G H J], rows![A B].inverted());
+    }
 }

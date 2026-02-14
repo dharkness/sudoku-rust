@@ -283,3 +283,59 @@ const CELL_COORDS: [[(CoordPair, CoordPair); 27]; 2] = {
 
     coords
 };
+
+#[cfg(test)]
+mod tests {
+    use crate::*;
+
+    use super::*;
+
+    #[test]
+    fn new_sets_corners_and_block_count() {
+        let rect = Rectangle::new(cell!(A1), cell!(B2));
+        assert_eq!(cell!(A1), rect.top_left);
+        assert_eq!(cell!(A2), rect.top_right);
+        assert_eq!(cell!(B1), rect.bottom_left);
+        assert_eq!(cell!(B2), rect.bottom_right);
+        assert_eq!(1, rect.block_count);
+
+        let rect = Rectangle::new(cell!(A1), cell!(B4));
+        assert_eq!(2, rect.block_count);
+
+        let rect = Rectangle::new(cell!(A1), cell!(D4));
+        assert_eq!(4, rect.block_count);
+    }
+
+    #[test]
+    fn from_and_with_origin() {
+        let rect = Rectangle::from(cell!(B2), cell!(A1), cell!(A2), cell!(B1));
+        assert_eq!(cell!(A1), rect.top_left);
+        assert_eq!(cell!(B2), rect.bottom_right);
+
+        let flipped = rect.with_origin(cell!(B2));
+        assert_eq!(cell!(B2), flipped.top_left);
+        assert_eq!(cell!(A1), flipped.bottom_right);
+    }
+
+    #[test]
+    fn try_from_valid_and_invalid() {
+        let rect = Rectangle::try_from(cells![A1 A2 B1 B2]).unwrap();
+        assert_eq!(cell!(A1), rect.top_left);
+
+        assert!(Rectangle::try_from(cells![A1]).is_err());
+        assert!(Rectangle::try_from(cells![A1 A2 A3]).is_err());
+    }
+
+    #[test]
+    fn display_and_debug() {
+        let rect = Rectangle::new(cell!(A1), cell!(B2));
+
+        assert_eq!("R12C12", format!("{}", rect));
+        assert_eq!("Rectangle(A1 B2)", format!("{:?}", rect));
+    }
+
+    #[test]
+    fn iterates_all_two_block_rectangles() {
+        assert_eq!(486, Rectangle::iter().count());
+    }
+}

@@ -136,7 +136,78 @@ macro_rules! coord {
     ($label:tt) => {
         match stringify!($label).parse::<Coord>() {
             Ok(coord) => coord,
-            Err(e) => panic!("coord![{}]: {}", stringify!($value), e),
+            Err(e) => panic!("coord![{}]: {}", stringify!($label), e),
         }
     };
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn constructors_and_accessors_work() {
+        let coord = Coord::new(4);
+
+        assert_eq!(4, coord.u8());
+        assert_eq!(4usize, coord.usize());
+        assert_eq!(1u16 << 4, coord.bit());
+        assert_eq!('5', coord.label());
+        assert_eq!('E', coord.row_label());
+    }
+
+    #[test]
+    fn from_ordinal_maps_digit_to_index() {
+        let coord = Coord::from_ordinal(1);
+
+        assert_eq!(0, coord.u8());
+        assert_eq!('1', coord.label());
+    }
+
+    #[test]
+    fn row_label_uses_j_for_last_row() {
+        assert_eq!('H', Coord::new(7).row_label());
+        assert_eq!('J', Coord::new(8).row_label());
+    }
+
+    #[test]
+    fn min_and_max_select_bounds() {
+        let a = Coord::new(2);
+        let b = Coord::new(6);
+
+        assert_eq!(a, a.min(b));
+        assert_eq!(b, a.max(b));
+    }
+
+    #[test]
+    fn try_from_and_parse_handle_valid_and_invalid() {
+        assert_eq!(Coord::new(0), Coord::try_from('1').unwrap());
+        assert_eq!(Coord::new(0), Coord::try_from('A').unwrap());
+        assert_eq!(Coord::new(7), Coord::try_from('h').unwrap());
+        assert_eq!(Coord::new(8), Coord::try_from('J').unwrap());
+        assert_eq!(Coord::new(1), " b ".parse::<Coord>().unwrap());
+
+        let err = Coord::try_from('I').unwrap_err();
+        assert_eq!(CoordError::InvalidValue("I".to_string()), err);
+        assert_eq!("invalid coord 'I'", err.to_string());
+        assert!("12".parse::<Coord>().is_err());
+        assert!("0".parse::<Coord>().is_err());
+    }
+
+    #[test]
+    fn conversions_and_display() {
+        let coord: Coord = 6u8.into();
+
+        assert_eq!('7', coord.label());
+        assert_eq!("7", format!("{}", coord));
+    }
+
+    #[test]
+    fn coord_macro_creates_coords() {
+        let digit = crate::coord!(2);
+        let row = crate::coord!(B);
+
+        assert_eq!('2', digit.label());
+        assert_eq!('B', row.row_label());
+    }
 }

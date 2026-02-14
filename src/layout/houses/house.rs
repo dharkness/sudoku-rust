@@ -584,6 +584,9 @@ const BLOCK_BLOCKS: [HouseSet; 9] = [
 
 #[cfg(test)]
 mod tests {
+    use std::cmp::Ordering;
+    use std::iter::ExactSizeIterator;
+
     use crate::*;
 
     use super::*;
@@ -691,5 +694,85 @@ mod tests {
         let cells = cells![C6 F6];
 
         assert_eq!(rows![C F], main.crossing_houses(cells));
+    }
+
+    #[test]
+    fn edge_flags() {
+        let row_a = row!(A);
+        assert!(row_a.is_top());
+        assert!(row_a.is_block_top());
+        assert!(!row_a.is_block_bottom());
+        assert!(!row_a.is_bottom());
+
+        let row_c = row!(C);
+        assert!(row_c.is_block_bottom());
+        assert!(!row_c.is_top());
+
+        let row_j = row!(J);
+        assert!(row_j.is_bottom());
+        assert!(row_j.is_block_bottom());
+        assert!(!row_j.is_block_top());
+
+        let col_1 = col!(1);
+        assert!(col_1.is_left());
+        assert!(col_1.is_block_left());
+        assert!(!col_1.is_block_right());
+        assert!(!col_1.is_right());
+
+        let col_3 = col!(3);
+        assert!(col_3.is_block_right());
+
+        let col_9 = col!(9);
+        assert!(col_9.is_right());
+    }
+
+    #[test]
+    fn conversions_and_ordering() {
+        let house = row!(A);
+        let shape: Shape = house.into();
+        let coord: Coord = house.into();
+
+        assert_eq!(Shape::Row, shape);
+        assert_eq!(Coord::new(0), coord);
+
+        assert_eq!(Some(Ordering::Less), row!(A).partial_cmp(&row!(B)));
+        assert_eq!(Some(Ordering::Less), row!(A).partial_cmp(&col!(1)));
+    }
+
+    #[test]
+    fn add_and_negate_build_sets() {
+        let set = row!(A) + row!(B);
+
+        assert_eq!(rows![A B], set);
+        assert_eq!(rows![B C D E F G H J], -row!(A));
+    }
+
+    #[test]
+    fn try_from_with_shape_errors() {
+        let house = House::try_from_with_shape(Shape::Row, "A").unwrap();
+        assert_eq!(row!(A), house);
+
+        let err = House::try_from_with_shape(Shape::Row, "0").unwrap_err();
+        assert_eq!("invalid coord '0' for row", err.to_string());
+    }
+
+    #[test]
+    #[should_panic]
+    fn crossing_houses_panics_for_blocks() {
+        block!(1).crossing_houses(cells![A1]);
+    }
+
+    #[test]
+    fn iterators_cover_all_houses() {
+        let mut rows_iter = House::rows_iter();
+        assert_eq!(9, rows_iter.len());
+        assert_eq!(row!(A), rows_iter.next().unwrap());
+
+        let houses: Vec<House> = House::iter().collect();
+        assert_eq!(27, houses.len());
+        assert_eq!(row!(A), houses[0]);
+        assert_eq!(col!(1), houses[9]);
+        assert_eq!(block!(1), houses[18]);
+        assert_eq!(block!(9), houses[26]);
     }
 }

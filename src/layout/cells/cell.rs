@@ -319,10 +319,120 @@ const PEERS: [CellSet; 81] = {
 
 #[cfg(test)]
 mod tests {
+    use std::iter::ExactSizeIterator;
+
+    use crate::*;
+
     use super::*;
 
     #[test]
     fn bits() {
         assert_eq!(Bit::new(0b1000000), Cell::new(6).bit());
+    }
+
+    #[test]
+    fn constructors_and_coords() {
+        let cell = Cell::from_coords(Coord::new(1), Coord::new(2));
+
+        assert_eq!(cell!(B3), cell);
+        assert_eq!(Coord::new(1), cell.row_coord());
+        assert_eq!(Coord::new(2), cell.column_coord());
+        assert_eq!(Coord::new(0), cell.block_coord());
+        assert_eq!(Coord::new(5), cell.coord_in_block());
+
+        assert_eq!(row!(B), cell.row());
+        assert_eq!(col!(3), cell.column());
+        assert_eq!(block!(1), cell.block());
+
+        assert_eq!(
+            cell,
+            Cell::from_row_column(House::row(Coord::new(1)), House::column(Coord::new(2)))
+        );
+    }
+
+    #[test]
+    fn common_row_or_column_detects_shared_house() {
+        assert_eq!(Some(row!(A)), cell!(A1).common_row_or_column(cell!(A9)));
+        assert_eq!(Some(col!(1)), cell!(A1).common_row_or_column(cell!(J1)));
+        assert_eq!(None, cell!(A1).common_row_or_column(cell!(B2)));
+    }
+
+    #[test]
+    fn common_houses_lists_all_shared() {
+        let shared = cell!(A1).common_houses(cell!(A2));
+
+        assert_eq!(vec![row!(A), block!(1)], shared);
+    }
+
+    #[test]
+    fn peers_and_sees() {
+        let peers = cell!(A1).peers();
+
+        assert_eq!(20, peers.len());
+        assert!(peers.has(cell!(A2)));
+        assert!(peers.has(cell!(B1)));
+        assert!(peers.has(cell!(B2)));
+        assert!(!peers.has(cell!(A1)));
+        assert!(cell!(A1).sees(cell!(A2)));
+        assert!(!cell!(A1).sees(cell!(J9)));
+    }
+
+    #[test]
+    fn labels_and_display() {
+        assert_eq!("J9", cell!(J9).label());
+        assert_eq!("J9", format!("{}", cell!(J9)));
+
+        let labels = Cell::labels(&[cell!(A1), cell!(B2)]);
+        assert_eq!("( A1 B2 )", labels);
+    }
+
+    #[test]
+    fn from_str_parses_and_errors() {
+        assert_eq!(cell!(A1), "A1".parse::<Cell>().unwrap());
+        assert_eq!(cell!(A1), "a1".parse::<Cell>().unwrap());
+
+        let err = "A10".parse::<Cell>().unwrap_err();
+        assert_eq!(CellError::WrongLength("A10".to_string()), err);
+
+        let err = "Z1".parse::<Cell>().unwrap_err();
+        assert_eq!(
+            CellError::InvalidRow {
+                label: "Z1".to_string(),
+                row: 'Z'
+            },
+            err
+        );
+
+        let err = "A0".parse::<Cell>().unwrap_err();
+        assert_eq!(
+            CellError::InvalidColumn {
+                label: "A0".to_string(),
+                column: '0'
+            },
+            err
+        );
+    }
+
+    #[test]
+    fn add_and_negate_build_sets() {
+        let set = cell!(A1) + cell!(B2);
+
+        assert!(set.has(cell!(A1)));
+        assert!(set.has(cell!(B2)));
+        assert!(!(-cell!(A1)).has(cell!(A1)));
+    }
+
+    #[test]
+    fn iter_len_and_end() {
+        let mut iter = Cell::iter();
+
+        assert_eq!(81, iter.len());
+        assert_eq!(cell!(A1), iter.next().unwrap());
+        assert_eq!(80, iter.len());
+        for _ in 0..80 {
+            iter.next();
+        }
+        assert_eq!(0, iter.len());
+        assert!(iter.next().is_none());
     }
 }

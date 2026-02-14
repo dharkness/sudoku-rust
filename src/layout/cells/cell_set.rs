@@ -791,6 +791,8 @@ impl FusedIterator for BitIter {}
 
 #[cfg(test)]
 mod tests {
+    use crate::layout::cells::cell::CellError;
+    use crate::symbols::EMPTY_SET;
     use crate::*;
 
     use super::*;
@@ -1220,5 +1222,51 @@ mod tests {
             cells![A5 C9 G2],
             cells![A5 B6 C9 F3 G2 J2] & cells![A5 B2 C9 D7 G2 J5]
         );
+    }
+
+    #[test]
+    fn pattern_string_and_debug() {
+        let set = cells![A1 B2];
+
+        let pattern = set.pattern_string();
+        assert_eq!(81, pattern.len());
+        assert_eq!('1', pattern.chars().next().unwrap());
+        assert_eq!('.', pattern.chars().nth(1).unwrap());
+        assert_eq!('1', pattern.chars().nth(10).unwrap());
+
+        let debug = set.debug();
+        assert!(debug.starts_with("02:"));
+        assert_eq!(84, debug.len());
+    }
+
+    #[test]
+    fn try_from_and_error_display() {
+        let set = CellSet::try_from("A1 B2,C3").unwrap();
+        assert_eq!(cells![A1 B2 C3], set);
+
+        let err = CellSet::try_from("A1 Z9").unwrap_err();
+        assert_eq!(
+            CellSetError::InvalidCell {
+                position: 2,
+                error: CellError::InvalidRow {
+                    label: "Z9".to_string(),
+                    row: 'Z'
+                }
+            },
+            err
+        );
+        assert_eq!("invalid row 'Z' for cell \"Z9\" (2nd)", err.to_string());
+    }
+
+    #[test]
+    fn display_and_bit_iter() {
+        let empty = CellSet::empty();
+        assert_eq!(EMPTY_SET.to_string(), format!("{}", empty));
+
+        let set = cells![A1 B2 C3];
+        assert_eq!("A1 B2 C3", format!("{}", set));
+
+        let bits: Vec<Bit> = set.bit_iter().collect();
+        assert_eq!(3, bits.len());
     }
 }

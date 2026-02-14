@@ -692,4 +692,31 @@ mod tests {
 
         assert_eq!("(·2·4·6··9)", set.to_string());
     }
+
+    #[test]
+    fn display_debug_and_macro() {
+        let empty = CoordSet::empty();
+        assert_eq!(EMPTY_SET_STR, format!("{}", empty));
+
+        let set = coords![1 3 5];
+        let display = format!("{}", set);
+        assert!(display.starts_with('('));
+        assert!(display.ends_with(')'));
+        assert!(display.contains('1'));
+        assert!(display.contains('3'));
+        assert!(display.contains('5'));
+
+        let debug = set.debug();
+        assert!(debug.starts_with("3:"));
+        assert_eq!(11, debug.len());
+
+        assert_eq!(CoordSet::try_from("A 3 J").unwrap(), coords![A 3 J]);
+    }
+
+    #[test]
+    fn try_from_errors_include_position() {
+        let err = CoordSet::try_from("1 X").unwrap_err();
+
+        assert_eq!("invalid coord 'X' (2nd)", err.to_string());
+    }
 }

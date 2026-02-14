@@ -103,3 +103,74 @@ macro_rules! value {
         Value::new($k as u8)
     };
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::symbols::MISSING;
+
+    #[test]
+    fn none_and_default_are_missing() {
+        let none = Value::none();
+        let defaulted = Value::default();
+
+        assert!(none.is_none());
+        assert!(defaulted.is_none());
+        assert_eq!(Value::NONE, none.value());
+        assert_eq!(MISSING, none.label());
+    }
+
+    #[test]
+    fn new_digit_is_detected() {
+        let value = Value::new(5);
+
+        assert!(value.is_digit());
+        assert_eq!(Some(Digit::from_ordinal(5)), value.digit());
+        assert_eq!(5, value.value());
+        assert_eq!('5', value.label());
+    }
+
+    #[test]
+    fn digit_returns_none_for_missing() {
+        let value = Value::none();
+
+        assert_eq!(None, value.digit());
+    }
+
+    #[test]
+    fn conversions_work() {
+        let from_digit: Value = Digit::from_ordinal(9).into();
+        let from_u8: Value = 4u8.into();
+        let from_char = Value::from('7');
+        let from_zero = Value::from('0');
+        let from_str = Value::from("8");
+
+        assert_eq!(9, from_digit.value());
+        assert_eq!(4, from_u8.value());
+        assert_eq!(7, from_char.value());
+        assert!(from_zero.is_none());
+        assert_eq!(8, from_str.value());
+    }
+
+    #[test]
+    fn not_operator_matches_missing_state() {
+        assert!(!Value::none());
+        assert!(!(!Value::new(3)));
+    }
+
+    #[test]
+    fn formatting_uses_labels() {
+        let value = Value::new(2);
+
+        assert_eq!("2", format!("{}", value));
+        assert_eq!("2", format!("{:?}", value));
+        assert_eq!(MISSING.to_string(), format!("{}", Value::none()));
+    }
+
+    #[test]
+    fn value_macro_creates_value() {
+        let value = crate::value!(3);
+
+        assert_eq!(3, value.value());
+    }
+}
