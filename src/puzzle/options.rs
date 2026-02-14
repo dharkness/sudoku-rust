@@ -125,62 +125,94 @@ mod test {
     use super::*;
 
     #[test]
-    fn test_solve_singles() {
+    fn defaults_match_none() {
+        let none = Options::none();
+        let defaulted = Options::default();
+
+        assert_eq!(none, defaulted);
+        assert!(!none.stop_on_error);
+        assert!(!none.solve_naked_singles);
+        assert!(!none.solve_hidden_singles);
+        assert!(!none.solve_intersection_removals);
+    }
+
+    #[test]
+    fn errors_and_all_set_expected_flags() {
+        let errors = Options::errors();
+        let all = Options::all();
+
+        assert!(errors.stop_on_error);
+        assert!(!errors.solve_naked_singles);
+        assert!(!errors.solve_hidden_singles);
+        assert!(!errors.solve_intersection_removals);
+
+        assert!(all.stop_on_error);
+        assert!(all.solve_naked_singles);
+        assert!(all.solve_hidden_singles);
+        assert!(all.solve_intersection_removals);
+    }
+
+    #[test]
+    fn mutators_toggle_flags() {
+        let base = Options::none();
+        let updated = base
+            .stop_on_error()
+            .solve_naked_singles()
+            .solve_hidden_singles()
+            .solve_intersection_removals();
+
+        assert!(!base.stop_on_error);
+        assert!(updated.stop_on_error);
+        assert!(updated.solve_naked_singles);
+        assert!(updated.solve_hidden_singles);
+        assert!(updated.solve_intersection_removals);
+
+        let reverted = updated
+            .ignore_errors()
+            .return_naked_singles()
+            .return_hidden_singles()
+            .return_intersection_removals();
+
+        assert!(!reverted.stop_on_error);
+        assert!(!reverted.solve_naked_singles);
+        assert!(!reverted.solve_hidden_singles);
+        assert!(!reverted.solve_intersection_removals);
+    }
+
+    #[test]
+    fn singles_helpers_set_and_clear_both_flags() {
         let options = Options::none().solve_singles();
 
         assert!(options.solve_naked_singles);
         assert!(options.solve_hidden_singles);
+
+        let cleared = options.return_singles();
+        assert!(!cleared.solve_naked_singles);
+        assert!(!cleared.solve_hidden_singles);
     }
 
     #[test]
-    fn test_should_apply() {
-        let mut options = Options::none();
+    fn should_apply_respects_flags() {
+        let none = Options::none();
 
-        assert_eq!(false, options.should_apply(Strategy::NakedSingle));
-        assert_eq!(false, options.should_apply(Strategy::HiddenSingle));
-        assert_eq!(false, options.should_apply(Strategy::PointingPair));
-        assert_eq!(false, options.should_apply(Strategy::PointingTriple));
-        assert_eq!(false, options.should_apply(Strategy::BoxLineReduction));
-        assert_eq!(false, options.should_apply(Strategy::Bug));
+        assert!(none.should_apply(Strategy::Peer));
+        assert!(none.should_apply(Strategy::BruteForce));
+        assert!(!none.should_apply(Strategy::NakedSingle));
+        assert!(!none.should_apply(Strategy::HiddenSingle));
+        assert!(!none.should_apply(Strategy::PointingPair));
+        assert!(!none.should_apply(Strategy::PointingTriple));
+        assert!(!none.should_apply(Strategy::BoxLineReduction));
+        assert!(!none.should_apply(Strategy::NakedPair));
 
-        options = options.solve_naked_singles();
-        assert_eq!(true, options.should_apply(Strategy::NakedSingle));
-        assert_eq!(false, options.should_apply(Strategy::HiddenSingle));
-        assert_eq!(false, options.should_apply(Strategy::PointingPair));
-        assert_eq!(false, options.should_apply(Strategy::PointingTriple));
-        assert_eq!(false, options.should_apply(Strategy::BoxLineReduction));
-        assert_eq!(false, options.should_apply(Strategy::Bug));
+        let singles = Options::none().solve_singles();
+        assert!(singles.should_apply(Strategy::NakedSingle));
+        assert!(singles.should_apply(Strategy::HiddenSingle));
+        assert!(!singles.should_apply(Strategy::PointingPair));
 
-        options = options.solve_hidden_singles();
-        assert_eq!(true, options.should_apply(Strategy::NakedSingle));
-        assert_eq!(true, options.should_apply(Strategy::HiddenSingle));
-        assert_eq!(false, options.should_apply(Strategy::PointingPair));
-        assert_eq!(false, options.should_apply(Strategy::PointingTriple));
-        assert_eq!(false, options.should_apply(Strategy::BoxLineReduction));
-        assert_eq!(false, options.should_apply(Strategy::Bug));
-
-        options = options.return_singles();
-        assert_eq!(false, options.should_apply(Strategy::NakedSingle));
-        assert_eq!(false, options.should_apply(Strategy::HiddenSingle));
-        assert_eq!(false, options.should_apply(Strategy::PointingPair));
-        assert_eq!(false, options.should_apply(Strategy::PointingTriple));
-        assert_eq!(false, options.should_apply(Strategy::BoxLineReduction));
-        assert_eq!(false, options.should_apply(Strategy::Bug));
-
-        options = options.solve_intersection_removals();
-        assert_eq!(false, options.should_apply(Strategy::NakedSingle));
-        assert_eq!(false, options.should_apply(Strategy::HiddenSingle));
-        assert_eq!(true, options.should_apply(Strategy::PointingPair));
-        assert_eq!(true, options.should_apply(Strategy::PointingTriple));
-        assert_eq!(true, options.should_apply(Strategy::BoxLineReduction));
-        assert_eq!(false, options.should_apply(Strategy::Bug));
-
-        options = options.return_intersection_removals();
-        assert_eq!(false, options.should_apply(Strategy::NakedSingle));
-        assert_eq!(false, options.should_apply(Strategy::HiddenSingle));
-        assert_eq!(false, options.should_apply(Strategy::PointingPair));
-        assert_eq!(false, options.should_apply(Strategy::PointingTriple));
-        assert_eq!(false, options.should_apply(Strategy::BoxLineReduction));
-        assert_eq!(false, options.should_apply(Strategy::Bug));
+        let intersections = Options::none().solve_intersection_removals();
+        assert!(intersections.should_apply(Strategy::PointingPair));
+        assert!(intersections.should_apply(Strategy::PointingTriple));
+        assert!(intersections.should_apply(Strategy::BoxLineReduction));
+        assert!(!intersections.should_apply(Strategy::HiddenSingle));
     }
 }

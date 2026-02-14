@@ -128,3 +128,142 @@ impl Changer {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::io::{Parse, Parser};
+    use crate::layout::DigitSet;
+    use crate::*;
+
+    use super::*;
+
+    fn board_with_single_candidate(cell: Cell, keep: Digit) -> Board {
+        let mut board = Board::new();
+        let mut effects = Effects::new();
+        for digit in Digit::iter() {
+            if digit != keep {
+                board.remove_candidate(cell, digit, &mut effects);
+            }
+        }
+        board
+    }
+
+    #[test]
+    fn set_digit_returns_valid() {
+        let board = Board::new();
+        let changer = Changer::new(Options::none());
+
+        let result = changer.set_digit(&board, Strategy::Solve, cell!(A1), digit!(1));
+
+        match result {
+            ChangeResult::Valid(after, unapplied) => {
+                assert_eq!(Some(digit!(1)), after.value(cell!(A1)).digit());
+                assert!(unapplied.is_empty());
+            }
+            _ => panic!("expected valid change"),
+        }
+    }
+
+    #[test]
+    fn set_digit_same_value_returns_none() {
+        let mut board = Board::new();
+        let mut effects = Effects::new();
+        board.set_given(cell!(A1), digit!(1), &mut effects);
+
+        let changer = Changer::new(Options::none());
+        let result = changer.set_digit(&board, Strategy::Solve, cell!(A1), digit!(1));
+
+        match result {
+            ChangeResult::None => {}
+            _ => panic!("expected no change"),
+        }
+    }
+
+    #[test]
+    fn stop_on_error_returns_invalid() {
+        let board = board_with_single_candidate(cell!(A1), digit!(9));
+        let changer = Changer::new(Options::errors());
+
+        let result = changer.remove_candidate(&board, Strategy::Erase, cell!(A1), digit!(9));
+
+        match result {
+            ChangeResult::Invalid(before, after, action, effects) => {
+                assert_eq!(digits![9], before.candidates(cell!(A1)));
+                assert!(after.candidates(cell!(A1)).is_empty());
+                assert!(effects.has_errors());
+                assert!(action.has_strategy(Strategy::Erase));
+            }
+            _ => panic!("expected invalid change"),
+        }
+    }
+
+    #[test]
+    fn ignore_errors_returns_valid() {
+        let board = board_with_single_candidate(cell!(A1), digit!(9));
+        let changer = Changer::new(Options::none());
+
+        let result = changer.remove_candidate(&board, Strategy::Erase, cell!(A1), digit!(9));
+
+        match result {
+            ChangeResult::Valid(after, _) => {
+                assert!(after.candidates(cell!(A1)).is_empty());
+            }
+            _ => panic!("expected valid change"),
+        }
+    }
+
+    #[test]
+    fn apply_all_with_unapplied_actions_returns_none() {
+        let board = Board::new();
+        let changer = Changer::new(Options::none());
+
+        let action = Action::new_erase(Strategy::NakedPair, cell!(A1), digit!(1));
+        let mut effects = Effects::new();
+        effects.add_action(action);
+
+        let result = changer.apply_all(&board, &effects);
+
+        match result {
+            ChangeResult::None => {}
+            _ => panic!("expected no change"),
+        }
+    }
+
+    #[test]
+    fn apply_all_runs_intersection_removals() {
+        let board = Parse::packed_with_options(Options::errors()).parse_simple(
+            "
+                7..1....9
+                .2.3..7..
+                4.9......
+                .6.8..2..
+                .........
+                .7...1.5.
+                .....49..
+                .46..5..2
+                .1...68..
+            ",
+        );
+
+        assert!(board.is_candidate(cell!(B8), digit!(1)));
+
+        let changer = Changer::new(Options::none().solve_intersection_removals());
+        let action = Action::new_erase(Strategy::NakedPair, cell!(A1), digit!(1));
+        let mut effects = Effects::new();
+        effects.add_action(action);
+
+        let result = changer.apply_all(&board, &effects);
+
+        match result {
+            ChangeResult::Valid(after, unapplied) => {
+                assert!(!after.is_candidate(cell!(B8), digit!(1)));
+                assert!(unapplied.action_count() >= 1);
+                assert!(unapplied
+                    .actions()
+                    .iter()
+                    .any(|action| action.has_strategy(Strategy::NakedPair)));
+            }
+            _ => panic!("expected valid change"),
+        }
+    }
+}

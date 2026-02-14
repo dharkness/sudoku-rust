@@ -324,3 +324,147 @@ impl fmt::Display for Action {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::symbols::{EMPTY_SET, REMOVE_CANDIDATE, SET_DIGIT};
+    use crate::*;
+
+    #[test]
+    fn new_is_empty_and_tracks_strategy() {
+        let action = Action::new(Strategy::NakedSingle);
+
+        assert!(action.is_empty());
+        assert_eq!(Strategy::NakedSingle, action.strategy());
+        assert!(action.has_strategy(Strategy::NakedSingle));
+        assert!(!action.has_strategy(Strategy::HiddenSingle));
+    }
+
+    #[test]
+    fn set_and_collects() {
+        let mut action = Action::new(Strategy::Solve);
+        action.set(cell!(B2), digit!(5));
+        action.set(cell!(A1), digit!(3));
+
+        assert!(action.sets(cell!(A1), digit!(3)));
+        assert!(!action.sets(cell!(A1), digit!(4)));
+
+        let sets = action.collect_sets().collect::<Vec<_>>();
+        assert_eq!(vec![(cell!(A1), digit!(3)), (cell!(B2), digit!(5))], sets);
+
+        assert!(action.affects_cell(cell!(A1)));
+        assert!(!action.affects_cell(cell!(C3)));
+
+        assert!(action.affects_digit(digit!(5)));
+        assert!(!action.affects_digit(digit!(9)));
+    }
+
+    #[test]
+    fn erase_and_collects() {
+        let mut action = Action::new(Strategy::Erase);
+        action.erase(cell!(A1), digit!(2));
+        action.erase_digits(cell!(A1), digits![5 7]);
+        action.erase_cells(cells![B2 C3], digit!(5));
+
+        assert!(action.erases(cell!(A1), digit!(2)));
+        assert!(action.erases(cell!(A1), digit!(5)));
+        assert!(!action.erases(cell!(A1), digit!(1)));
+
+        assert_eq!(cells![A1 B2 C3], action.erases_from_cells(digit!(5)));
+        assert_eq!(digits![2 5 7], action.erases_digits_from(cell!(A1)));
+
+        let erases = action.collect_erases().collect::<Vec<_>>();
+        assert_eq!(
+            vec![
+                (cell!(A1), digits![2 5 7]),
+                (cell!(B2), digits![5]),
+                (cell!(C3), digits![5]),
+            ],
+            erases
+        );
+    }
+
+    #[test]
+    fn clues_and_verdicts() {
+        let mut action = Action::new(Strategy::HiddenSingle);
+        action.clue_cell_for_digit(Verdict::Primary, cell!(A1), digit!(3));
+        action.clue_cells_for_digits(Verdict::Secondary, cells![B2 C3], digits![4 5]);
+
+        assert!(action.has_clues());
+
+        let clues = action.collect_clues().collect::<Vec<_>>();
+        assert_eq!(
+            vec![
+                (cell!(A1), digit!(3), Verdict::Primary),
+                (cell!(B2), digit!(4), Verdict::Secondary),
+                (cell!(B2), digit!(5), Verdict::Secondary),
+                (cell!(C3), digit!(4), Verdict::Secondary),
+                (cell!(C3), digit!(5), Verdict::Secondary),
+            ],
+            clues
+        );
+
+        action.set(cell!(A1), digit!(3));
+        action.erase(cell!(A1), digit!(5));
+
+        let verdicts = action.collect_verdicts();
+        assert_eq!(Verdict::Set, verdicts[&cell!(A1)][&digit!(3)]);
+        assert_eq!(Verdict::Erase, verdicts[&cell!(A1)][&digit!(5)]);
+        assert_eq!(Verdict::Secondary, verdicts[&cell!(B2)][&digit!(5)]);
+
+        let by_digit = action.collect_verdicts_for_digit(digit!(3));
+        assert_eq!(Verdict::Set, by_digit[&cell!(A1)]);
+    }
+
+    #[test]
+    fn apply_sets_and_erases() {
+        let mut board = Board::new();
+        let mut follow = Effects::new();
+        let mut action = Action::new(Strategy::Solve);
+        action.set(cell!(A1), digit!(1));
+        action.erase(cell!(A2), digit!(1));
+
+        let change = action.apply(&mut board, &mut follow);
+
+        assert_eq!(Change::Valid, change);
+        assert_eq!(Some(digit!(1)), board.value(cell!(A1)).digit());
+        assert!(!board.is_candidate(cell!(A2), digit!(1)));
+        assert!(!board.is_given(cell!(A1)));
+        assert!(follow.is_empty());
+    }
+
+    #[test]
+    fn apply_given_marks_given() {
+        let mut board = Board::new();
+        let mut follow = Effects::new();
+        let action = Action::new_set(Strategy::Given, cell!(B2), digit!(9));
+
+        let change = action.apply(&mut board, &mut follow);
+
+        assert_eq!(Change::Valid, change);
+        assert!(board.is_given(cell!(B2)));
+        assert_eq!(Some(digit!(9)), board.value(cell!(B2)).digit());
+        assert!(follow.is_empty());
+    }
+
+    #[test]
+    fn formatting_includes_strategy_and_symbols() {
+        let empty = Action::new(Strategy::Solve);
+        let display = format!("{}", empty);
+        let debug = format!("{:?}", empty);
+
+        assert!(display.contains("Solve"));
+        assert!(display.contains(EMPTY_SET));
+        assert!(debug.contains("Solve"));
+        assert!(debug.contains(EMPTY_SET));
+
+        let mut action = Action::new(Strategy::Erase);
+        action.erase(cell!(A1), digit!(2));
+        action.set(cell!(B2), digit!(3));
+        let display = format!("{}", action);
+
+        assert!(display.contains(REMOVE_CANDIDATE));
+        assert!(display.contains(SET_DIGIT));
+    }
+}

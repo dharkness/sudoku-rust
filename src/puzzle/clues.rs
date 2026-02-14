@@ -147,3 +147,81 @@ impl fmt::Display for Clues {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::symbols::EMPTY_SET;
+    use crate::*;
+
+    #[test]
+    fn new_is_empty() {
+        let clues = Clues::new();
+
+        assert!(clues.is_empty());
+        assert!(clues.clues().is_empty());
+        assert_eq!(EMPTY_SET.to_string(), format!("{}", clues));
+    }
+
+    #[test]
+    fn clue_cells_merge_by_digit() {
+        let mut clues = Clues::new();
+        clues.clue_cell_for_digit(Verdict::Primary, cell!(A1), digit!(3));
+        clues.clue_cell_for_digit(Verdict::Primary, cell!(B2), digit!(3));
+
+        assert_eq!(1, clues.clues().len());
+        assert_eq!(cells![A1 B2], clues.clues()[0].cells);
+        assert_eq!(digit!(3), clues.clues()[0].digit);
+        assert_eq!(Verdict::Primary, clues.clues()[0].verdict);
+    }
+
+    #[test]
+    fn clue_cells_for_digits_adds_each_digit() {
+        let mut clues = Clues::new();
+        clues.clue_cells_for_digits(Verdict::Secondary, cells![A1], digits![1 2]);
+
+        let digits = clues
+            .clues()
+            .iter()
+            .fold(DigitSet::empty(), |acc, clue| acc + clue.digit);
+
+        assert_eq!(digits![1 2], digits);
+    }
+
+    #[test]
+    fn collect_maps_cells_and_digits() {
+        let mut clues = Clues::new();
+        clues.clue_cell_for_digit(Verdict::Primary, cell!(A1), digit!(3));
+        clues.clue_cells_for_digit(Verdict::Secondary, cells![B2 C3], digit!(4));
+
+        let map = clues.collect();
+        assert_eq!(Verdict::Primary, map[&cell!(A1)][&digit!(3)]);
+        assert_eq!(Verdict::Secondary, map[&cell!(B2)][&digit!(4)]);
+        assert_eq!(Verdict::Secondary, map[&cell!(C3)][&digit!(4)]);
+
+        let by_digit = clues.collect_for_digit(digit!(4));
+        assert_eq!(Verdict::Secondary, by_digit[&cell!(B2)]);
+    }
+
+    #[test]
+    fn verdict_color_includes_char() {
+        let plain = Verdict::None.color_char('x');
+        let colored = Verdict::Primary.color_char('x');
+
+        assert_eq!("x", plain);
+        assert!(colored.contains('x'));
+        assert!(!colored.is_empty());
+    }
+
+    #[test]
+    fn display_includes_verdicts() {
+        let mut clues = Clues::new();
+        clues.clue_cell_for_digit(Verdict::Primary, cell!(A1), digit!(3));
+
+        let text = format!("{}", clues);
+
+        assert!(text.contains("Primary"));
+        assert!(text.contains("3"));
+        assert!(text.contains("A1"));
+    }
+}

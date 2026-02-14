@@ -240,3 +240,158 @@ impl fmt::Display for Effects {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::*;
+
+    #[test]
+    fn new_and_errors_work() {
+        let mut effects = Effects::new();
+
+        assert!(effects.is_empty());
+        assert!(!effects.has_errors());
+        assert_eq!(0, effects.error_count());
+
+        let error = Error::UnsolvableCell(cell!(A1));
+        effects.add_error(error);
+
+        assert!(effects.has_errors());
+        assert_eq!(1, effects.error_count());
+        assert_eq!(Some(&error), effects.errors().first());
+        assert_eq!(1, effects.errors_iter().count());
+
+        effects.clear_errors();
+        assert!(!effects.has_errors());
+    }
+
+    #[test]
+    fn action_helpers_and_counts() {
+        let mut effects = Effects::new();
+
+        assert!(!effects.add_action(Action::new(Strategy::Solve)));
+
+        effects.add_set(Strategy::Solve, cell!(A1), digit!(1));
+        effects.add_erase(Strategy::Erase, cell!(A1), digit!(2));
+        effects.add_erase_cells(Strategy::Erase, cells![A1 B2], digit!(3));
+        effects.add_erase_digits(Strategy::Erase, cell!(A1), digits![4 5]);
+
+        assert!(effects.has_actions());
+        assert_eq!(4, effects.action_count());
+
+        let counts = effects.action_counts();
+        assert_eq!(1, counts[&Strategy::Solve]);
+        assert_eq!(3, counts[&Strategy::Erase]);
+    }
+
+    #[test]
+    fn erases_helpers_work() {
+        let mut effects = Effects::new();
+        effects.add_erase(Strategy::Erase, cell!(A1), digit!(2));
+        effects.add_erase_digits(Strategy::Erase, cell!(A1), digits![4 5]);
+        effects.add_erase_cells(Strategy::Erase, cells![A1], digit!(7));
+
+        assert!(effects.erases(cell!(A1), digit!(2)));
+        assert_eq!(cells![A1], effects.erases_from_cells(digit!(7)));
+        assert_eq!(digits![2 4 5 7], effects.erases_digits_from(cell!(A1)));
+    }
+
+    #[test]
+    fn affecting_filters_actions() {
+        let mut effects = Effects::new();
+        effects.add_set(Strategy::Solve, cell!(A1), digit!(1));
+        effects.add_erase(Strategy::Erase, cell!(B2), digit!(1));
+        effects.add_erase(Strategy::Erase, cell!(C3), digit!(2));
+
+        let by_cell = effects.affecting_cell(cell!(A1));
+        assert_eq!(1, by_cell.action_count());
+
+        let by_digit = effects.affecting_digit(digit!(1));
+        assert_eq!(2, by_digit.action_count());
+    }
+
+    #[test]
+    fn pop_without_and_take_actions() {
+        let mut effects = Effects::new();
+        effects.add_set(Strategy::Solve, cell!(A1), digit!(1));
+        effects.add_set(Strategy::Solve, cell!(B2), digit!(2));
+
+        let popped = effects.pop_action().unwrap();
+        assert!(popped.sets(cell!(B2), digit!(2)));
+        assert_eq!(1, effects.action_count());
+
+        let filtered = effects.without_action(0);
+        assert_eq!(0, filtered.action_count());
+
+        let mut other = Effects::new();
+        other.add_set(Strategy::Solve, cell!(C3), digit!(3));
+        effects.take_actions(other);
+
+        assert_eq!(2, effects.action_count());
+    }
+
+    #[test]
+    fn apply_updates_board() {
+        let mut effects = Effects::new();
+        effects.add_set(Strategy::Solve, cell!(A1), digit!(1));
+
+        let mut board = Board::new();
+        let mut next = Effects::new();
+        let change = effects.apply(&mut board, &mut next);
+
+        assert_eq!(Change::Valid, change);
+        assert_eq!(Some(digit!(1)), board.value(cell!(A1)).digit());
+        assert!(next.is_empty());
+    }
+
+    #[test]
+    fn apply_strategy_filters_actions() {
+        let mut effects = Effects::new();
+        effects.add_set(Strategy::Solve, cell!(A1), digit!(1));
+        effects.add_erase(Strategy::Erase, cell!(B2), digit!(2));
+
+        let mut board = Board::new();
+        let mut next = Effects::new();
+        let change = effects.apply_strategy(&mut board, Strategy::Solve, &mut next);
+
+        assert_eq!(Change::Valid, change);
+        assert_eq!(Some(digit!(1)), board.value(cell!(A1)).digit());
+        assert!(board.is_candidate(cell!(B2), digit!(2)));
+        assert!(next.is_empty());
+    }
+
+    #[test]
+    fn apply_all_returns_errors() {
+        let mut effects = Effects::new();
+        effects.add_error(Error::UnsolvableCell(cell!(A1)));
+
+        let mut board = Board::new();
+        let result = effects.apply_all(&mut board);
+
+        assert!(result.is_some());
+        assert!(result.unwrap().has_errors());
+    }
+
+    #[test]
+    fn from_action_creates_effects() {
+        let action = Action::new_set(Strategy::Solve, cell!(A1), digit!(1));
+        let effects: Effects = action.into();
+
+        assert!(effects.has_actions());
+        assert_eq!(1, effects.action_count());
+    }
+
+    #[test]
+    fn display_includes_errors_and_actions() {
+        let mut effects = Effects::new();
+        effects.add_error(Error::UnsolvableCell(cell!(A1)));
+        effects.add_set(Strategy::Solve, cell!(A1), digit!(1));
+
+        let text = format!("{}", effects);
+
+        assert!(text.contains("Errors:"));
+        assert!(text.contains("Actions:"));
+        assert!(text.contains("A1"));
+    }
+}

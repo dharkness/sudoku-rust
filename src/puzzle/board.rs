@@ -541,6 +541,14 @@ mod test {
 
     use super::*;
 
+    fn with_given_and_placed() -> Board {
+        let mut board = Board::new();
+        let mut effects = Effects::new();
+        board.set_given(cell!(A1), digit!(1), &mut effects);
+        board.set_digit(cell!(B2), digit!(2), &mut effects);
+        board
+    }
+
     fn fixture() -> Board {
         Parse::grid().parse_simple(
             strip_leading_whitespace(
@@ -600,6 +608,150 @@ mod test {
                 assert_eq!(f.house_has_digit(house, digit), false);
             }
         }
+    }
+
+    #[test]
+    fn test_change_and_invalid_paths() {
+        assert_eq!(Change::Invalid, Change::Valid.and(Change::Invalid));
+        assert_eq!(Change::Invalid, Change::Invalid.and(Change::Valid));
+        assert_eq!(Change::Valid, Change::Valid.and(Change::Valid));
+        assert_eq!(Change::None, Change::None.and(Change::None));
+    }
+
+    #[test]
+    fn test_unsolved_and_solved_iters() {
+        let f = with_given_and_placed();
+
+        let unsolved = f.unsolved_iter().map(|(cell, _)| cell).collect_vec();
+        assert_eq!(79, unsolved.len());
+        assert!(!unsolved.contains(&cell!(A1)));
+        assert!(!unsolved.contains(&cell!(B2)));
+
+        let solved = f.solved_iter().collect_vec();
+        assert_eq!(vec![(cell!(A1), digit!(1)), (cell!(B2), digit!(2))], solved);
+    }
+
+    #[test]
+    fn test_solved_givens_and_placed_sets() {
+        let f = with_given_and_placed();
+
+        assert_eq!(cells![A1], f.solved_with(digit!(1)));
+        assert_eq!(cells![B2], f.solved_with(digit!(2)));
+
+        assert_eq!(cells![A1], f.givens_with(digit!(1)));
+        assert_eq!(cells![], f.givens_with(digit!(2)));
+
+        assert_eq!(cells![B2], f.placed_with(digit!(2)));
+        assert_eq!(cells![], f.placed_with(digit!(1)));
+    }
+
+    #[test]
+    fn test_blocked_by_given() {
+        let mut board = Board::new();
+        let mut effects = Effects::new();
+        board.set_given(cell!(A1), digit!(1), &mut effects);
+
+        assert!(board.blocked_by_given(cell!(A2), digit!(1)));
+        assert!(board.blocked_by_given(cell!(B2), digit!(1)));
+        assert!(!board.blocked_by_given(cell!(H9), digit!(1)));
+    }
+
+    #[test]
+    fn test_set_digit_error_paths() {
+        let mut board = Board::new();
+        let mut effects = Effects::new();
+        board.set_given(cell!(A1), digit!(1), &mut effects);
+
+        let change = board.set_digit(cell!(A1), digit!(2), &mut effects);
+        assert_eq!(Change::Invalid, change);
+        assert!(effects
+            .errors()
+            .contains(&Error::AlreadySolved(cell!(A1), digit!(2), digit!(1))));
+
+        let mut board = Board::new();
+        let mut effects = Effects::new();
+        board.remove_candidate(cell!(A2), digit!(3), &mut effects);
+
+        let change = board.set_digit(cell!(A2), digit!(3), &mut effects);
+        assert_eq!(Change::Invalid, change);
+        assert!(effects
+            .errors()
+            .contains(&Error::NotCandidate(cell!(A2), digit!(3))));
+    }
+
+    #[test]
+    fn test_remove_candidate_unsolvable_cell() {
+        let mut board = Board::new();
+        let mut effects = Effects::new();
+
+        for digit in [1u8, 2, 3, 4, 5, 6, 7, 8] {
+            board.remove_candidate(cell!(A1), Digit::from_ordinal(digit), &mut effects);
+        }
+
+        let change = board.remove_candidate(cell!(A1), digit!(9), &mut effects);
+        assert_eq!(Change::Invalid, change);
+        assert!(effects.errors().contains(&Error::UnsolvableCell(cell!(A1))));
+        assert!(board.candidates(cell!(A1)).is_empty());
+    }
+
+    #[test]
+    fn test_remove_candidate_unsolvable_house() {
+        let mut board = Board::new();
+        let mut effects = Effects::new();
+
+        let row_cells = row!(A).cells();
+        for cell in row_cells {
+            board.remove_candidate(cell, digit!(1), &mut effects);
+        }
+
+        assert!(effects
+            .errors()
+            .contains(&Error::UnsolvableHouse(row!(A), digit!(1))));
+    }
+
+    #[test]
+    fn test_remove_candidates_helpers() {
+        let mut board = Board::new();
+        let mut effects = Effects::new();
+
+        let change = board.remove_candidates(cell!(A1), digits![1 2], &mut effects);
+        assert_eq!(Change::Valid, change);
+        assert!(!board.is_candidate(cell!(A1), digit!(1)));
+        assert!(!board.is_candidate(cell!(A1), digit!(2)));
+
+        let change = board.remove_candidate_from_cells(cells![A1 A2], digit!(3), &mut effects);
+        assert_eq!(Change::Valid, change);
+        assert!(!board.is_candidate(cell!(A1), digit!(3)));
+        assert!(!board.is_candidate(cell!(A2), digit!(3)));
+    }
+
+    #[test]
+    fn test_with_givens_and_without() {
+        let board = with_given_and_placed();
+        let (with_givens, effects) = board.with_givens(cells![A1 A2]);
+
+        assert!(!effects.has_errors());
+        assert!(with_givens.is_given(cell!(A1)));
+        assert_eq!(Some(digit!(1)), with_givens.value(cell!(A1)).digit());
+        assert!(with_givens.value(cell!(A2)).is_none());
+
+        let (without, _) = board.without(cell!(A1));
+        assert!(without.is_given(cell!(B2)));
+        assert!(without.value(cell!(A1)).is_none());
+    }
+
+    #[test]
+    fn test_packed_string_and_display() {
+        let board = with_given_and_placed();
+
+        let packed = board.packed_string();
+        assert_eq!(81, packed.len());
+        assert_eq!(Some('1'), packed.chars().nth(0));
+        assert_eq!(Some('.'), packed.chars().nth(1));
+        assert_eq!(Some('2'), packed.chars().nth(10));
+
+        let display = format!("{}", board);
+        assert!(!display.is_empty());
     }
 
     #[test]
