@@ -52,6 +52,14 @@ impl Coord {
         (b'1' + self.0) as char
     }
 
+    pub const fn row_label(&self) -> char {
+        if self.0 < 8 {
+            (b'A' + self.0) as char
+        } else {
+            'J'
+        }
+    }
+
     pub const fn min(self, other: Self) -> Self {
         if self.0 <= other.0 {
             self

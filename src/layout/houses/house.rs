@@ -605,6 +605,15 @@ mod tests {
                         format!("{} {}", houses.shape().label(), i + 1),
                         house.label()
                     );
+                } else {
+                    assert_eq!(
+                        format!(
+                            "{} {}",
+                            houses.shape().label(),
+                            Coord::from(i as u8).row_label()
+                        ),
+                        house.label()
+                    );
                 }
 
                 let mut house_cells = CellSet::empty();
@@ -613,19 +622,20 @@ mod tests {
                     assert_eq!(house, cell.house(houses.shape()));
                     house_cells += cell
                 });
-                assert_eq!(house.cells(), house_cells);
+                assert_eq!(house_cells, house.cells());
 
                 all |= house.cells();
             }
 
-            assert_eq!(CellSet::full(), all);
+            assert_eq!(all, CellSet::full());
         }
     }
 
     #[test]
     fn intersect() {
         assert_eq!(cells![A1 A2 A3], row!(A).intersect(block!(1)));
-        assert_eq!(cells![A1 A2 A3], row!(A).intersect(block!(1)));
+        assert_eq!(cells![D4], row!(D).intersect(col!(4)));
+        assert_eq!(cells![D3 E3 F3], col!(3).intersect(block!(4)));
     }
 
     #[test]
