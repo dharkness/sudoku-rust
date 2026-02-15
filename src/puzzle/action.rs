@@ -233,7 +233,7 @@ impl Action {
             }
         }
 
-        if matches!(self.strategy, Strategy::Given) {
+        if matches!(self.strategy, Strategy::Give) {
             for (cell, digit) in &self.set {
                 // println!("give {} to {}", cell, digit);
                 change &= board.set_given(*cell, *digit, effects);
@@ -241,7 +241,7 @@ impl Action {
         } else {
             for (cell, digit) in &self.set {
                 // println!("set {} to {}", cell, digit);
-                change &= board.set_digit(*cell, *digit, effects);
+                change &= board.set_placed(*cell, *digit, effects);
             }
         }
 
@@ -343,7 +343,7 @@ mod tests {
 
     #[test]
     fn set_and_collects() {
-        let mut action = Action::new(Strategy::Solve);
+        let mut action = Action::new(Strategy::Place);
         action.set(cell!(B2), digit!(5));
         action.set(cell!(A1), digit!(3));
 
@@ -421,7 +421,7 @@ mod tests {
     fn apply_sets_and_erases() {
         let mut board = Board::new();
         let mut follow = Effects::new();
-        let mut action = Action::new(Strategy::Solve);
+        let mut action = Action::new(Strategy::Place);
         action.set(cell!(A1), digit!(1));
         action.erase(cell!(A2), digit!(1));
 
@@ -438,7 +438,7 @@ mod tests {
     fn apply_given_marks_given() {
         let mut board = Board::new();
         let mut follow = Effects::new();
-        let action = Action::new_set(Strategy::Given, cell!(B2), digit!(9));
+        let action = Action::new_set(Strategy::Give, cell!(B2), digit!(9));
 
         let change = action.apply(&mut board, &mut follow);
 
@@ -450,13 +450,13 @@ mod tests {
 
     #[test]
     fn formatting_includes_strategy_and_symbols() {
-        let empty = Action::new(Strategy::Solve);
+        let empty = Action::new(Strategy::Place);
         let display = format!("{}", empty);
         let debug = format!("{:?}", empty);
 
-        assert!(display.contains("Solve"));
+        assert!(display.contains("Place"));
         assert!(display.contains(EMPTY_SET));
-        assert!(debug.contains("Solve"));
+        assert!(debug.contains("Place"));
         assert!(debug.contains(EMPTY_SET));
 
         let mut action = Action::new(Strategy::Erase);

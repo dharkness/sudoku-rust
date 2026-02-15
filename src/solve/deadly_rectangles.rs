@@ -93,14 +93,14 @@ mod tests {
             let mut board = Board::new();
             let mut effects = Effects::new();
 
-            board.set_digit(tl, digit!(1), &mut effects);
+            board.set_placed(tl, digit!(1), &mut effects);
             if givens {
                 board.set_given(tr, digit!(2), &mut effects);
             } else {
-                board.set_digit(tr, digit!(2), &mut effects);
+                board.set_placed(tr, digit!(2), &mut effects);
             }
-            board.set_digit(br, digit!(1), &mut effects);
-            board.set_digit(bl, digit!(2), &mut effects);
+            board.set_placed(br, digit!(1), &mut effects);
+            board.set_placed(bl, digit!(2), &mut effects);
 
             let found = find_deadly_rectangles(&board);
             if givens {
@@ -148,7 +148,7 @@ mod tests {
                             board.set_given(cells[j], digits[j], &mut effects);
                             first = false;
                         } else {
-                            board.set_digit(cells[j], digits[j], &mut effects);
+                            board.set_placed(cells[j], digits[j], &mut effects);
                         }
                     }
                 }

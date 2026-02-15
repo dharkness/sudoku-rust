@@ -153,7 +153,7 @@ mod tests {
         let board = Board::new();
         let changer = Changer::new(Options::none());
 
-        let result = changer.set_digit(&board, Strategy::Solve, cell!(A1), digit!(1));
+        let result = changer.set_digit(&board, Strategy::Place, cell!(A1), digit!(1));
 
         match result {
             ChangeResult::Valid(after, unapplied) => {
@@ -171,7 +171,7 @@ mod tests {
         board.set_given(cell!(A1), digit!(1), &mut effects);
 
         let changer = Changer::new(Options::none());
-        let result = changer.set_digit(&board, Strategy::Solve, cell!(A1), digit!(1));
+        let result = changer.set_digit(&board, Strategy::Place, cell!(A1), digit!(1));
 
         match result {
             ChangeResult::None => {}

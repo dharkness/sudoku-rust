@@ -173,7 +173,7 @@ impl Board {
     }
 
     /// Returns true if a cell in the house has the digit.
-    pub fn house_has_digit(&self, house: House, digit: Digit) -> bool {
+    pub fn is_digit_in_house(&self, house: House, digit: Digit) -> bool {
         !(self.solved_cells_by_digit[digit.usize()] & house.cells()).is_empty()
     }
 
@@ -198,7 +198,7 @@ impl Board {
     }
 
     /// Returns true if the cell could not have been solved by the digit due to a peer with the same given.
-    pub fn blocked_by_given(&self, cell: Cell, digit: Digit) -> bool {
+    pub fn is_blocked_by_given(&self, cell: Cell, digit: Digit) -> bool {
         !(cell.peers() & self.givens & self.solved_cells_by_digit[digit.usize()]).is_empty()
     }
 
@@ -232,8 +232,8 @@ impl Board {
         self.values[cell.usize()]
     }
 
-    /// Sets the cell to the candidate, marks it as a given,
-    /// and returns true along with any follow-up actions found.
+    /// Sets the cell to the digit, marks it as a given,
+    /// and returns the change along with any follow-up actions found.
     ///
     /// See [`Board::set_digit()`] for more details.
     pub fn set_given(&mut self, cell: Cell, digit: Digit, effects: &mut Effects) -> Change {
@@ -244,7 +244,15 @@ impl Board {
         change
     }
 
-    /// Sets the cell to the digit and returns true
+    /// Sets the cell to the digit, marks it as placed,
+    /// and returns the change along with any follow-up actions found.
+    ///
+    /// See [`Board::set_digit()`] for more details.
+    pub fn set_placed(&mut self, cell: Cell, digit: Digit, effects: &mut Effects) -> Change {
+        self.set_digit(cell, digit, effects)
+    }
+
+    /// Sets the cell to the digit and returns the change
     /// along with any follow-up actions found.
     ///
     /// The candidate is removed from the cell's peers
@@ -257,9 +265,9 @@ impl Board {
     /// will be left in an unsolvable state, but the internal
     /// state will be consistent.
     ///
-    /// Returns false with no actions or errors
+    /// Returns no change with no actions or errors
     /// if the digit is not a candidate for the cell.
-    pub fn set_digit(&mut self, cell: Cell, digit: Digit, effects: &mut Effects) -> Change {
+    fn set_digit(&mut self, cell: Cell, digit: Digit, effects: &mut Effects) -> Change {
         if let Some(current) = self.value(cell).digit() {
             if current == digit {
                 return Change::None;
@@ -362,7 +370,7 @@ impl Board {
         house.cells() & self.candidate_cells(digit)
     }
 
-    /// Removes the candidate from the cell and returns true
+    /// Removes the candidate from the cell and returns change
     /// along with any follow-up actions found.
     ///
     /// The cell is removed as a candidate from its three houses.
@@ -372,33 +380,38 @@ impl Board {
     /// will be left in an unsolvable state, but the internal
     /// state will be consistent.
     ///
-    /// Returns false with no actions or errors
+    /// Returns no change with no actions or errors
     /// if the digit is not a candidate for the cell.
-    pub fn remove_candidate(&mut self, cell: Cell, digit: Digit, effects: &mut Effects) -> Change {
-        let digits = &mut self.candidate_digits_by_cell[cell.usize()];
-        if !digits[digit] {
+    pub fn remove_candidate(
+        &mut self,
+        cell: Cell,
+        candidate: Digit,
+        effects: &mut Effects,
+    ) -> Change {
+        let candidates = &mut self.candidate_digits_by_cell[cell.usize()];
+        if !candidates[candidate] {
             return Change::None;
         }
 
-        let size = digits.len();
-        *digits -= digit;
+        let size = candidates.len();
+        *candidates -= candidate;
         self.cells_with_n_candidates[size] -= cell;
         self.cells_with_n_candidates[size - 1] += cell;
-        self.candidate_cells_by_digit[digit.usize()] -= cell;
+        self.candidate_cells_by_digit[candidate.usize()] -= cell;
 
         let mut change = Change::Valid;
-        if digits.is_empty() {
+        if candidates.is_empty() {
             effects.add_error(Error::UnsolvableCell(cell));
             change = Change::Invalid;
-        } else if let Some(single) = digits.as_single() {
+        } else if let Some(single) = candidates.as_single() {
             effects.add_set(Strategy::NakedSingle, cell, single);
         }
 
-        change & self.remove_candidate_cell_from_houses(cell, digit, effects)
+        change & self.remove_candidate_cell_from_houses(cell, candidate, effects)
     }
 
     /// Removes the cell as a candidate for the digit
-    /// from its three houses and returns true
+    /// from its three houses and returns the change
     /// along with any follow-up actions found.
     ///
     /// If any errors are caused while removing the candidate,
@@ -414,7 +427,7 @@ impl Board {
         let mut change = Change::None;
 
         for house in cell.houses() {
-            if self.house_has_digit(house, digit) {
+            if self.is_digit_in_house(house, digit) {
                 continue;
             }
 
@@ -431,7 +444,7 @@ impl Board {
         change
     }
 
-    /// Removes the candidates from the cell and returns true
+    /// Removes the candidates from the cell and returns the change
     /// along with any follow-up actions found.
     ///
     /// See [`Board::remove_candidate()`] for more details.
@@ -446,7 +459,7 @@ impl Board {
         })
     }
 
-    /// Removes the candidate from the cells and returns true
+    /// Removes the candidate from the cells and returns the change
     /// along with any follow-up actions found.
     ///
     /// See [`Board::remove_candidate()`] for more details.
@@ -461,7 +474,7 @@ impl Board {
         })
     }
 
-    /// Removes the candidates from the cells and returns true
+    /// Removes the candidates from the cells and returns the change
     /// along with any follow-up actions found.
     ///
     /// See [`Board::remove_candidate()`] for more details.
@@ -545,7 +558,7 @@ mod test {
         let mut board = Board::new();
         let mut effects = Effects::new();
         board.set_given(cell!(A1), digit!(1), &mut effects);
-        board.set_digit(cell!(B2), digit!(2), &mut effects);
+        board.set_placed(cell!(B2), digit!(2), &mut effects);
         board
     }
 
@@ -605,7 +618,7 @@ mod test {
         for house in House::iter() {
             assert_eq!(f.is_house_solved(house), false);
             for digit in Digit::iter() {
-                assert_eq!(f.house_has_digit(house, digit), false);
+                assert_eq!(f.is_digit_in_house(house, digit), false);
             }
         }
     }
@@ -651,9 +664,9 @@ mod test {
         let mut effects = Effects::new();
         board.set_given(cell!(A1), digit!(1), &mut effects);
 
-        assert!(board.blocked_by_given(cell!(A2), digit!(1)));
-        assert!(board.blocked_by_given(cell!(B2), digit!(1)));
-        assert!(!board.blocked_by_given(cell!(H9), digit!(1)));
+        assert!(board.is_blocked_by_given(cell!(A2), digit!(1)));
+        assert!(board.is_blocked_by_given(cell!(B2), digit!(1)));
+        assert!(!board.is_blocked_by_given(cell!(H9), digit!(1)));
     }
 
     #[test]
@@ -662,7 +675,7 @@ mod test {
         let mut effects = Effects::new();
         board.set_given(cell!(A1), digit!(1), &mut effects);
 
-        let change = board.set_digit(cell!(A1), digit!(2), &mut effects);
+        let change = board.set_placed(cell!(A1), digit!(2), &mut effects);
         assert_eq!(Change::Invalid, change);
         assert!(effects
             .errors()
@@ -672,7 +685,7 @@ mod test {
         let mut effects = Effects::new();
         board.remove_candidate(cell!(A2), digit!(3), &mut effects);
 
-        let change = board.set_digit(cell!(A2), digit!(3), &mut effects);
+        let change = board.set_placed(cell!(A2), digit!(3), &mut effects);
         assert_eq!(Change::Invalid, change);
         assert!(effects
             .errors()

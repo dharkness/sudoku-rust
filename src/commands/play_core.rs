@@ -391,7 +391,7 @@ impl PlayState {
             return PlayOutput::default().message("No deductions found".to_string());
         };
 
-        let mut combined = Action::new(Strategy::Solve);
+        let mut combined = Action::new(Strategy::Place);
         for action in found.actions() {
             for (cell, digit) in action.collect_sets() {
                 combined.set(cell, digit);
@@ -643,7 +643,7 @@ impl PlayState {
         let mut clone = *board;
         let mut changed = false;
         for cell in cells {
-            match self.changer.set_given(&clone, Strategy::Given, cell, digit) {
+            match self.changer.set_given(&clone, Strategy::Give, cell, digit) {
                 ChangeResult::None => {
                     output
                         .messages
@@ -673,7 +673,7 @@ impl PlayState {
         let mut clone = *board;
         let mut changed = false;
         for cell in cells {
-            match self.changer.set_digit(&clone, Strategy::Solve, cell, digit) {
+            match self.changer.set_digit(&clone, Strategy::Place, cell, digit) {
                 ChangeResult::None => {
                     output
                         .messages

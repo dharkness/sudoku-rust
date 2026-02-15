@@ -90,7 +90,7 @@ impl Parser for ParsePacked {
                     };
                     let current = board.value(cell);
                     if current != digit.value() {
-                        match self.changer.set_given(&board, Strategy::Given, cell, digit) {
+                        match self.changer.set_given(&board, Strategy::Give, cell, digit) {
                             ChangeResult::None => (),
                             ChangeResult::Valid(after, actions) => {
                                 board = *after;
@@ -163,7 +163,7 @@ impl Parser for ParseGrid {
             let cell = Cell::new(c as u8);
 
             if let Some(solved) = digits.as_single() {
-                if board.set_digit(cell, solved, &mut effects).changed() {
+                if board.set_placed(cell, solved, &mut effects).changed() {
                     if effects.has_errors() && self.stop_on_error {
                         return (board, effects, Some((cell, solved)));
                     }
@@ -229,7 +229,7 @@ impl Parser for ParseWiki {
                 if given {
                     board.set_given(cell, solved, &mut effects)
                 } else {
-                    board.set_digit(cell, solved, &mut effects)
+                    board.set_placed(cell, solved, &mut effects)
                 };
                 if effects.has_errors() && self.stop_on_error {
                     return (board, effects, Some((cell, solved)));

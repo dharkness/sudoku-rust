@@ -270,9 +270,9 @@ mod tests {
     fn action_helpers_and_counts() {
         let mut effects = Effects::new();
 
-        assert!(!effects.add_action(Action::new(Strategy::Solve)));
+        assert!(!effects.add_action(Action::new(Strategy::Place)));
 
-        effects.add_set(Strategy::Solve, cell!(A1), digit!(1));
+        effects.add_set(Strategy::Place, cell!(A1), digit!(1));
         effects.add_erase(Strategy::Erase, cell!(A1), digit!(2));
         effects.add_erase_cells(Strategy::Erase, cells![A1 B2], digit!(3));
         effects.add_erase_digits(Strategy::Erase, cell!(A1), digits![4 5]);
@@ -281,7 +281,7 @@ mod tests {
         assert_eq!(4, effects.action_count());
 
         let counts = effects.action_counts();
-        assert_eq!(1, counts[&Strategy::Solve]);
+        assert_eq!(1, counts[&Strategy::Place]);
         assert_eq!(3, counts[&Strategy::Erase]);
     }
 
@@ -300,7 +300,7 @@ mod tests {
     #[test]
     fn affecting_filters_actions() {
         let mut effects = Effects::new();
-        effects.add_set(Strategy::Solve, cell!(A1), digit!(1));
+        effects.add_set(Strategy::Place, cell!(A1), digit!(1));
         effects.add_erase(Strategy::Erase, cell!(B2), digit!(1));
         effects.add_erase(Strategy::Erase, cell!(C3), digit!(2));
 
@@ -314,8 +314,8 @@ mod tests {
     #[test]
     fn pop_without_and_take_actions() {
         let mut effects = Effects::new();
-        effects.add_set(Strategy::Solve, cell!(A1), digit!(1));
-        effects.add_set(Strategy::Solve, cell!(B2), digit!(2));
+        effects.add_set(Strategy::Place, cell!(A1), digit!(1));
+        effects.add_set(Strategy::Place, cell!(B2), digit!(2));
 
         let popped = effects.pop_action().unwrap();
         assert!(popped.sets(cell!(B2), digit!(2)));
@@ -325,7 +325,7 @@ mod tests {
         assert_eq!(0, filtered.action_count());
 
         let mut other = Effects::new();
-        other.add_set(Strategy::Solve, cell!(C3), digit!(3));
+        other.add_set(Strategy::Place, cell!(C3), digit!(3));
         effects.take_actions(other);
 
         assert_eq!(2, effects.action_count());
@@ -334,7 +334,7 @@ mod tests {
     #[test]
     fn apply_updates_board() {
         let mut effects = Effects::new();
-        effects.add_set(Strategy::Solve, cell!(A1), digit!(1));
+        effects.add_set(Strategy::Place, cell!(A1), digit!(1));
 
         let mut board = Board::new();
         let mut next = Effects::new();
@@ -348,12 +348,12 @@ mod tests {
     #[test]
     fn apply_strategy_filters_actions() {
         let mut effects = Effects::new();
-        effects.add_set(Strategy::Solve, cell!(A1), digit!(1));
+        effects.add_set(Strategy::Place, cell!(A1), digit!(1));
         effects.add_erase(Strategy::Erase, cell!(B2), digit!(2));
 
         let mut board = Board::new();
         let mut next = Effects::new();
-        let change = effects.apply_strategy(&mut board, Strategy::Solve, &mut next);
+        let change = effects.apply_strategy(&mut board, Strategy::Place, &mut next);
 
         assert_eq!(Change::Valid, change);
         assert_eq!(Some(digit!(1)), board.value(cell!(A1)).digit());
@@ -375,7 +375,7 @@ mod tests {
 
     #[test]
     fn from_action_creates_effects() {
-        let action = Action::new_set(Strategy::Solve, cell!(A1), digit!(1));
+        let action = Action::new_set(Strategy::Place, cell!(A1), digit!(1));
         let effects: Effects = action.into();
 
         assert!(effects.has_actions());
@@ -386,7 +386,7 @@ mod tests {
     fn display_includes_errors_and_actions() {
         let mut effects = Effects::new();
         effects.add_error(Error::UnsolvableCell(cell!(A1)));
-        effects.add_set(Strategy::Solve, cell!(A1), digit!(1));
+        effects.add_set(Strategy::Place, cell!(A1), digit!(1));
 
         let text = format!("{}", effects);
 

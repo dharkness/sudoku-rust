@@ -33,9 +33,9 @@ use std::fmt;
 pub enum Strategy {
     // these become the Clues; copy and generalize for Strategy
     /// The player or parser has provided a given (clue).
-    Given, // (Digit, Cell)
+    Give, // (Digit, Cell)
     /// The player has solved a cell.
-    Solve, // (Digit, Cell)
+    Place, // (Digit, Cell)
     /// The player has erased a candidate from a cell.
     Erase, // (Digit, Cell)
 
@@ -109,8 +109,8 @@ pub enum Strategy {
 impl Strategy {
     pub const fn difficulty(&self) -> Difficulty {
         match self {
-            Self::Given => Difficulty::Trivial,
-            Self::Solve => Difficulty::Trivial,
+            Self::Give => Difficulty::Trivial,
+            Self::Place => Difficulty::Trivial,
             Self::Erase => Difficulty::Trivial,
 
             Self::Peer => Difficulty::Trivial,
@@ -154,8 +154,8 @@ impl Strategy {
 
     pub const fn label(&self) -> &'static str {
         match self {
-            Self::Given => "Given",
-            Self::Solve => "Solve",
+            Self::Give => "Give",
+            Self::Place => "Place",
             Self::Erase => "Erase",
             Self::Peer => "Peer",
             Self::IntersectionRemoval => "Intersection Removal",
