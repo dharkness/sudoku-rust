@@ -1,3 +1,5 @@
 /data/
 /target/
 /sudoku-rust*
+/coverage/
+/cobertura.xml
