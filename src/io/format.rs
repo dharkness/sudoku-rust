@@ -240,10 +240,10 @@ impl FormatWiki {
 
                 if value < 32 {
                     result.push('0');
-                    result.push(std::char::from_digit(value, 32).unwrap());
+                    result.push(char::from_digit(value, 32).unwrap());
                 } else {
-                    result.push(std::char::from_digit(value / 32, 32).unwrap());
-                    result.push(std::char::from_digit(value % 32, 32).unwrap());
+                    result.push(char::from_digit(value / 32, 32).unwrap());
+                    result.push(char::from_digit(value % 32, 32).unwrap());
                 }
             })
         });

@@ -127,7 +127,7 @@ fn prompt_new_puzzle() -> Option<String> {
             println!();
             return None;
         }
-        if input.len() == 162 || input.len() <= 81 {
+        if input.len() >= 160 || input.len() <= 81 {
             return Some(input);
         }
 

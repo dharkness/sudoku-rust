@@ -280,7 +280,7 @@ impl TuiState {
                     if key.modifiers.contains(KeyModifiers::CONTROL) {
                         return TuiAction::None;
                     }
-                    if let Some(ch) = normalize_char(ch) {
+                    if let Some(ch) = normalize_char(ch, input.spec.key == 'N') {
                         if input.spec.key == 'O' && input.buffer.is_empty() {
                             let token = ch.to_string();
                             if token_valid(ArgKind::OptionFlags, &token) {
@@ -1151,7 +1151,7 @@ fn validate_buffer(spec: &CommandSpec, buffer: &str) -> bool {
     if spec.args.len() == 1 && matches!(spec.args[0], ArgKind::Puzzle) {
         return buffer
             .chars()
-            .all(|c| matches!(c, '0'..='9' | '.' | '·' | ' '));
+            .all(|c| matches!(c, '0'..='9' | 'A'..='Z' | 'a'..='z' | '.' | '·' | ' '));
     }
     let tokens = buffer.split_whitespace().collect::<Vec<_>>();
     if tokens.len() > spec.args.len() {
@@ -1174,7 +1174,9 @@ fn token_valid(kind: ArgKind, token: &str) -> bool {
         ArgKind::Number => token.chars().all(|c| c.is_ascii_digit()),
         ArgKind::OptionFlags => token.chars().all(|c| matches!(c, 'N' | 'H' | 'I')),
         ArgKind::Char => token.len() <= 1 && !token.is_empty(),
-        ArgKind::Puzzle => token.chars().all(|c| matches!(c, '0'..='9' | '.' | '·')),
+        ArgKind::Puzzle => token
+            .chars()
+            .all(|c| matches!(c, '0'..='9' | 'A'..='Z' | 'a'..='z' | '.' | '·')),
         ArgKind::CellOrDigit => token.len() <= 2 && token.chars().all(is_cell_char),
         ArgKind::Print => {
             token.len() <= 1 && token.chars().all(|c| matches!(c, 'G' | 'S' | '1'..='9'))
@@ -1186,10 +1188,10 @@ fn is_cell_char(ch: char) -> bool {
     matches!(ch, '1'..='9' | 'A'..='H' | 'J')
 }
 
-fn normalize_char(ch: char) -> Option<char> {
+fn normalize_char(ch: char, preserve_case: bool) -> Option<char> {
     if ch.is_ascii_control() {
         None
-    } else if ch.is_ascii_lowercase() {
+    } else if !preserve_case && ch.is_ascii_lowercase() {
         Some(ch.to_ascii_uppercase())
     } else {
         Some(ch)

@@ -323,8 +323,13 @@ impl PlayState {
         let mut output = PlayOutput::default();
         match puzzle {
             Some(clues) => {
-                let parser = Parse::packed_with_player(state.changer);
-                let (board, effects, failure) = parser.parse(&clues);
+                let normalized = clues.trim().replace(' ', "").replace(MISSING, ".");
+                let parser: Box<dyn Parser> = if normalized.len() >= 160 {
+                    Box::new(Parse::wiki())
+                } else {
+                    Box::new(Parse::packed_with_player(state.changer))
+                };
+                let (board, effects, failure) = parser.parse(&normalized);
                 state.boards.push_back(board);
                 state.index = 0;
 
@@ -524,7 +529,7 @@ impl PlayState {
                 }
 
                 let normalized = input.replace(' ', "").replace(MISSING, ".");
-                let parser: Option<Box<dyn Parser>> = if normalized.len() == 162 {
+                let parser: Option<Box<dyn Parser>> = if normalized.len() >= 160 {
                     Some(Box::new(Parse::wiki()))
                 } else if normalized.len() <= 81 {
                     Some(Box::new(Parse::packed_with_player(self.changer)))

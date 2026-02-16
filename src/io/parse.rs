@@ -212,39 +212,103 @@ impl Parser for ParseWiki {
         let mut board = Board::new();
         let mut effects = Effects::new();
 
-        for (c, chars) in input.chars().collect::<Vec<char>>().chunks(2).enumerate() {
-            if chars.len() != 2 {
+        let bytes = input.as_bytes();
+        let (format, mut index) = wiki_format(bytes);
+
+        for c in 0..Cell::COUNT as usize {
+            if index + 1 >= bytes.len() {
                 break;
             }
-            let value = 32 * to_decimal(chars[0]) + to_decimal(chars[1]);
-            if value > 1022 {
-                break;
+            let value = match format {
+                WikiFormat::Legacy => {
+                    32 * to_decimal_byte(bytes[index]) + to_decimal_byte(bytes[index + 1])
+                }
+                WikiFormat::VersionB => {
+                    36 * to_decimal_byte(bytes[index]) + to_decimal_byte(bytes[index + 1])
+                }
+            };
+            index += 2;
+            if value == 0 {
+                continue;
             }
 
             let cell = Cell::new(c as u8);
-            let given = value % 2 == 1;
-            let digits = DigitSet::new(value >> 1);
-
-            if let Some(solved) = digits.as_single() {
-                if given {
-                    board.set_given(cell, solved, &mut effects)
-                } else {
-                    board.set_placed(cell, solved, &mut effects)
-                };
-                if effects.has_errors() && self.stop_on_error {
-                    return (board, effects, Some((cell, solved)));
-                }
-                effects.clear_actions();
-            } else {
-                if given {
-                    break;
-                }
-                for digit in digits.inverted() {
-                    board.remove_candidate(cell, digit, &mut effects);
-                    if effects.has_errors() && self.stop_on_error {
-                        return (board, effects, Some((cell, digit)));
+            match format {
+                WikiFormat::Legacy => {
+                    if value > 1022 {
+                        break;
                     }
-                    effects.clear_actions();
+                    let given = value % 2 == 1;
+                    let bits = value >> 1;
+                    if bits > DigitSet::full().bits() {
+                        break;
+                    }
+                    let digits = DigitSet::new(bits);
+
+                    if let Some(solved) = digits.as_single() {
+                        if given {
+                            board.set_given(cell, solved, &mut effects)
+                        } else {
+                            board.set_placed(cell, solved, &mut effects)
+                        };
+                        if effects.has_errors() && self.stop_on_error {
+                            return (board, effects, Some((cell, solved)));
+                        }
+                        effects.clear_actions();
+                    } else {
+                        if given {
+                            break;
+                        }
+                        if digits.is_empty() {
+                            continue;
+                        }
+                        for digit in digits.inverted() {
+                            board.remove_candidate(cell, digit, &mut effects);
+                            if effects.has_errors() && self.stop_on_error {
+                                return (board, effects, Some((cell, digit)));
+                            }
+                            effects.clear_actions();
+                        }
+                    }
+                }
+                WikiFormat::VersionB => {
+                    if value > 529 {
+                        break;
+                    }
+                    if value <= 9 {
+                        let digit = Digit::from_ordinal(value as u8);
+                        board.set_given(cell, digit, &mut effects);
+                        if effects.has_errors() && self.stop_on_error {
+                            return (board, effects, Some((cell, digit)));
+                        }
+                        effects.clear_actions();
+                        continue;
+                    }
+                    if value <= 18 {
+                        let digit = Digit::from_ordinal((value - 9) as u8);
+                        board.set_placed(cell, digit, &mut effects);
+                        if effects.has_errors() && self.stop_on_error {
+                            return (board, effects, Some((cell, digit)));
+                        }
+                        effects.clear_actions();
+                        continue;
+                    }
+
+                    let bits = value - 18;
+                    if bits > DigitSet::full().bits() {
+                        break;
+                    }
+                    let digits = DigitSet::new(bits);
+                    if digits.is_empty() {
+                        continue;
+                    }
+                    for digit in digits.inverted() {
+                        board.remove_candidate(cell, digit, &mut effects);
+                        if effects.has_errors() && self.stop_on_error {
+                            return (board, effects, Some((cell, digit)));
+                        }
+                        effects.clear_actions();
+                    }
                 }
             }
         }
@@ -253,11 +317,28 @@ impl Parser for ParseWiki {
     }
 }
 
-fn to_decimal(c: char) -> u16 {
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum WikiFormat {
+    Legacy,
+    VersionB,
+}
+
+fn wiki_format(bytes: &[u8]) -> (WikiFormat, usize) {
+    if bytes.len() >= 3
+        && bytes[1] == b'9'
+        && (bytes[2] == b'B' || bytes[2] == b'b')
+        && bytes[0].is_ascii_alphabetic()
+    {
+        return (WikiFormat::VersionB, 3);
+    }
+    (WikiFormat::Legacy, 0)
+}
+
+fn to_decimal_byte(c: u8) -> u16 {
     match c {
-        '0'..='9' => c as u16 - '0' as u16,
-        'A'..='Z' => c as u16 - 'A' as u16 + 10,
-        'a'..='z' => c as u16 - 'a' as u16 + 10,
+        b'0'..=b'9' => (c - b'0') as u16,
+        b'A'..=b'Z' => (c - b'A' + 10) as u16,
+        b'a'..=b'z' => (c - b'a' + 10) as u16,
         _ => 0,
     }
 }
