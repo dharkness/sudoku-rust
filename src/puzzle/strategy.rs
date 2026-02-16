@@ -91,6 +91,7 @@ pub enum Strategy {
     SinglesChain,       // (Digit, Vec<Cell>)
     Skyscraper,         // (Digit, floor (Cell, Cell), ceiling (Cell, Cell))
     YWing,              // (Digit, pivot Cell, arms (Cell, Cell))
+    WWing,              // (Digit, cells (Cell, Cell), links (Cell, Cell))
     XYZWing,            // (Digit, pivot Cell, arms (Cell, Cell))
     WXYZWing,           // (Digit, pivot Cell, arms (Cell, Cell, Cell))
 
@@ -132,6 +133,7 @@ impl Strategy {
             Self::TwoStringKite => Difficulty::Tough,
             Self::SinglesChain => Difficulty::Tough,
             Self::YWing => Difficulty::Tough,
+            Self::WWing => Difficulty::Tough,
             Self::EmptyRectangle => Difficulty::Tough,
             Self::Swordfish => Difficulty::Tough,
             Self::XYZWing => Difficulty::Tough,
@@ -179,6 +181,7 @@ impl Strategy {
             Self::SinglesChain => "Singles Chain",
             Self::Skyscraper => "Skyscraper",
             Self::YWing => "Y-Wing",
+            Self::WWing => "W-Wing",
             Self::XYZWing => "XYZ-Wing",
             Self::WXYZWing => "WXYZ-Wing",
             Self::XYChain => "XY-Chain",

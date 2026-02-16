@@ -6,7 +6,7 @@
 //! peers, houses, and coordinates.
 //!
 //! Strategy logic should primarily operate on the bitset types:
-//! [`CellSet`], [`HouseSet`], [`CoordSet`], and [`DigitSet`]. They provide fast
+//! [`CellSet`], [`PeerSet`], [`HouseSet`], [`CoordSet`], and [`DigitSet`]. They provide fast
 //! union, intersection, and difference operations with deterministic iteration
 //! order, which makes it easy to express scans such as "candidate cells in this
 //! house" or "all peers of these cells" without allocating.
@@ -21,7 +21,7 @@
 //!
 //! See [`crate::puzzle::Board`] for stateful access to candidates and values.
 
-pub use cells::{Cell, CellIteratorUnion, CellSet, CellSetIteratorUnion, Rectangle};
+pub use cells::{Cell, CellIteratorUnion, CellSet, CellSetIteratorUnion, PeerSet, Rectangle};
 pub use houses::{
     Coord, CoordSet, House, HouseIteratorUnion, HouseSet, HouseSetIteratorUnion, Shape,
 };

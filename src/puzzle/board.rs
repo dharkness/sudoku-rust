@@ -2,7 +2,7 @@ use std::fmt;
 use std::ops::{BitAnd, BitAndAssign};
 
 use crate::io::format_for_fancy_console;
-use crate::layout::{Cell, CellSet, Digit, DigitSet, House, Value};
+use crate::layout::{Cell, CellSet, Digit, DigitSet, House, PeerSet, Value};
 use crate::solve::creates_deadly_rectangles;
 
 use super::{Effects, Error, PseudoCell, Strategy};
@@ -368,6 +368,30 @@ impl Board {
     /// Returns the set of cells in the house that have the candidate.
     pub fn house_candidate_cells(&self, house: House, digit: Digit) -> CellSet {
         house.cells() & self.candidate_cells(digit)
+    }
+
+    /// Returns the strong links for the digit as peer pairs.
+    pub fn strong_links_for_digit(&self, digit: Digit) -> PeerSet {
+        let mut links = PeerSet::empty();
+
+        for house in House::iter() {
+            if let Some((a, b)) = self.house_candidate_cells(house, digit).as_pair() {
+                links += (a, b);
+            }
+        }
+
+        links
+    }
+
+    /// Returns the strong links for all digits.
+    pub fn strong_links(&self) -> [PeerSet; 9] {
+        let mut links = [PeerSet::empty(); 9];
+
+        for digit in Digit::iter() {
+            links[digit.usize()] = self.strong_links_for_digit(digit);
+        }
+
+        links
     }
 
     /// Removes the candidate from the cell and returns change
