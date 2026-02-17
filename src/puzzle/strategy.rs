@@ -101,8 +101,7 @@ pub enum Strategy {
     Fireworks,               // (DigitSet, Cell, Cell, Cell)
     ExtendedUniqueRectangle, // (DigitSet, Cell, Cell, Cell, Cell, Cell, Cell)
     HiddenUniqueRectangle,   // (DigitSet, Cell, Cell, Cell, Cell)
-
-    EmptyRectangle, // (Digit, Block, Row, Column, Cell) - CellSet instead of three houses
+    RectangleElimination,    // (Digit, CellSet)
 
     BruteForce,
 }
@@ -134,7 +133,7 @@ impl Strategy {
             Self::SinglesChain => Difficulty::Tough,
             Self::YWing => Difficulty::Tough,
             Self::WWing => Difficulty::Tough,
-            Self::EmptyRectangle => Difficulty::Tough,
+            Self::RectangleElimination => Difficulty::Tough,
             Self::Swordfish => Difficulty::Tough,
             Self::XYZWing => Difficulty::Tough,
             Self::AvoidableRectangle => Difficulty::Tough,
@@ -190,7 +189,7 @@ impl Strategy {
             Self::Fireworks => "Fireworks",
             Self::ExtendedUniqueRectangle => "Extended Unique Rectangle",
             Self::HiddenUniqueRectangle => "Hidden Unique Rectangle",
-            Self::EmptyRectangle => "Empty Rectangle",
+            Self::RectangleElimination => "Rectangle Elimination",
             Self::BruteForce => "Brute Force",
         }
     }

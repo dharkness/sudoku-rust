@@ -60,7 +60,7 @@ pub const TECHNIQUES: [Technique; 29] = [
     Technique::new(Strategy::SinglesChain, algorithms::find_singles_chains),
     Technique::new(Strategy::YWing, algorithms::find_y_wings),
     Technique::new(Strategy::WWing, algorithms::find_w_wings),
-    Technique::new(Strategy::EmptyRectangle, algorithms::find_empty_rectangles),
+    Technique::new(Strategy::RectangleElimination, algorithms::find_rectangle_eliminations),
     Technique::new(Strategy::Swordfish, algorithms::find_swordfish),
     Technique::new(Strategy::XYZWing, algorithms::find_xyz_wings),
     Technique::new(Strategy::AvoidableRectangle, algorithms::find_avoidable_rectangles),
