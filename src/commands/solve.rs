@@ -52,7 +52,7 @@ pub fn solve_puzzles(args: SolveArgs) {
             let mut count = 0;
             let mut solved = 0;
 
-            println!("                   µs NS HS NP NT NQ HP HT HQ PP PT BL XW SC YW WW RE SF XZ JF SK TS AR XY UR AU FW EU HU WZ BG");
+            println!("                   µs NS HS NP NT NQ HP HT HQ PP PT BL XW SC YW WW CR RE SF XZ JF SK TS AR XY UR AU FW EU HU WZ BG");
             for puzzle in stdin.lock().lines().map_while(Result::ok) {
                 if cancelable.is_canceled() {
                     break;
@@ -250,7 +250,7 @@ impl CSVReporter {
 
     fn format_counts(&self, counts: &HashMap<Strategy, i32>) -> String {
         format!(
-            "{:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2}",
+            "{:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2}",
             // dash_zero(*counts.get(&Strategy::Peer).unwrap_or(0)),
             dash_zero(*counts.get(&Strategy::NakedSingle).unwrap_or(&0)),
             dash_zero(*counts.get(&Strategy::HiddenSingle).unwrap_or(&0)),
@@ -269,6 +269,7 @@ impl CSVReporter {
             dash_zero(*counts.get(&Strategy::SinglesChain).unwrap_or(&0)),
             dash_zero(*counts.get(&Strategy::YWing).unwrap_or(&0)),
             dash_zero(*counts.get(&Strategy::WWing).unwrap_or(&0)),
+            dash_zero(*counts.get(&Strategy::ChuteRemotePair).unwrap_or(&0)),
             dash_zero(*counts.get(&Strategy::RectangleElimination).unwrap_or(&0)),
             dash_zero(*counts.get(&Strategy::Swordfish).unwrap_or(&0)),
             dash_zero(*counts.get(&Strategy::XYZWing).unwrap_or(&0)),
