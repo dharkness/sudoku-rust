@@ -8,6 +8,7 @@ pub struct Technique {
     strategy: Strategy,
     difficulty: Difficulty,
     label: &'static str,
+    acronym: &'static str,
     solve: TechniqueFunc,
 }
 
@@ -17,6 +18,7 @@ impl Technique {
             strategy,
             difficulty: strategy.difficulty(),
             label: strategy.label(),
+            acronym: strategy.acronym(),
             solve,
         }
     }
@@ -31,6 +33,10 @@ impl Technique {
 
     pub const fn label(&self) -> &'static str {
         self.label
+    }
+
+    pub const fn acronym(&self) -> &'static str {
+        self.acronym
     }
 
     pub fn solve(&self, board: &Board, single: bool) -> Option<Effects> {
@@ -57,18 +63,18 @@ pub const TECHNIQUES: [Technique; 30] = [
 
     Technique::new(Strategy::XWing, algorithms::find_x_wings),
     Technique::new(Strategy::TwoStringKite, algorithms::find_two_string_kites),
-    Technique::new(Strategy::SinglesChain, algorithms::find_singles_chains),
+    Technique::new(Strategy::ChuteRemotePair, algorithms::find_chute_remote_pairs),
     Technique::new(Strategy::YWing, algorithms::find_y_wings),
     Technique::new(Strategy::WWing, algorithms::find_w_wings),
-    Technique::new(Strategy::ChuteRemotePair, algorithms::find_chute_remote_pairs),
     Technique::new(Strategy::RectangleElimination, algorithms::find_rectangle_eliminations),
+    Technique::new(Strategy::SinglesChain, algorithms::find_singles_chains),
     Technique::new(Strategy::Swordfish, algorithms::find_swordfish),
     Technique::new(Strategy::XYZWing, algorithms::find_xyz_wings),
     Technique::new(Strategy::AvoidableRectangle, algorithms::find_avoidable_rectangles),
 
-    Technique::new(Strategy::Jellyfish,algorithms::find_jellyfish),
     Technique::new(Strategy::Skyscraper,algorithms::find_skyscrapers),
     Technique::new(Strategy::XYChain, algorithms::find_xy_chains),
+    Technique::new(Strategy::Jellyfish,algorithms::find_jellyfish),
     Technique::new(Strategy::UniqueRectangle, algorithms::find_unique_rectangles),
     Technique::new(Strategy::AlmostUniqueRectangle, algorithms::find_almost_unique_rectangles),
     Technique::new(Strategy::Fireworks,algorithms::find_fireworks),
@@ -77,7 +83,7 @@ pub const TECHNIQUES: [Technique; 30] = [
     Technique::new(Strategy::WXYZWing, algorithms::find_wxyz_wings),
 
     // BUG causes unavoidable rectangles in several puzzles which UR fixes
-    Technique::new(Strategy::Bug,algorithms::find_bugs),
+    Technique::new(Strategy::Bug, algorithms::find_bugs),
 ];
 
 /// All techniques except finding peers.

@@ -11,7 +11,7 @@ use crate::io::{
 };
 use crate::layout::{Cell, Digit};
 use crate::puzzle::{Action, Board, Changer, Difficulty, Effects, Options, Strategy};
-use crate::solve::{Reporter, Resolution, Solver, Timings};
+use crate::solve::{Reporter, Resolution, Solver, Timings, NON_PEER_TECHNIQUES};
 
 #[derive(Debug, Args)]
 pub struct SolveArgs {
@@ -52,7 +52,11 @@ pub fn solve_puzzles(args: SolveArgs) {
             let mut count = 0;
             let mut solved = 0;
 
-            println!("                   µs NS HS NP NT NQ HP HT HQ PP PT BL XW SC YW WW CR RE SF XZ JF SK TS AR XY UR AU FW EU HU WZ BG");
+            print!("                   µs");
+            for solver in NON_PEER_TECHNIQUES {
+                print!("{:>3}", solver.acronym());
+            }
+            println!();
             for puzzle in stdin.lock().lines().map_while(Result::ok) {
                 if cancelable.is_canceled() {
                     break;
@@ -249,44 +253,12 @@ impl CSVReporter {
     }
 
     fn format_counts(&self, counts: &HashMap<Strategy, i32>) -> String {
-        format!(
-            "{:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2} {:>2}",
-            // dash_zero(*counts.get(&Strategy::Peer).unwrap_or(0)),
-            dash_zero(*counts.get(&Strategy::NakedSingle).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::HiddenSingle).unwrap_or(&0)),
-
-            dash_zero(*counts.get(&Strategy::NakedPair).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::NakedTriple).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::NakedQuad).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::HiddenPair).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::HiddenTriple).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::HiddenQuad).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::PointingPair).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::PointingTriple).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::BoxLineReduction).unwrap_or(&0)),
-
-            dash_zero(*counts.get(&Strategy::XWing).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::SinglesChain).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::YWing).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::WWing).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::ChuteRemotePair).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::RectangleElimination).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::Swordfish).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::XYZWing).unwrap_or(&0)),
-
-            dash_zero(*counts.get(&Strategy::Jellyfish).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::Skyscraper).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::AvoidableRectangle).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::TwoStringKite).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::XYChain).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::UniqueRectangle).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::AlmostUniqueRectangle).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::Fireworks).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::ExtendedUniqueRectangle).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::HiddenUniqueRectangle).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::WXYZWing).unwrap_or(&0)),
-            dash_zero(*counts.get(&Strategy::Bug).unwrap_or(&0)),
-        )
+        NON_PEER_TECHNIQUES
+            .iter()
+            .map(|t| dash_zero(*counts.get(&t.strategy()).unwrap_or(&0)))
+            .map(|s| format!("{:>2}", s))
+            .collect::<Vec<_>>()
+            .join(" ")
     }
 }
 
