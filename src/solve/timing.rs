@@ -103,4 +103,16 @@ impl Timings {
             );
         }
     }
+
+    pub fn strategy_totals(&self) -> HashMap<Strategy, i32> {
+        self.timings
+            .iter()
+            .map(|(strategy, found_times)| {
+                let total = found_times
+                    .iter()
+                    .fold(0usize, |acc, (found, (count, _))| acc + found * count);
+                (*strategy, total as i32)
+            })
+            .collect()
+    }
 }

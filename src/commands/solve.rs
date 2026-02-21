@@ -29,7 +29,11 @@ pub fn solve_puzzles(args: SolveArgs) {
     let changer = Changer::new(Options::errors());
     let parser = Parse::packed_with_player(changer);
     let solver = Solver::new(args.check);
+
     let mut timings = Timings::new();
+    let mut count = 0;
+    let mut solved = 0;
+    let runtime = Instant::now();
 
     match args.puzzles {
         Some(puzzles) => {
@@ -37,26 +41,21 @@ pub fn solve_puzzles(args: SolveArgs) {
             let mut parser_solver = ParserSolver::new(&parser, &solver, &reporter, &mut timings);
 
             for puzzle in puzzles {
-                parser_solver.parse_and_solve(&puzzle);
                 if cancelable.is_canceled() {
                     break;
                 }
+                if parser_solver.parse_and_solve(&puzzle) {
+                    solved += 1;
+                }
+                count += 1;
             }
         }
         None => {
-            let reporter = CSVReporter::new();
+            let reporter = TableReporter::new();
             let mut parser_solver = ParserSolver::new(&parser, &solver, &reporter, &mut timings);
             let stdin = std::io::stdin();
 
-            let runtime = Instant::now();
-            let mut count = 0;
-            let mut solved = 0;
-
-            print!("                   µs");
-            for solver in NON_PEER_TECHNIQUES {
-                print!("{:>3}", solver.acronym());
-            }
-            println!();
+            print_table_header(3);
             for puzzle in stdin.lock().lines().map_while(Result::ok) {
                 if cancelable.is_canceled() {
                     break;
@@ -66,16 +65,28 @@ pub fn solve_puzzles(args: SolveArgs) {
                 }
                 count += 1;
             }
-
-            println!(
-                "\nsolved {} of {} puzzles in {} µs\n",
-                format_number(solved),
-                format_number(count),
-                format_runtime(runtime.elapsed())
-            );
         }
     }
 
+    let totals = timings.strategy_totals();
+
+    println!(
+        "\nsolved {} of {} puzzles in {} µs",
+        format_number(solved),
+        format_number(count),
+        format_runtime(runtime.elapsed())
+    );
+
+    println!();
+    print_table_header(5);
+    println!(
+        "{:<10} {:>10} {}",
+        "Total",
+        format_runtime(runtime.elapsed()),
+        format_counts(&totals, 5)
+    );
+
+    println!();
     timings.print_details();
     println!();
     timings.print_totals();
@@ -114,23 +125,29 @@ impl ParserSolver<'_> {
         }
 
         match self.solver.solve(&start, &effects, self.timings) {
-            Resolution::Canceled(..) => (),
-            Resolution::Failed(board, applied, _, action, errors) => self.reporter.failed(
-                givens,
-                &start,
-                &board,
-                &action,
-                &errors,
-                runtime.elapsed(),
-                &applied.action_counts(),
-            ),
-            Resolution::Unsolved(board, applied, _) => self.reporter.unsolved(
-                givens,
-                &start,
-                &board,
-                runtime.elapsed(),
-                &applied.action_counts(),
-            ),
+            Resolution::Canceled(..) => false,
+            Resolution::Failed(board, applied, _, action, errors) => {
+                self.reporter.failed(
+                    givens,
+                    &start,
+                    &board,
+                    &action,
+                    &errors,
+                    runtime.elapsed(),
+                    &applied.action_counts(),
+                );
+                false
+            }
+            Resolution::Unsolved(board, applied, _) => {
+                self.reporter.unsolved(
+                    givens,
+                    &start,
+                    &board,
+                    runtime.elapsed(),
+                    &applied.action_counts(),
+                );
+                false
+            }
             Resolution::Solved(solution, actions, difficulty) => {
                 self.reporter.solved(
                     givens,
@@ -140,11 +157,9 @@ impl ParserSolver<'_> {
                     runtime.elapsed(),
                     &actions.action_counts(),
                 );
-                return true;
+                true
             }
         }
-
-        false
     }
 }
 
@@ -245,24 +260,15 @@ impl Reporter for DetailedReporter {
     }
 }
 
-struct CSVReporter {}
+struct TableReporter {}
 
-impl CSVReporter {
-    fn new() -> CSVReporter {
-        CSVReporter {}
-    }
-
-    fn format_counts(&self, counts: &HashMap<Strategy, i32>) -> String {
-        NON_PEER_TECHNIQUES
-            .iter()
-            .map(|t| dash_zero(*counts.get(&t.strategy()).unwrap_or(&0)))
-            .map(|s| format!("{:>2}", s))
-            .collect::<Vec<_>>()
-            .join(" ")
+impl TableReporter {
+    fn new() -> TableReporter {
+        TableReporter {}
     }
 }
 
-impl Reporter for CSVReporter {
+impl Reporter for TableReporter {
     fn invalid(
         &self,
         givens: &str,
@@ -288,7 +294,7 @@ impl Reporter for CSVReporter {
         println!(
             "Invalid    {:>10} {} {}",
             format_runtime(runtime),
-            self.format_counts(counts),
+            format_counts(counts, 3),
             start.packed_string()
         );
     }
@@ -304,7 +310,7 @@ impl Reporter for CSVReporter {
         println!(
             "Unsolved   {:>10} {} {}",
             format_runtime(runtime),
-            self.format_counts(counts),
+            format_counts(counts, 3),
             // givens,
             start.packed_string()
         );
@@ -323,7 +329,7 @@ impl Reporter for CSVReporter {
             "{:<10} {:>10} {} {}",
             format!("{:?}", difficulty),
             format_runtime(runtime),
-            self.format_counts(counts),
+            format_counts(counts, 3),
             start.packed_string()
         );
     }
@@ -335,4 +341,31 @@ fn dash_zero(value: i32) -> String {
     } else {
         value.to_string()
     }
+}
+
+fn print_table_header(width: usize) {
+    print!("                   µs");
+    let header = NON_PEER_TECHNIQUES
+        .iter()
+        .map(|solver| format_column(solver.acronym(), width))
+        .collect::<Vec<_>>()
+        .join(" ");
+    if !header.is_empty() {
+        print!(" {}", header);
+    }
+    println!();
+}
+
+fn format_counts(counts: &HashMap<Strategy, i32>, width: usize) -> String {
+    NON_PEER_TECHNIQUES
+        .iter()
+        .map(|technique| dash_zero(*counts.get(&technique.strategy()).unwrap_or(&0)))
+        .map(|value| format_column(&value, width))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn format_column(value: &str, width: usize) -> String {
+    let inner = width.saturating_sub(1);
+    format!("{:>inner$}", value, inner = inner)
 }
