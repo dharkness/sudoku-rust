@@ -85,19 +85,20 @@ pub enum Strategy {
     Swordfish, // (Digit, mains HouseSet, crosses HouseSet)
     Jellyfish, // (Digit, mains HouseSet, crosses HouseSet)
 
-    Bug,                  // (Cell, Cell, Cell)
-    AvoidableRectangle,   // (CellSet) - all unsolved cells
-    TwoStringKite,        // (Digit, Vec<Cell>)
-    SinglesChain,         // (Digit, Vec<Cell>)
-    XCycle,               // (Digit, Vec<Cell>)
-    ThreeDMedusa,         // (Digit, Vec<Cell>)
-    Skyscraper,           // (Digit, floor (Cell, Cell), ceiling (Cell, Cell))
-    YWing,                // (Digit, pivot Cell, arms (Cell, Cell))
-    WWing,                // (Digit, cells (Cell, Cell), links (Cell, Cell))
-    ChuteRemotePair,      // (DigitSet, Cell, Cell)
-    XYZWing,              // (Digit, pivot Cell, arms (Cell, Cell))
-    WXYZWing,             // (Digit, pivot Cell, arms (Cell, Cell, Cell))
-    AlignedPairExclusion, // (Cell, Cell)
+    Bug,                       // (Cell, Cell, Cell)
+    AvoidableRectangle,        // (CellSet) - all unsolved cells
+    TwoStringKite,             // (Digit, Vec<Cell>)
+    SinglesChain,              // (Digit, Vec<Cell>)
+    XCycle,                    // (Digit, Vec<Cell>)
+    ThreeDMedusa,              // (Digit, Vec<Cell>)
+    Skyscraper,                // (Digit, floor (Cell, Cell), ceiling (Cell, Cell))
+    YWing,                     // (Digit, pivot Cell, arms (Cell, Cell))
+    WWing,                     // (Digit, cells (Cell, Cell), links (Cell, Cell))
+    ChuteRemotePair,           // (DigitSet, Cell, Cell)
+    XYZWing,                   // (Digit, pivot Cell, arms (Cell, Cell))
+    WXYZWing,                  // (Digit, pivot Cell, arms (Cell, Cell, Cell))
+    AlignedPairExclusion,      // (Cell, Cell)
+    AlternatingInferenceChain, // (Digit, Vec<Cell>)
 
     XYChain,                 // (Digit, Vec<Cell>)
     UniqueRectangle,         // (DigitSet, Cell, Cell, Cell, Cell)
@@ -157,7 +158,9 @@ impl Strategy {
             Self::WXYZWing => Difficulty::Diabolical,
             Self::AlignedPairExclusion => Difficulty::Diabolical,
 
-            Self::BruteForce => Difficulty::Extreme,
+            Self::AlternatingInferenceChain => Difficulty::Extreme,
+
+            Self::BruteForce => Difficulty::BruteForce,
         }
     }
 
@@ -165,6 +168,7 @@ impl Strategy {
         match self {
             Self::AlignedPairExclusion => "Aligned Pair Exclusion",
             Self::AlmostUniqueRectangle => "Almost Unique Rectangle",
+            Self::AlternatingInferenceChain => "Alternating Inference Chain",
             Self::AvoidableRectangle => "Avoidable Rectangle",
             Self::BoxLineReduction => "Box/Line Reduction",
             Self::BruteForce => "Brute Force",
@@ -210,6 +214,7 @@ impl Strategy {
         match self {
             Self::AlignedPairExclusion => "AP",
             Self::AlmostUniqueRectangle => "AU",
+            Self::AlternatingInferenceChain => "IC",
             Self::AvoidableRectangle => "AR",
             Self::BoxLineReduction => "BL",
             Self::BruteForce => "BF",
@@ -266,4 +271,5 @@ pub enum Difficulty {
     Tough,
     Diabolical,
     Extreme,
+    BruteForce,
 }
