@@ -85,18 +85,19 @@ pub enum Strategy {
     Swordfish, // (Digit, mains HouseSet, crosses HouseSet)
     Jellyfish, // (Digit, mains HouseSet, crosses HouseSet)
 
-    Bug,                // (Cell, Cell, Cell)
-    AvoidableRectangle, // (CellSet) - all unsolved cells
-    TwoStringKite,      // (Digit, Vec<Cell>)
-    SinglesChain,       // (Digit, Vec<Cell>)
-    XCycle,             // (Digit, Vec<Cell>)
-    ThreeDMedusa,       // (Digit, Vec<Cell>)
-    Skyscraper,         // (Digit, floor (Cell, Cell), ceiling (Cell, Cell))
-    YWing,              // (Digit, pivot Cell, arms (Cell, Cell))
-    WWing,              // (Digit, cells (Cell, Cell), links (Cell, Cell))
-    ChuteRemotePair,    // (DigitSet, Cell, Cell)
-    XYZWing,            // (Digit, pivot Cell, arms (Cell, Cell))
-    WXYZWing,           // (Digit, pivot Cell, arms (Cell, Cell, Cell))
+    Bug,                  // (Cell, Cell, Cell)
+    AvoidableRectangle,   // (CellSet) - all unsolved cells
+    TwoStringKite,        // (Digit, Vec<Cell>)
+    SinglesChain,         // (Digit, Vec<Cell>)
+    XCycle,               // (Digit, Vec<Cell>)
+    ThreeDMedusa,         // (Digit, Vec<Cell>)
+    Skyscraper,           // (Digit, floor (Cell, Cell), ceiling (Cell, Cell))
+    YWing,                // (Digit, pivot Cell, arms (Cell, Cell))
+    WWing,                // (Digit, cells (Cell, Cell), links (Cell, Cell))
+    ChuteRemotePair,      // (DigitSet, Cell, Cell)
+    XYZWing,              // (Digit, pivot Cell, arms (Cell, Cell))
+    WXYZWing,             // (Digit, pivot Cell, arms (Cell, Cell, Cell))
+    AlignedPairExclusion, // (Cell, Cell)
 
     XYChain,                 // (Digit, Vec<Cell>)
     UniqueRectangle,         // (DigitSet, Cell, Cell, Cell, Cell)
@@ -154,6 +155,7 @@ impl Strategy {
             Self::ExtendedUniqueRectangle => Difficulty::Diabolical,
             Self::HiddenUniqueRectangle => Difficulty::Diabolical,
             Self::WXYZWing => Difficulty::Diabolical,
+            Self::AlignedPairExclusion => Difficulty::Diabolical,
 
             Self::BruteForce => Difficulty::Extreme,
         }
@@ -161,6 +163,7 @@ impl Strategy {
 
     pub const fn label(&self) -> &'static str {
         match self {
+            Self::AlignedPairExclusion => "Aligned Pair Exclusion",
             Self::AlmostUniqueRectangle => "Almost Unique Rectangle",
             Self::AvoidableRectangle => "Avoidable Rectangle",
             Self::BoxLineReduction => "Box/Line Reduction",
@@ -188,14 +191,14 @@ impl Strategy {
             Self::PointingTriple => "Pointing Triple",
             Self::RectangleElimination => "Rectangle Elimination",
             Self::SinglesChain => "Singles Chain",
-            Self::XCycle => "X-Cycle",
-            Self::ThreeDMedusa => "3D Medusa",
             Self::Skyscraper => "Skyscraper",
             Self::Swordfish => "Swordfish",
+            Self::ThreeDMedusa => "3D Medusa",
             Self::TwoStringKite => "Two-String Kite",
             Self::UniqueRectangle => "Unique Rectangle",
             Self::WWing => "W-Wing",
             Self::WXYZWing => "WXYZ-Wing",
+            Self::XCycle => "X-Cycle",
             Self::XWing => "X-Wing",
             Self::XYChain => "XY-Chain",
             Self::XYZWing => "XYZ-Wing",
@@ -205,6 +208,7 @@ impl Strategy {
 
     pub const fn acronym(&self) -> &'static str {
         match self {
+            Self::AlignedPairExclusion => "AP",
             Self::AlmostUniqueRectangle => "AU",
             Self::AvoidableRectangle => "AR",
             Self::BoxLineReduction => "BL",
@@ -232,14 +236,14 @@ impl Strategy {
             Self::PointingTriple => "PT",
             Self::RectangleElimination => "RE",
             Self::SinglesChain => "SC",
-            Self::XCycle => "XC",
-            Self::ThreeDMedusa => "3D",
             Self::Skyscraper => "SK",
             Self::Swordfish => "SF",
+            Self::ThreeDMedusa => "3D",
             Self::TwoStringKite => "TS",
             Self::UniqueRectangle => "UR",
             Self::WWing => "WW",
             Self::WXYZWing => "WZ",
+            Self::XCycle => "XC",
             Self::XWing => "XW",
             Self::XYChain => "XY",
             Self::XYZWing => "XZ",

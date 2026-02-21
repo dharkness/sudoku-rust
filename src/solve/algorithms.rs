@@ -16,6 +16,7 @@
 
 use itertools::Itertools;
 
+pub use aligned_pair_exclusion::find_aligned_pair_exclusion;
 pub use avoidable_rectangles::find_avoidable_rectangles;
 pub use brute_force::{find_brute_force, BruteForceResult};
 pub use bugs::find_bugs;
@@ -52,6 +53,7 @@ pub use y_wings::find_y_wings;
 use crate::layout::*;
 use crate::puzzle::*;
 
+mod aligned_pair_exclusion;
 mod avoidable_rectangles;
 mod brute_force;
 mod bugs;
