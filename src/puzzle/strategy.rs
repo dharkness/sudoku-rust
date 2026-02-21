@@ -113,6 +113,51 @@ pub enum Strategy {
 }
 
 impl Strategy {
+    pub const ALL: [Strategy; 42] = [
+        Strategy::AlignedPairExclusion,
+        Strategy::AlmostLockedSets,
+        Strategy::AlmostUniqueRectangle,
+        Strategy::AlternatingInferenceChain,
+        Strategy::AvoidableRectangle,
+        Strategy::BoxLineReduction,
+        Strategy::BruteForce,
+        Strategy::Bug,
+        Strategy::ChuteRemotePair,
+        Strategy::Erase,
+        Strategy::ExtendedUniqueRectangle,
+        Strategy::Fireworks,
+        Strategy::Give,
+        Strategy::HiddenPair,
+        Strategy::HiddenQuad,
+        Strategy::HiddenSingle,
+        Strategy::HiddenTriple,
+        Strategy::HiddenUniqueRectangle,
+        Strategy::IntersectionRemoval,
+        Strategy::Jellyfish,
+        Strategy::NakedPair,
+        Strategy::NakedQuad,
+        Strategy::NakedSingle,
+        Strategy::NakedTriple,
+        Strategy::Peer,
+        Strategy::Place,
+        Strategy::PointingPair,
+        Strategy::PointingTriple,
+        Strategy::RectangleElimination,
+        Strategy::SinglesChain,
+        Strategy::Skyscraper,
+        Strategy::Swordfish,
+        Strategy::ThreeDMedusa,
+        Strategy::TwoStringKite,
+        Strategy::UniqueRectangle,
+        Strategy::WWing,
+        Strategy::WXYZWing,
+        Strategy::XCycle,
+        Strategy::XWing,
+        Strategy::XYChain,
+        Strategy::XYZWing,
+        Strategy::YWing,
+    ];
+
     pub const fn difficulty(&self) -> Difficulty {
         match self {
             Self::Give => Difficulty::Trivial,
@@ -258,6 +303,23 @@ impl Strategy {
             Self::XYZWing => "XZ",
             Self::YWing => "YW",
         }
+    }
+}
+
+impl TryFrom<&str> for Strategy {
+    type Error = ();
+
+    fn try_from(acronym: &str) -> Result<Self, Self::Error> {
+        let needle = acronym.trim();
+        if needle.is_empty() {
+            return Err(());
+        }
+
+        Strategy::ALL
+            .iter()
+            .find(|strategy| strategy.acronym().trim().eq_ignore_ascii_case(needle))
+            .copied()
+            .ok_or(())
     }
 }
 

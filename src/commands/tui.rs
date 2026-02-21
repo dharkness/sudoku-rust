@@ -1108,7 +1108,7 @@ fn command_spec(key: char) -> Option<CommandSpec> {
             key,
             name: "Find Deductions",
             args: vec![ArgKind::CellOrDigit],
-            labels: vec!["cell or digit"],
+            labels: vec!["cell or digit or strategy"],
             allow_empty: true,
         },
         'H' => CommandSpec {
@@ -1177,7 +1177,9 @@ fn token_valid(kind: ArgKind, token: &str) -> bool {
         ArgKind::Puzzle => token
             .chars()
             .all(|c| matches!(c, '0'..='9' | 'A'..='Z' | 'a'..='z' | '.' | '·')),
-        ArgKind::CellOrDigit => token.len() <= 2 && token.chars().all(is_cell_char),
+        ArgKind::CellOrDigit => {
+            (token.len() <= 2 && token.chars().all(is_cell_char)) || strategy_token_valid(token)
+        }
         ArgKind::Print => {
             token.len() <= 1 && token.chars().all(|c| matches!(c, 'G' | 'S' | '1'..='9'))
         }
@@ -1186,6 +1188,10 @@ fn token_valid(kind: ArgKind, token: &str) -> bool {
 
 fn is_cell_char(ch: char) -> bool {
     matches!(ch, '1'..='9' | 'A'..='H' | 'J')
+}
+
+fn strategy_token_valid(token: &str) -> bool {
+    !token.is_empty() && token.chars().all(|ch| ch.is_ascii_alphanumeric())
 }
 
 fn normalize_char(ch: char, preserve_case: bool) -> Option<char> {

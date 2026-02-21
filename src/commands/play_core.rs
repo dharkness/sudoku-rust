@@ -73,6 +73,7 @@ pub enum ProgressStage {
 pub enum FindFilter {
     Cell(Cell),
     Digit(Digit),
+    Strategy(Strategy),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -260,15 +261,29 @@ pub fn parse_command_line(line: &str) -> Result<PlayCommand, PlayError> {
         }
         "F" => {
             let filter = if parts.len() == 2 {
-                match parts[1].len() {
-                    1 => Some(FindFilter::Digit(parts[1].parse::<Digit>().map_err(
-                        |_| PlayError::InvalidArguments(format!("Invalid digit: {}", parts[1])),
-                    )?)),
-                    2 => Some(FindFilter::Cell(parts[1].parse::<Cell>().map_err(
-                        |_| PlayError::InvalidArguments(format!("Invalid cell: {}", parts[1])),
-                    )?)),
-                    _ => None,
+                let token = parts[1];
+                let mut filter = None;
+                if token.len() == 1 {
+                    if let Ok(digit) = token.parse::<Digit>() {
+                        filter = Some(FindFilter::Digit(digit));
+                    }
                 }
+                if filter.is_none() && token.len() == 2 {
+                    if let Ok(cell) = token.parse::<Cell>() {
+                        filter = Some(FindFilter::Cell(cell));
+                    }
+                }
+                if filter.is_none() {
+                    if let Ok(strategy) = Strategy::try_from(token) {
+                        filter = Some(FindFilter::Strategy(strategy));
+                    } else {
+                        return Err(PlayError::InvalidArguments(format!(
+                            "Unknown strategy: {}",
+                            token
+                        )));
+                    }
+                }
+                filter
             } else {
                 None
             };
@@ -305,6 +320,7 @@ pub struct PlayState {
     boards: VecDeque<Board>,
     index: usize,
     deductions: Option<Effects>,
+    deductions_strategy: Option<Strategy>,
     highlight: Option<Action>,
     cancelable: Cancelable,
 }
@@ -316,6 +332,7 @@ impl PlayState {
             boards: VecDeque::new(),
             index: 0,
             deductions: None,
+            deductions_strategy: None,
             highlight: None,
             cancelable: Cancelable::new(),
         };
@@ -392,7 +409,7 @@ impl PlayState {
     }
 
     pub fn highlight_all_deductions(&mut self) -> PlayOutput {
-        let Some(found) = self.ensure_deductions() else {
+        let Some(found) = self.ensure_deductions(self.deductions_strategy) else {
             return PlayOutput::default().message("No deductions found".to_string());
         };
 
@@ -738,13 +755,20 @@ impl PlayState {
     }
 
     fn find_deductions(&mut self, filter: Option<FindFilter>) -> PlayOutput {
-        let Some(found) = self.ensure_deductions() else {
+        let strategy_filter = match filter {
+            Some(FindFilter::Strategy(strategy)) => Some(strategy),
+            _ => None,
+        };
+        let Some(found) = self.ensure_deductions(strategy_filter) else {
             let message = match filter {
                 Some(FindFilter::Cell(cell)) => {
                     format!("==> No deductions found affecting {}", cell)
                 }
                 Some(FindFilter::Digit(digit)) => {
                     format!("==> No deductions found affecting {}", digit)
+                }
+                Some(FindFilter::Strategy(strategy)) => {
+                    format!("==> No deductions found for {}", strategy.label())
                 }
                 None => "==> No deductions found".to_string(),
             };
@@ -777,6 +801,11 @@ impl PlayState {
                     digit
                 ))
             }
+            Some(FindFilter::Strategy(strategy)) => Some(format!(
+                "==> Found {} from {}",
+                pluralize(found.action_count(), "deduction"),
+                strategy.label()
+            )),
             None => Some(format!(
                 "==> Found {}",
                 pluralize(found.action_count(), "deduction")
@@ -792,6 +821,10 @@ impl PlayState {
                 }
             } else if let Some(FindFilter::Digit(digit)) = filter {
                 if action.affects_digit(digit) {
+                    include = true;
+                }
+            } else if let Some(FindFilter::Strategy(strategy)) = filter {
+                if action.strategy() == strategy {
                     include = true;
                 }
             } else {
@@ -811,6 +844,9 @@ impl PlayState {
                 Some(FindFilter::Digit(digit)) => {
                     format!("==> No deductions found affecting {}", digit)
                 }
+                Some(FindFilter::Strategy(strategy)) => {
+                    format!("==> No deductions found for {}", strategy.label())
+                }
                 None => "==> No deductions found".to_string(),
             };
             return PlayOutput::default().message(msg);
@@ -829,7 +865,7 @@ impl PlayState {
 
     fn highlight_deduction(&mut self, index: usize) -> PlayOutput {
         let mut output = PlayOutput::default();
-        let Some(found) = self.ensure_deductions() else {
+        let Some(found) = self.ensure_deductions(self.deductions_strategy) else {
             return PlayOutput::default().message("==> Find deductions first with F".to_string());
         };
 
@@ -853,7 +889,7 @@ impl PlayState {
 
     fn apply_deductions(&mut self, index: Option<usize>) -> PlayOutput {
         let board = *self.current();
-        let Some(found) = self.ensure_deductions() else {
+        let Some(found) = self.ensure_deductions(self.deductions_strategy) else {
             return PlayOutput::default().message("==> Find deductions first with F".to_string());
         };
 
@@ -1084,6 +1120,7 @@ impl PlayState {
         if self.index > 0 {
             self.index -= 1;
             self.deductions = None;
+            self.deductions_strategy = None;
             self.highlight = None;
             output.messages.push("Undoing last move".to_string());
             output.show_board = true;
@@ -1091,16 +1128,30 @@ impl PlayState {
         output
     }
 
-    fn ensure_deductions(&mut self) -> Option<&Effects> {
-        if self.deductions.is_none() {
+    fn ensure_deductions(&mut self, strategy: Option<Strategy>) -> Option<&Effects> {
+        if self.deductions.is_none() || self.deductions_strategy != strategy {
             let mut found = Effects::new();
             let board = self.current();
-            TECHNIQUES.iter().for_each(|solver| {
-                if let Some(actions) = solver.solve(board, false) {
-                    found.take_actions(actions);
+            match strategy {
+                Some(target) => {
+                    if let Some(technique) =
+                        TECHNIQUES.iter().find(|solver| solver.strategy() == target)
+                    {
+                        if let Some(actions) = technique.solve(board, false) {
+                            found.take_actions(actions);
+                        }
+                    }
                 }
-            });
+                None => {
+                    TECHNIQUES.iter().for_each(|solver| {
+                        if let Some(actions) = solver.solve(board, false) {
+                            found.take_actions(actions);
+                        }
+                    });
+                }
+            }
             self.deductions = Some(found);
+            self.deductions_strategy = strategy;
         }
 
         match &self.deductions {
@@ -1114,6 +1165,7 @@ impl PlayState {
         if self.index + 1 < self.boards.len() {
             self.index += 1;
             self.deductions = None;
+            self.deductions_strategy = None;
             self.highlight = None;
             output.messages.push("Redoing last move".to_string());
             output.show_board = true;
@@ -1130,6 +1182,7 @@ impl PlayState {
         self.boards.push_back(board);
         self.index = self.boards.len().saturating_sub(1);
         self.deductions = None;
+        self.deductions_strategy = None;
         self.highlight = None;
     }
 }
@@ -1143,39 +1196,39 @@ pub fn play_help_text() -> String {
     concat!(
         "==> Help\n",
         "\n",
-        "  O [option]          - view or toggle an option\n",
-        "  N                   - start or input a new puzzle\n",
-        "  C                   - create a new random puzzle\n",
+        "  O [option]                    - view or toggle an option\n",
+        "  N                             - start or input a new puzzle\n",
+        "  C                             - create a new random puzzle\n",
         "\n",
-        "  P [G | S | digit]   - print the full puzzle (or givens, solutions, or single candidate)\n",
-        "  X [char]            - export the puzzle with optional character for unsolved cells\n",
-        "  W                   - print URL to play on SudokuWiki.org\n",
-        "  M                   - print the puzzle as a grid suitable for email\n",
+        "  P [G | S | digit]             - print the full puzzle (or givens, solutions, or single candidate)\n",
+        "  X [char]                      - export the puzzle with optional character for unsolved cells\n",
+        "  W                             - print URL to play on SudokuWiki.org\n",
+        "  M                             - print the puzzle as a grid suitable for email\n",
         "\n",
-        "  G <cells> <digit>   - set the given (clue) for the cell(s)\n",
-        "  S <cells> <digit>   - solve the cell(s)\n",
-        "  E <cells> <digits>  - erase the candidate(s) from the cell(s)\n",
+        "  G <cells> <digit>             - set the given (clue) for the cell(s)\n",
+        "  S <cells> <digit>             - solve the cell(s)\n",
+        "  E <cells> <digits>            - erase the candidate(s) from the cell(s)\n",
         "\n",
-        "  F [cell | digit]    - find deductions\n",
-        "  H <num>             - highlight a single deduction\n",
-        "  A [num]             - apply a single or all deductions\n",
-        "  V                   - verify that puzzle is solvable\n",
-        "  B                   - use Bowman's Bingo to solve the puzzle if possible\n",
-        "  R                   - reset candidates based on solved cells\n",
-        "  Z                   - undo last change\n",
-        "  Y                   - redo last change\n",
+        "  F [cell | digit | strategy]   - find deductions\n",
+        "  H <num>                       - highlight a single deduction\n",
+        "  A [num]                       - apply a single or all deductions\n",
+        "  V                             - verify that puzzle is solvable\n",
+        "  B                             - use Bowman's Bingo to solve the puzzle if possible\n",
+        "  R                             - reset candidates based on solved cells\n",
+        "  Z                             - undo last change\n",
+        "  Y                             - redo last change\n",
         "\n",
-        "  ?                   - this help message\n",
-        "  Q                   - quit\n",
+        "  ?                             - this help message\n",
+        "  Q                             - quit\n",
         "\n",
-        "      <option> - H, N or I\n",
-        "      <cell>   - A1 to J9\n",
-        "      <digit>  - 1 to 9\n",
-        "      <num>    - any positive number\n",
-        "      <char>   - any single character\n",
-        "      [...]    - optional\n",
+        "          <option> - H, N or I\n",
+        "          <cell>   - A1 to J9\n",
+        "          <digit>  - 1 to 9\n",
+        "          <num>    - any positive number\n",
+        "          <char>   - any single character\n",
+        "          [...]    - optional\n",
         "\n",
-        "  Commands and cells are not case-sensitive - \"s a2 4\" and \"E D8 6\" are fine\n",
+        "  Commands and cells are case-insensitive - \"s a2 4\" and \"E D8 6\" are fine\n",
     )
     .to_string()
 }
