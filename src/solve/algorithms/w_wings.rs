@@ -52,7 +52,7 @@ fn add_single_w_wings(
     effects: &mut Effects,
     single: bool,
 ) -> bool {
-    let cell_pairs = cells.iter().combinations(2).collect_vec();
+    let cell_pairs = cells.pair_iter().collect_vec();
 
     for (link_digit, erase_digit) in [(d1, d2), (d2, d1)] {
         let links = &strong_links[link_digit.usize()];
@@ -60,10 +60,8 @@ fn add_single_w_wings(
             continue;
         }
 
-        for combo in &cell_pairs {
-            let c1 = combo[0];
-            let c2 = combo[1];
-            if c1.sees(c2) {
+        for (c1, c2) in &cell_pairs {
+            if c1.sees(*c2) {
                 continue;
             }
 
@@ -81,7 +79,7 @@ fn add_single_w_wings(
 
                 let mut action = Action::new(Strategy::WWing);
                 action.erase_cells(erase, erase_digit);
-                action.clue_cells_for_digits(Verdict::Secondary, CellSet::of(&[c1, c2]), pair);
+                action.clue_cells_for_digits(Verdict::Secondary, CellSet::of(&[*c1, *c2]), pair);
                 action.clue_cells_for_digit(Verdict::Primary, CellSet::of(&[s1, s2]), link_digit);
 
                 if effects.add_action(action) && single {
@@ -151,10 +149,7 @@ fn add_remote_pair_chains(
         }
     }
 
-    let cell_pairs = cells.iter().combinations(2).collect_vec();
-    for combo in cell_pairs {
-        let c1 = combo[0];
-        let c2 = combo[1];
+    for (c1, c2) in cells.pair_iter() {
         if c1.sees(c2) {
             continue;
         }

@@ -45,31 +45,29 @@ pub fn find(board: &Board, single: bool, full: bool) -> Option<Effects> {
             }
         }
 
-        for corners in cells.iter().combinations(2).map(CellSet::from_iter) {
-            let (first, second) = corners.as_pair().unwrap();
-
-            if first.row() == second.row() {
+        for (c1, c2) in cells.pair_iter() {
+            if c1.row() == c2.row() {
                 if check_neighbors(
                     board,
                     single,
                     full,
                     *pair,
-                    first,
-                    second,
+                    c1,
+                    c2,
                     Shape::Row,
                     &found_type_ones,
                     &mut effects,
                 ) {
                     return Some(effects);
                 }
-            } else if first.column() == second.column() {
+            } else if c1.column() == c2.column() {
                 if check_neighbors(
                     board,
                     single,
                     full,
                     *pair,
-                    first,
-                    second,
+                    c1,
+                    c2,
                     Shape::Column,
                     &found_type_ones,
                     &mut effects,
@@ -82,8 +80,8 @@ pub fn find(board: &Board, single: bool, full: bool) -> Option<Effects> {
                     single,
                     full,
                     *pair,
-                    first,
-                    second,
+                    c1,
+                    c2,
                     &found_type_ones,
                     &mut effects,
                 ) {

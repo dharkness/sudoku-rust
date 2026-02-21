@@ -90,20 +90,17 @@ pub fn find_wxyz_wings(board: &Board, single: bool) -> Option<Effects> {
 
     // the other bi-value cells that each bi-value cell sees with the same two candidates
     // only tracks the earlier of the two cells
+    //
+    // TODO iterate candidates c, intersect candidates with c.peers(), remove cells < c, and store the result as the seen bi-value cells for c
     let seen_bi_values: HashMap<Cell, CellSet> =
         pairs_by_candidates
             .iter()
             .fold(HashMap::new(), |mut map, (_, cells)| {
-                cells.iter().combinations(2).for_each(|combo| {
-                    let (c1, c2) = (combo[0], combo[1]);
+                for (c1, c2) in cells.pair_iter() {
                     if c1.sees(c2) {
-                        if c1 < c2 {
-                            *map.entry(c1).or_default() += c2;
-                        } else {
-                            *map.entry(c2).or_default() += c1;
-                        }
+                        *map.entry(c1).or_default() += c2;
                     }
-                });
+                }
                 map
             });
 
@@ -147,11 +144,7 @@ pub fn find_wxyz_wings(board: &Board, single: bool) -> Option<Effects> {
         let mut non_restricted: HashMap<Digit, CellSet> = HashMap::new();
         for digit in wing_digits {
             let candidates = wing & board.candidate_cells(digit);
-            let is_restricted = candidates
-                .iter()
-                .combinations(2)
-                .all(|combo| combo[0].sees(combo[1]));
-            if is_restricted {
+            if candidates.pair_iter().all(|(c1, c2)| c1.sees(c2)) {
                 restricted.insert(digit, candidates);
             } else {
                 if !non_restricted.is_empty() {

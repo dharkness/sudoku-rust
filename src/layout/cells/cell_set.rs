@@ -35,7 +35,7 @@ impl fmt::Display for CellSetError {
 }
 
 const ALL_CELLS: std::ops::Range<Size> = 0..Cell::COUNT;
-const ALL_SET: Bits = (1 << Cell::COUNT) - 1;
+const ALL_SET: Bits = (1u128 << Cell::COUNT) - 1;
 
 impl CellSet {
     /// Returns a new empty set.
@@ -190,7 +190,7 @@ impl CellSet {
     }
 
     /// Removes `cell` from this set.
-    pub fn remove(&mut self, cell: Cell) {
+    pub const fn remove(&mut self, cell: Cell) {
         self.0 &= !(cell.bit().bit());
     }
 
@@ -374,6 +374,14 @@ impl CellSet {
         CellIter {
             iter: self.bit_iter(),
         }
+    }
+
+    /// Returns an iterator over all unique pairs of members of this set in row-then-column order.
+    /// Each pair is returned as (a, b) with a < b in that order.
+    ///
+    /// TODO Add non_peer_pair_iter() that returns pairs of cells that don't see each other, which is useful for some algorithms.
+    pub const fn pair_iter(&self) -> PairIter {
+        PairIter::new(*self)
     }
 
     /// Returns an iterator over the members of this set as bits in row-then-column order.
@@ -685,6 +693,100 @@ impl fmt::Debug for CellSet {
         write!(f, "{}", self)
     }
 }
+
+pub struct PairIter {
+    // Remaining candidates for the first element.
+    outer: CellSet,
+    // Remaining candidates for the second element for the current `first`.
+    inner: CellSet,
+
+    first: Cell,
+    has_first: bool,
+
+    total: usize,
+    emitted: usize,
+}
+
+impl PairIter {
+    const fn new(set: CellSet) -> Self {
+        let n = set.len();
+        let total = n.saturating_sub(1) * n / 2;
+
+        Self {
+            outer: set,
+            inner: CellSet::empty(),
+            first: Cell::new(0),
+            has_first: false,
+            total,
+            emitted: 0,
+        }
+    }
+
+    const fn advance_outer(&mut self) -> bool {
+        // Pick next `first` in order.
+        let Some(first) = self.outer.first() else {
+            return false;
+        };
+        self.first = first;
+
+        // Remove it from outer candidates so it won't be used again as `first`.
+        self.outer.remove(first);
+
+        // Inner candidates are all remaining cells strictly after `first`.
+        let i = first.index() as u32;
+        debug_assert!(i < Cell::COUNT as u32);
+
+        // Bits 0..=i set to 1.
+        let mask_low: Bits = (1u128 << (i + 1)) - 1;
+
+        // Keep only bits > i (and still within ALL_SET because outer is).
+        let inner_bits: Bits = self.outer.bits() & !mask_low;
+
+        self.inner = CellSet::new(inner_bits);
+        self.has_first = true;
+        true
+    }
+}
+
+impl Iterator for PairIter {
+    type Item = (Cell, Cell);
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        while self.emitted < self.total {
+            // Emit remaining (first, second) pairs for the current `first`.
+            if self.has_first {
+                if let Some(second) = self.inner.pop() {
+                    self.emitted += 1;
+                    return Some((self.first, second));
+                }
+            }
+
+            // Move to next `first`.
+            if !self.advance_outer() {
+                debug_assert_eq!(self.emitted, self.total);
+                return None;
+            }
+        }
+
+        None
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let rem = self.total - self.emitted;
+        (rem, Some(rem))
+    }
+}
+
+impl ExactSizeIterator for PairIter {
+    #[inline]
+    fn len(&self) -> usize {
+        self.total - self.emitted
+    }
+}
+
+impl FusedIterator for PairIter {}
 
 /// Creates a [`CellSet`] containing all 81 cells in the grid.
 ///

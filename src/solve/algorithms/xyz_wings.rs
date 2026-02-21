@@ -26,12 +26,7 @@ pub fn find_xyz_wings(board: &Board, single: bool) -> Option<Effects> {
     for pivot in tri_values {
         // let (d1, d2) = board.candidates(cell).as_pair().unwrap();
         let pivot_peers = pivot.peers();
-        for pair in (pivot_peers & bi_values)
-            .iter()
-            .combinations(2)
-            .map(|pair| pair.iter().copied().union_cells())
-        {
-            let (c1, c2) = pair.as_pair().expect("cell pair");
+        for (c1, c2) in (pivot_peers & bi_values).pair_iter() {
             let candidates = pivot_peers & c1.peers() & c2.peers();
             if candidates.len() != 2 {
                 // degenerate naked triple
@@ -56,7 +51,7 @@ pub fn find_xyz_wings(board: &Board, single: bool) -> Option<Effects> {
 
             let mut action = Action::new(Strategy::XYZWing);
             action.erase_cells(candidates & board.candidate_cells(d), d);
-            action.clue_cells_for_digit(Verdict::Secondary, pair + pivot, d);
+            action.clue_cells_for_digit(Verdict::Secondary, CellSet::of(&[c1, c2, pivot]), d);
             action.clue_cell_for_digits(Verdict::Primary, pivot, ds1 - d);
             action.clue_cell_for_digits(Verdict::Primary, pivot, ds2 - d);
             action.clue_cell_for_digits(Verdict::Primary, c1, ds1 - d);
