@@ -90,6 +90,7 @@ pub enum Strategy {
     TwoStringKite,      // (Digit, Vec<Cell>)
     SinglesChain,       // (Digit, Vec<Cell>)
     XCycle,             // (Digit, Vec<Cell>)
+    ThreeDMedusa,       // (Digit, Vec<Cell>)
     Skyscraper,         // (Digit, floor (Cell, Cell), ceiling (Cell, Cell))
     YWing,              // (Digit, pivot Cell, arms (Cell, Cell))
     WWing,              // (Digit, cells (Cell, Cell), links (Cell, Cell))
@@ -145,6 +146,7 @@ impl Strategy {
             Self::XCycle => Difficulty::Diabolical,
             Self::Skyscraper => Difficulty::Diabolical,
             Self::XYChain => Difficulty::Diabolical,
+            Self::ThreeDMedusa => Difficulty::Diabolical,
             Self::Jellyfish => Difficulty::Diabolical,
             Self::UniqueRectangle => Difficulty::Diabolical,
             Self::AlmostUniqueRectangle => Difficulty::Diabolical,
@@ -187,6 +189,7 @@ impl Strategy {
             Self::RectangleElimination => "Rectangle Elimination",
             Self::SinglesChain => "Singles Chain",
             Self::XCycle => "X-Cycle",
+            Self::ThreeDMedusa => "3D Medusa",
             Self::Skyscraper => "Skyscraper",
             Self::Swordfish => "Swordfish",
             Self::TwoStringKite => "Two-String Kite",
@@ -230,6 +233,7 @@ impl Strategy {
             Self::RectangleElimination => "RE",
             Self::SinglesChain => "SC",
             Self::XCycle => "XC",
+            Self::ThreeDMedusa => "3D",
             Self::Skyscraper => "SK",
             Self::Swordfish => "SF",
             Self::TwoStringKite => "TS",
