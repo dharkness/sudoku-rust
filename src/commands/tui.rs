@@ -449,7 +449,7 @@ impl TuiState {
                 action.collect_verdicts(),
             ))
         } else {
-            add_all_candidates_labels(strip_ansi_lines(write_candidates(board)))
+            add_all_candidates_labels(write_candidates(board))
         };
         let status = format!(
             "[ {} solved / {} unsolved ]",
@@ -471,17 +471,9 @@ impl TuiState {
         grid_block.push(String::new());
         grid_block.push(status_line);
         let left_inner = inner_rect(left_area);
-        let centered_grid = if state.highlight().is_some() {
-            center_lines_visible(&grid_block, left_inner)
-        } else {
-            center_lines(&grid_block, left_inner)
-        };
+        let centered_grid = center_lines_visible(&grid_block, left_inner);
 
-        let left_text = if state.highlight().is_some() {
-            ansi_lines_to_text(&centered_grid)
-        } else {
-            Text::from(centered_grid.join("\n"))
-        };
+        let left_text = ansi_lines_to_text(&centered_grid);
         let left = Paragraph::new(left_text)
             .block(Block::default().title(" Board ").borders(Borders::ALL))
             .wrap(Wrap { trim: false });
@@ -889,7 +881,7 @@ fn left_grid_max_width(
             action.collect_verdicts(),
         ))
     } else {
-        add_all_candidates_labels(strip_ansi_lines(write_candidates(board)))
+        add_all_candidates_labels(write_candidates(board))
     };
     grid.iter()
         .map(|line| visible_len(line.trim_end_matches(' ')))
@@ -1332,10 +1324,6 @@ fn progress_bar(value: usize, total: usize) -> String {
     let filled = value.min(total);
     let empty = total.saturating_sub(filled);
     format!("{}{}", "#".repeat(filled), "-".repeat(empty))
-}
-
-fn strip_ansi_lines(lines: Vec<String>) -> Vec<String> {
-    lines.into_iter().map(|line| strip_ansi(&line)).collect()
 }
 
 fn digit_complete(board: &crate::puzzle::Board, digit: Digit) -> bool {

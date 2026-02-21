@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+use colored::Colorize;
 use itertools::Itertools;
 
 use crate::layout::{Cell, Digit, House};
@@ -19,6 +20,18 @@ use crate::symbols::{GIVEN, MISSING};
 // combo:  ╟ ╢ ╧ ╤ ╪ ╫
 //
 // dashed: ┄ ┅ ┆ ┇ ┈ ┉ ┊ ┋ ╌ ╍ ╎ ╏
+
+const DIGIT_GLYPHS: [[&str; 3]; 9] = [
+    ["╶┐ ", " │ ", "╶┴╴"],
+    ["╶─┐", "┌─┘", "└─╴"],
+    ["╶─┐", "╶─┤", "╶─┘"],
+    ["╷ ╷", "└─┤", "  ╵"],
+    ["┌─╴", "└─┐", "╶─┘"],
+    ["┌─╴", "├─┐", "└─┘"],
+    ["╶─┐", "  │", "  ╵"],
+    ["┌─┐", "├─┤", "└─┘"],
+    ["┌─┐", "└─┤", "╶─┘"],
+];
 
 pub fn print_givens(board: &Board) {
     for line in add_single_value_labels(write_givens(board)) {
@@ -150,6 +163,40 @@ pub fn write_single_value(append: impl Fn(Cell, &mut String)) -> Vec<String> {
     lines
 }
 
+fn digit_glyph_line(digit: Digit, line: usize) -> &'static str {
+    DIGIT_GLYPHS[digit.usize()][line]
+}
+
+fn pad_digit_glyph_line(digit: Digit, line: usize) -> String {
+    format!(" {}  ", digit_glyph_line(digit, line))
+}
+
+fn gray_line(line: &str) -> String {
+    line.bright_black().to_string()
+}
+
+fn append_solved_digit_lines(
+    cell_lines: &mut [String; 3],
+    digit: Digit,
+    given: bool,
+    verdict: Verdict,
+) {
+    for line in 0..3 {
+        let glyph = pad_digit_glyph_line(digit, line);
+        let rendered = match verdict {
+            Verdict::None => {
+                if given {
+                    gray_line(&glyph)
+                } else {
+                    glyph
+                }
+            }
+            verdict => verdict.color(glyph),
+        };
+        cell_lines[line].push_str(&rendered);
+    }
+}
+
 pub fn print_candidates(board: &Board) {
     for line in add_all_candidates_labels(write_candidates(board)) {
         println!("{}", line);
@@ -205,11 +252,16 @@ pub fn write_candidates(board: &Board) -> Vec<String> {
                     cell_lines[line].push(' ');
                 }
             } else {
-                cell_lines[0].push_str("      ");
-                cell_lines[1].push_str(&format!("  {}   ", value));
-                if board.is_given(cell) {
-                    cell_lines[2].push_str(&format!("  {}   ", MISSING));
+                if let Some(digit) = value.digit() {
+                    append_solved_digit_lines(
+                        &mut cell_lines,
+                        digit,
+                        board.is_given(cell),
+                        Verdict::None,
+                    );
                 } else {
+                    cell_lines[0].push_str("      ");
+                    cell_lines[1].push_str("      ");
                     cell_lines[2].push_str("      ");
                 }
             }
@@ -263,17 +315,7 @@ pub fn write_candidates_with_highlight(
                     .get(&cell)
                     .and_then(|map| map.get(&digit))
                     .unwrap_or(&Verdict::None);
-                cell_lines[0].push_str("      ");
-                cell_lines[1].push_str(&format!(
-                    "  {}   ",
-                    verdict.color_char(digit.label()).as_str()
-                ));
-                if board.is_given(cell) {
-                    cell_lines[2]
-                        .push_str(&format!("  {}   ", verdict.color_char(MISSING).as_str()));
-                } else {
-                    cell_lines[2].push_str("      ");
-                }
+                append_solved_digit_lines(&mut cell_lines, digit, board.is_given(cell), *verdict);
             } else {
                 for digit in Digit::iter() {
                     let line = digit.usize() / 3;
