@@ -89,6 +89,7 @@ pub enum Strategy {
     AvoidableRectangle, // (CellSet) - all unsolved cells
     TwoStringKite,      // (Digit, Vec<Cell>)
     SinglesChain,       // (Digit, Vec<Cell>)
+    XCycle,             // (Digit, Vec<Cell>)
     Skyscraper,         // (Digit, floor (Cell, Cell), ceiling (Cell, Cell))
     YWing,              // (Digit, pivot Cell, arms (Cell, Cell))
     WWing,              // (Digit, cells (Cell, Cell), links (Cell, Cell))
@@ -141,6 +142,7 @@ impl Strategy {
             Self::AvoidableRectangle => Difficulty::Tough,
             Self::Bug => Difficulty::Tough,
 
+            Self::XCycle => Difficulty::Diabolical,
             Self::Skyscraper => Difficulty::Diabolical,
             Self::XYChain => Difficulty::Diabolical,
             Self::Jellyfish => Difficulty::Diabolical,
@@ -184,6 +186,7 @@ impl Strategy {
             Self::PointingTriple => "Pointing Triple",
             Self::RectangleElimination => "Rectangle Elimination",
             Self::SinglesChain => "Singles Chain",
+            Self::XCycle => "X-Cycle",
             Self::Skyscraper => "Skyscraper",
             Self::Swordfish => "Swordfish",
             Self::TwoStringKite => "Two-String Kite",
@@ -226,6 +229,7 @@ impl Strategy {
             Self::PointingTriple => "PT",
             Self::RectangleElimination => "RE",
             Self::SinglesChain => "SC",
+            Self::XCycle => "XC",
             Self::Skyscraper => "SK",
             Self::Swordfish => "SF",
             Self::TwoStringKite => "TS",

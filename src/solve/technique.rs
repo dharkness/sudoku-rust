@@ -48,7 +48,7 @@ type TechniqueFunc = fn(board: &Board, single: bool) -> Option<Effects>;
 
 /// All techniques implemented by this solver.
 #[rustfmt::skip]
-pub const TECHNIQUES: [Technique; 30] = [
+pub const TECHNIQUES: [Technique; 31] = [
     Technique::new(Strategy::Peer, algorithms::find_peers),
     Technique::new(Strategy::NakedSingle, algorithms::find_naked_singles),
     Technique::new(Strategy::HiddenSingle, algorithms::find_hidden_singles),
@@ -60,6 +60,7 @@ pub const TECHNIQUES: [Technique; 30] = [
     Technique::new(Strategy::HiddenTriple, algorithms::find_hidden_triples),
     Technique::new(Strategy::HiddenQuad, algorithms::find_hidden_quads),
     Technique::new(Strategy::IntersectionRemoval, algorithms::find_intersection_removals),
+    // Intersection Removal finds Pointing Pairs and Triples and Box-Line Reductions
 
     Technique::new(Strategy::XWing, algorithms::find_x_wings),
     Technique::new(Strategy::TwoStringKite, algorithms::find_two_string_kites),
@@ -72,6 +73,7 @@ pub const TECHNIQUES: [Technique; 30] = [
     Technique::new(Strategy::XYZWing, algorithms::find_xyz_wings),
     Technique::new(Strategy::AvoidableRectangle, algorithms::find_avoidable_rectangles),
 
+    Technique::new(Strategy::XCycle, algorithms::find_x_cycles),
     Technique::new(Strategy::Skyscraper,algorithms::find_skyscrapers),
     Technique::new(Strategy::XYChain, algorithms::find_xy_chains),
     Technique::new(Strategy::Jellyfish,algorithms::find_jellyfish),
@@ -88,22 +90,22 @@ pub const TECHNIQUES: [Technique; 30] = [
 
 /// All techniques except finding peers.
 #[rustfmt::skip]
-pub const NON_PEER_TECHNIQUES: [Technique; 29] = [
+pub const NON_PEER_TECHNIQUES: [Technique; 30] = [
     TECHNIQUES[1],  TECHNIQUES[2],  TECHNIQUES[3],  TECHNIQUES[4],  TECHNIQUES[5],
     TECHNIQUES[6],  TECHNIQUES[7],  TECHNIQUES[8],  TECHNIQUES[9],  TECHNIQUES[10],
     TECHNIQUES[11], TECHNIQUES[12], TECHNIQUES[13], TECHNIQUES[14], TECHNIQUES[15],
     TECHNIQUES[16], TECHNIQUES[17], TECHNIQUES[18], TECHNIQUES[19], TECHNIQUES[20],
     TECHNIQUES[21], TECHNIQUES[22], TECHNIQUES[23], TECHNIQUES[24], TECHNIQUES[25],
-    TECHNIQUES[26], TECHNIQUES[27], TECHNIQUES[28], TECHNIQUES[29],
+    TECHNIQUES[26], TECHNIQUES[27], TECHNIQUES[28], TECHNIQUES[29], TECHNIQUES[30],
 ];
 
 /// All techniques that cannot be handled automatically by the [`Board`].
 #[rustfmt::skip]
-pub const MANUAL_TECHNIQUES: [Technique; 27] = [
+pub const MANUAL_TECHNIQUES: [Technique; 28] = [
     TECHNIQUES[3],  TECHNIQUES[4],  TECHNIQUES[5],  TECHNIQUES[6],  TECHNIQUES[7],
     TECHNIQUES[8],  TECHNIQUES[9],  TECHNIQUES[10], TECHNIQUES[11], TECHNIQUES[12],
     TECHNIQUES[13], TECHNIQUES[14], TECHNIQUES[15], TECHNIQUES[16], TECHNIQUES[17],
     TECHNIQUES[18], TECHNIQUES[19], TECHNIQUES[20], TECHNIQUES[21], TECHNIQUES[22],
     TECHNIQUES[23], TECHNIQUES[24], TECHNIQUES[25], TECHNIQUES[26], TECHNIQUES[27],
-    TECHNIQUES[28], TECHNIQUES[29],
+    TECHNIQUES[28], TECHNIQUES[29], TECHNIQUES[30],
 ];
