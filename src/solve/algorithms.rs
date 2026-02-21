@@ -17,6 +17,7 @@
 use itertools::Itertools;
 
 pub use aligned_pair_exclusion::find_aligned_pair_exclusion;
+pub use almost_locked_sets::find_almost_locked_sets;
 pub use alternating_inference_chains::find_alternating_inference_chains;
 pub use avoidable_rectangles::find_avoidable_rectangles;
 pub use brute_force::{find_brute_force, BruteForceResult};
@@ -55,6 +56,7 @@ use crate::layout::*;
 use crate::puzzle::*;
 
 mod aligned_pair_exclusion;
+mod almost_locked_sets;
 mod alternating_inference_chains;
 mod avoidable_rectangles;
 mod brute_force;

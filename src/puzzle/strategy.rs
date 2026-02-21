@@ -99,6 +99,7 @@ pub enum Strategy {
     WXYZWing,                  // (Digit, pivot Cell, arms (Cell, Cell, Cell))
     AlignedPairExclusion,      // (Cell, Cell)
     AlternatingInferenceChain, // (Digit, Vec<Cell>)
+    AlmostLockedSets,          // (CellSet, DigitSet)
 
     XYChain,                 // (Digit, Vec<Cell>)
     UniqueRectangle,         // (DigitSet, Cell, Cell, Cell, Cell)
@@ -159,6 +160,7 @@ impl Strategy {
             Self::AlignedPairExclusion => Difficulty::Diabolical,
 
             Self::AlternatingInferenceChain => Difficulty::Extreme,
+            Self::AlmostLockedSets => Difficulty::Extreme,
 
             Self::BruteForce => Difficulty::BruteForce,
         }
@@ -169,6 +171,7 @@ impl Strategy {
             Self::AlignedPairExclusion => "Aligned Pair Exclusion",
             Self::AlmostUniqueRectangle => "Almost Unique Rectangle",
             Self::AlternatingInferenceChain => "Alternating Inference Chain",
+            Self::AlmostLockedSets => "Almost Locked Sets",
             Self::AvoidableRectangle => "Avoidable Rectangle",
             Self::BoxLineReduction => "Box/Line Reduction",
             Self::BruteForce => "Brute Force",
@@ -213,6 +216,7 @@ impl Strategy {
     pub const fn acronym(&self) -> &'static str {
         match self {
             Self::AlignedPairExclusion => "AP",
+            Self::AlmostLockedSets => "LS",
             Self::AlmostUniqueRectangle => "AU",
             Self::AlternatingInferenceChain => "IC",
             Self::AvoidableRectangle => "AR",
