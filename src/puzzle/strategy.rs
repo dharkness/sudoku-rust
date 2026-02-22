@@ -91,6 +91,7 @@ pub enum Strategy {
     SinglesChain,              // (Digit, Vec<Cell>)
     XCycle,                    // (Digit, Vec<Cell>)
     GroupedXCycle,             // (Digit, Vec<CellSet>)
+    FinnedXWing,               // (Digit, House, House)
     ThreeDMedusa,              // (Digit, Vec<Cell>)
     Skyscraper,                // (Digit, floor (Cell, Cell), ceiling (Cell, Cell))
     YWing,                     // (Digit, pivot Cell, arms (Cell, Cell))
@@ -114,7 +115,7 @@ pub enum Strategy {
 }
 
 impl Strategy {
-    pub const ALL: [Strategy; 43] = [
+    pub const ALL: [Strategy; 44] = [
         Strategy::AlignedPairExclusion,
         Strategy::AlmostLockedSets,
         Strategy::AlmostUniqueRectangle,
@@ -129,6 +130,7 @@ impl Strategy {
         Strategy::Fireworks,
         Strategy::Give,
         Strategy::GroupedXCycle,
+        Strategy::FinnedXWing,
         Strategy::HiddenPair,
         Strategy::HiddenQuad,
         Strategy::HiddenSingle,
@@ -207,6 +209,7 @@ impl Strategy {
             Self::AlignedPairExclusion => Difficulty::Diabolical,
 
             Self::GroupedXCycle => Difficulty::Extreme,
+            Self::FinnedXWing => Difficulty::Extreme,
             Self::AlternatingInferenceChain => Difficulty::Extreme,
             Self::AlmostLockedSets => Difficulty::Extreme,
 
@@ -227,6 +230,7 @@ impl Strategy {
             Self::ChuteRemotePair => "Chute Remote Pair",
             Self::Erase => "Erase",
             Self::ExtendedUniqueRectangle => "Extended Unique Rectangle",
+            Self::FinnedXWing => "Finned X-Wing",
             Self::Fireworks => "Fireworks",
             Self::Give => "Give",
             Self::GroupedXCycle => "Grouped X-Cycle",
@@ -275,6 +279,7 @@ impl Strategy {
             Self::ChuteRemotePair => "CR",
             Self::Erase => " E",
             Self::ExtendedUniqueRectangle => "ER",
+            Self::FinnedXWing => "FX",
             Self::Fireworks => "FW",
             Self::Give => " G",
             Self::GroupedXCycle => "GX",
