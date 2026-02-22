@@ -93,6 +93,7 @@ pub enum Strategy {
     GroupedXCycle,             // (Digit, Vec<CellSet>)
     FinnedXWing,               // (Digit, House, House)
     FinnedSwordfish,           // (Digit, HouseSet, HouseSet)
+    DeathBlossom,              // (Cell, Vec<Als>)
     ThreeDMedusa,              // (Digit, Vec<Cell>)
     Skyscraper,                // (Digit, floor (Cell, Cell), ceiling (Cell, Cell))
     YWing,                     // (Digit, pivot Cell, arms (Cell, Cell))
@@ -116,7 +117,7 @@ pub enum Strategy {
 }
 
 impl Strategy {
-    pub const ALL: [Strategy; 45] = [
+    pub const ALL: [Strategy; 46] = [
         Strategy::AlignedPairExclusion,
         Strategy::AlmostLockedSets,
         Strategy::AlmostUniqueRectangle,
@@ -126,6 +127,7 @@ impl Strategy {
         Strategy::BruteForce,
         Strategy::Bug,
         Strategy::ChuteRemotePair,
+        Strategy::DeathBlossom,
         Strategy::Erase,
         Strategy::ExtendedUniqueRectangle,
         Strategy::FinnedSwordfish,
@@ -215,6 +217,7 @@ impl Strategy {
             Self::FinnedSwordfish => Difficulty::Extreme,
             Self::AlternatingInferenceChain => Difficulty::Extreme,
             Self::AlmostLockedSets => Difficulty::Extreme,
+            Self::DeathBlossom => Difficulty::Extreme,
 
             Self::BruteForce => Difficulty::BruteForce,
         }
@@ -231,6 +234,7 @@ impl Strategy {
             Self::BruteForce => "Brute Force",
             Self::Bug => "BUG",
             Self::ChuteRemotePair => "Chute Remote Pair",
+            Self::DeathBlossom => "Death Blossom",
             Self::Erase => "Erase",
             Self::ExtendedUniqueRectangle => "Extended Unique Rectangle",
             Self::FinnedSwordfish => "Finned Swordfish",
@@ -281,6 +285,7 @@ impl Strategy {
             Self::BruteForce => "BF",
             Self::Bug => "BG",
             Self::ChuteRemotePair => "CR",
+            Self::DeathBlossom => "DB",
             Self::Erase => " E",
             Self::ExtendedUniqueRectangle => "ER",
             Self::FinnedSwordfish => "FS",
