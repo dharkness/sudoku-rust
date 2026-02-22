@@ -179,6 +179,13 @@ impl FromStr for Cell {
                 row: row_char,
             })?;
 
+        if !col_char.is_ascii_digit() {
+            return Err(CellError::InvalidColumn {
+                label: trimmed.to_string(),
+                column: col_char,
+            });
+        }
+
         let col = col_char
             .to_string()
             .parse::<Coord>()
