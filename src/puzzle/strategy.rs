@@ -92,6 +92,7 @@ pub enum Strategy {
     XCycle,                    // (Digit, Vec<Cell>)
     GroupedXCycle,             // (Digit, Vec<CellSet>)
     FinnedXWing,               // (Digit, House, House)
+    FinnedSwordfish,           // (Digit, HouseSet, HouseSet)
     ThreeDMedusa,              // (Digit, Vec<Cell>)
     Skyscraper,                // (Digit, floor (Cell, Cell), ceiling (Cell, Cell))
     YWing,                     // (Digit, pivot Cell, arms (Cell, Cell))
@@ -115,7 +116,7 @@ pub enum Strategy {
 }
 
 impl Strategy {
-    pub const ALL: [Strategy; 44] = [
+    pub const ALL: [Strategy; 45] = [
         Strategy::AlignedPairExclusion,
         Strategy::AlmostLockedSets,
         Strategy::AlmostUniqueRectangle,
@@ -127,10 +128,11 @@ impl Strategy {
         Strategy::ChuteRemotePair,
         Strategy::Erase,
         Strategy::ExtendedUniqueRectangle,
+        Strategy::FinnedSwordfish,
+        Strategy::FinnedXWing,
         Strategy::Fireworks,
         Strategy::Give,
         Strategy::GroupedXCycle,
-        Strategy::FinnedXWing,
         Strategy::HiddenPair,
         Strategy::HiddenQuad,
         Strategy::HiddenSingle,
@@ -210,6 +212,7 @@ impl Strategy {
 
             Self::GroupedXCycle => Difficulty::Extreme,
             Self::FinnedXWing => Difficulty::Extreme,
+            Self::FinnedSwordfish => Difficulty::Extreme,
             Self::AlternatingInferenceChain => Difficulty::Extreme,
             Self::AlmostLockedSets => Difficulty::Extreme,
 
@@ -230,6 +233,7 @@ impl Strategy {
             Self::ChuteRemotePair => "Chute Remote Pair",
             Self::Erase => "Erase",
             Self::ExtendedUniqueRectangle => "Extended Unique Rectangle",
+            Self::FinnedSwordfish => "Finned Swordfish",
             Self::FinnedXWing => "Finned X-Wing",
             Self::Fireworks => "Fireworks",
             Self::Give => "Give",
@@ -279,6 +283,7 @@ impl Strategy {
             Self::ChuteRemotePair => "CR",
             Self::Erase => " E",
             Self::ExtendedUniqueRectangle => "ER",
+            Self::FinnedSwordfish => "FS",
             Self::FinnedXWing => "FX",
             Self::Fireworks => "FW",
             Self::Give => " G",
