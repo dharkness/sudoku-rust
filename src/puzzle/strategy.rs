@@ -94,6 +94,7 @@ pub enum Strategy {
     FinnedXWing,               // (Digit, House, House)
     FinnedSwordfish,           // (Digit, HouseSet, HouseSet)
     DeathBlossom,              // (Cell, Vec<Als>)
+    SueDeCoq,                  // (CellSet, CellSet, CellSet)
     ThreeDMedusa,              // (Digit, Vec<Cell>)
     Skyscraper,                // (Digit, floor (Cell, Cell), ceiling (Cell, Cell))
     YWing,                     // (Digit, pivot Cell, arms (Cell, Cell))
@@ -117,7 +118,7 @@ pub enum Strategy {
 }
 
 impl Strategy {
-    pub const ALL: [Strategy; 46] = [
+    pub const ALL: [Strategy; 47] = [
         Strategy::AlignedPairExclusion,
         Strategy::AlmostLockedSets,
         Strategy::AlmostUniqueRectangle,
@@ -153,6 +154,7 @@ impl Strategy {
         Strategy::RectangleElimination,
         Strategy::SinglesChain,
         Strategy::Skyscraper,
+        Strategy::SueDeCoq,
         Strategy::Swordfish,
         Strategy::ThreeDMedusa,
         Strategy::TwoStringKite,
@@ -218,6 +220,7 @@ impl Strategy {
             Self::AlternatingInferenceChain => Difficulty::Extreme,
             Self::AlmostLockedSets => Difficulty::Extreme,
             Self::DeathBlossom => Difficulty::Extreme,
+            Self::SueDeCoq => Difficulty::Extreme,
 
             Self::BruteForce => Difficulty::BruteForce,
         }
@@ -260,6 +263,7 @@ impl Strategy {
             Self::RectangleElimination => "Rectangle Elimination",
             Self::SinglesChain => "Singles Chain",
             Self::Skyscraper => "Skyscraper",
+            Self::SueDeCoq => "Sue-De-Coq",
             Self::Swordfish => "Swordfish",
             Self::ThreeDMedusa => "3D Medusa",
             Self::TwoStringKite => "Two-String Kite",
@@ -311,6 +315,7 @@ impl Strategy {
             Self::RectangleElimination => "RE",
             Self::SinglesChain => "SC",
             Self::Skyscraper => "SK",
+            Self::SueDeCoq => "SU",
             Self::Swordfish => "SF",
             Self::ThreeDMedusa => "3D",
             Self::TwoStringKite => "TS",
