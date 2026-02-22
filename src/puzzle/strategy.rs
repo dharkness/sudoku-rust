@@ -90,6 +90,7 @@ pub enum Strategy {
     TwoStringKite,             // (Digit, Vec<Cell>)
     SinglesChain,              // (Digit, Vec<Cell>)
     XCycle,                    // (Digit, Vec<Cell>)
+    GroupedXCycle,             // (Digit, Vec<CellSet>)
     ThreeDMedusa,              // (Digit, Vec<Cell>)
     Skyscraper,                // (Digit, floor (Cell, Cell), ceiling (Cell, Cell))
     YWing,                     // (Digit, pivot Cell, arms (Cell, Cell))
@@ -113,7 +114,7 @@ pub enum Strategy {
 }
 
 impl Strategy {
-    pub const ALL: [Strategy; 42] = [
+    pub const ALL: [Strategy; 43] = [
         Strategy::AlignedPairExclusion,
         Strategy::AlmostLockedSets,
         Strategy::AlmostUniqueRectangle,
@@ -127,6 +128,7 @@ impl Strategy {
         Strategy::ExtendedUniqueRectangle,
         Strategy::Fireworks,
         Strategy::Give,
+        Strategy::GroupedXCycle,
         Strategy::HiddenPair,
         Strategy::HiddenQuad,
         Strategy::HiddenSingle,
@@ -204,6 +206,7 @@ impl Strategy {
             Self::WXYZWing => Difficulty::Diabolical,
             Self::AlignedPairExclusion => Difficulty::Diabolical,
 
+            Self::GroupedXCycle => Difficulty::Extreme,
             Self::AlternatingInferenceChain => Difficulty::Extreme,
             Self::AlmostLockedSets => Difficulty::Extreme,
 
@@ -226,6 +229,7 @@ impl Strategy {
             Self::ExtendedUniqueRectangle => "Extended Unique Rectangle",
             Self::Fireworks => "Fireworks",
             Self::Give => "Give",
+            Self::GroupedXCycle => "Grouped X-Cycle",
             Self::HiddenPair => "Hidden Pair",
             Self::HiddenQuad => "Hidden Quad",
             Self::HiddenSingle => "Hidden Single",
@@ -273,6 +277,7 @@ impl Strategy {
             Self::ExtendedUniqueRectangle => "ER",
             Self::Fireworks => "FW",
             Self::Give => " G",
+            Self::GroupedXCycle => "GX",
             Self::HiddenPair => "HP",
             Self::HiddenQuad => "HQ",
             Self::HiddenSingle => "HS",
