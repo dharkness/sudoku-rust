@@ -832,7 +832,12 @@ impl PlayState {
             }
             if include {
                 found_any = true;
-                lines.push(format!("{:>4} - {}", i + 1, action));
+                lines.push(format!(
+                    "{:>4} - {:30}{}",
+                    i + 1,
+                    action.strategy().label(),
+                    action
+                ));
             }
         }
 
@@ -878,9 +883,10 @@ impl PlayState {
 
         let action = found.actions()[index - 1].clone();
         output.messages.push(format!(
-            "==> Highlighting deduction {} - {}",
+            "==> Highlighting deduction {} - {} - {}",
             index,
-            action.strategy().label()
+            action.strategy().label(),
+            action.to_string()
         ));
         self.highlight = Some(action);
         output.show_board = true;
