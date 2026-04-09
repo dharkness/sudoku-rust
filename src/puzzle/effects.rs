@@ -298,6 +298,41 @@ mod tests {
     }
 
     #[test]
+    fn take_actions_appends_in_order() {
+        let mut effects = Effects::new();
+        effects.add_set(Strategy::Place, cell!(A1), digit!(1));
+
+        let mut other = Effects::new();
+        other.add_set(Strategy::Place, cell!(B2), digit!(2));
+        other.add_set(Strategy::Place, cell!(C3), digit!(3));
+
+        effects.take_actions(other);
+
+        assert_eq!(3, effects.action_count());
+        assert!(effects.actions()[0].sets(cell!(A1), digit!(1)));
+        assert!(effects.actions()[1].sets(cell!(B2), digit!(2)));
+        assert!(effects.actions()[2].sets(cell!(C3), digit!(3)));
+    }
+
+    #[test]
+    fn erases_from_cells_unions_across_actions() {
+        let mut effects = Effects::new();
+        effects.add_erase_cells(Strategy::Erase, cells![A1 B2], digit!(4));
+        effects.add_erase_cells(Strategy::Erase, cells![C3], digit!(4));
+
+        assert_eq!(cells![A1 B2 C3], effects.erases_from_cells(digit!(4)));
+    }
+
+    #[test]
+    fn erases_digits_from_unions_across_actions() {
+        let mut effects = Effects::new();
+        effects.add_erase(Strategy::Erase, cell!(A1), digit!(2));
+        effects.add_erase_digits(Strategy::Erase, cell!(A1), digits![4 5]);
+
+        assert_eq!(digits![2 4 5], effects.erases_digits_from(cell!(A1)));
+    }
+
+    #[test]
     fn affecting_filters_actions() {
         let mut effects = Effects::new();
         effects.add_set(Strategy::Place, cell!(A1), digit!(1));

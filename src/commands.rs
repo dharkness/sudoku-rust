@@ -9,6 +9,7 @@ pub use tui::{start_tui, TuiArgs};
 
 mod bingo;
 mod create;
+mod deduction_merge;
 mod extract;
 mod find;
 mod play;

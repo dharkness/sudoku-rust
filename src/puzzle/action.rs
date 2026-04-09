@@ -81,6 +81,10 @@ impl Action {
         self.strategy == strategy
     }
 
+    pub fn has_same_effects(&self, other: &Action) -> bool {
+        self.set == other.set && self.erase == other.erase
+    }
+
     pub fn set(&mut self, cell: Cell, digit: Digit) {
         self.set.insert(cell, digit);
     }
@@ -446,6 +450,62 @@ mod tests {
         assert!(board.is_given(cell!(B2)));
         assert_eq!(Some(digit!(9)), board.value(cell!(B2)).digit());
         assert!(follow.is_empty());
+    }
+
+    #[test]
+    fn has_same_effects_ignores_strategy_and_clues() {
+        let mut first = Action::new_set(Strategy::Place, cell!(A1), digit!(1));
+        first.erase(cell!(B2), digit!(3));
+        first.clue_cell_for_digit(Verdict::Primary, cell!(A1), digit!(1));
+
+        let mut second = Action::new_set(Strategy::HiddenSingle, cell!(A1), digit!(1));
+        second.erase(cell!(B2), digit!(3));
+        second.clue_cell_for_digit(Verdict::Secondary, cell!(C3), digit!(2));
+
+        assert!(first.has_same_effects(&second));
+    }
+
+    #[test]
+    fn has_same_effects_detects_difference() {
+        let first = Action::new_set(Strategy::Place, cell!(A1), digit!(1));
+        let second = Action::new_set(Strategy::Place, cell!(A1), digit!(2));
+
+        assert!(!first.has_same_effects(&second));
+    }
+
+    #[test]
+    fn verdicts_for_digit_prefers_set_over_erase_and_clue() {
+        let mut action = Action::new(Strategy::HiddenSingle);
+        action.clue_cell_for_digit(Verdict::Secondary, cell!(A1), digit!(3));
+        action.erase(cell!(A1), digit!(3));
+        action.set(cell!(A1), digit!(3));
+
+        let verdicts = action.collect_verdicts_for_digit(digit!(3));
+
+        assert_eq!(Verdict::Set, verdicts[&cell!(A1)]);
+    }
+
+    #[test]
+    fn verdicts_for_digit_prefers_erase_over_clue() {
+        let mut action = Action::new(Strategy::HiddenSingle);
+        action.clue_cell_for_digit(Verdict::Secondary, cell!(A1), digit!(3));
+        action.erase(cell!(A1), digit!(3));
+
+        let verdicts = action.collect_verdicts_for_digit(digit!(3));
+
+        assert_eq!(Verdict::Erase, verdicts[&cell!(A1)]);
+    }
+
+    #[test]
+    fn affects_digit_with_sets_and_erases() {
+        let mut action = Action::new(Strategy::Erase);
+        action.set(cell!(A1), digit!(4));
+        action.erase(cell!(B2), digit!(2));
+        action.erase(cell!(B2), digit!(3));
+
+        assert!(action.affects_digit(digit!(4)));
+        assert!(action.affects_digit(digit!(2)));
+        assert!(!action.affects_digit(digit!(1)));
     }
 
     #[test]

@@ -17,6 +17,8 @@ use crate::puzzle::{Action, Board, ChangeResult, Changer, Effects, Options, Stra
 use crate::solve::{find_brute_force, BruteForceResult, TECHNIQUES};
 use crate::symbols::{MISSING, UNSOLVED};
 
+use super::deduction_merge::take_actions_with_rules;
+
 const MAXIMUM_SOLUTIONS: usize = 100;
 
 #[derive(Debug, Args, Clone, Copy, Default)]
@@ -1134,19 +1136,31 @@ impl PlayState {
             let board = self.current();
             match strategy {
                 Some(target) => {
-                    if let Some(technique) =
-                        TECHNIQUES.iter().find(|solver| solver.strategy() == target)
-                    {
-                        if let Some(actions) = technique.solve(board, false) {
-                            found.take_actions(actions);
+                    let mut aggregated: Vec<Action> = Vec::new();
+                    for solver in TECHNIQUES.iter() {
+                        if let Some(actions) = solver.solve(board, false) {
+                            take_actions_with_rules(&mut aggregated, actions);
+                        }
+                        if solver.strategy() == target {
+                            break;
                         }
                     }
+                    aggregated
+                        .iter()
+                        .filter(|action| action.has_strategy(target))
+                        .for_each(|action| {
+                            found.add_action(action.clone());
+                        });
                 }
                 None => {
-                    TECHNIQUES.iter().for_each(|solver| {
+                    let mut aggregated: Vec<Action> = Vec::new();
+                    for solver in TECHNIQUES.iter() {
                         if let Some(actions) = solver.solve(board, false) {
-                            found.take_actions(actions);
+                            take_actions_with_rules(&mut aggregated, actions);
                         }
+                    }
+                    aggregated.iter().for_each(|action| {
+                        found.add_action(action.clone());
                     });
                 }
             }
