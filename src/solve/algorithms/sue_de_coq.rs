@@ -189,15 +189,6 @@ mod tests {
 
     use super::*;
 
-    fn assert_any_erase(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.erases(cell, digit)),
-            "expected erase of {} from {}",
-            digit,
-            cell
-        );
-    }
-
     #[test]
     fn example_1() {
         let parser = Parse::wiki().stop_on_error();
@@ -208,10 +199,10 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_sue_de_coq(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(C2), digit!(8));
-        assert_any_erase(got.actions(), cell!(J2), digit!(8));
-        assert_any_erase(got.actions(), cell!(G2), digit!(2));
-        assert_any_erase(got.actions(), cell!(E3), digit!(3));
+        assert_erase!(got, C2, 8);
+        assert_erase!(got, J2, 8);
+        assert_erase!(got, G2, 2);
+        assert_erase!(got, E3, 3);
     }
 
     #[test]
@@ -224,10 +215,10 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_sue_de_coq(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(E1), digit!(6));
-        assert_any_erase(got.actions(), cell!(E3), digit!(8));
-        assert_any_erase(got.actions(), cell!(D7), digit!(3));
-        assert_any_erase(got.actions(), cell!(F8), digit!(1));
-        assert_any_erase(got.actions(), cell!(F8), digit!(7));
+        assert_erase!(got, E1, 6);
+        assert_erase!(got, E3, 8);
+        assert_erase!(got, D7, 3);
+        assert_erase!(got, F8, 1);
+        assert_erase!(got, F8, 7);
     }
 }

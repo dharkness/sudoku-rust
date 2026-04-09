@@ -93,6 +93,10 @@ impl Effects {
         self.add_action(Action::new_set(strategy, cell, digit));
     }
 
+    pub fn sets(&self, cell: Cell, digit: Digit) -> bool {
+        self.actions.iter().any(|action| action.sets(cell, digit))
+    }
+
     pub fn add_erase(&mut self, strategy: Strategy, cell: Cell, digit: Digit) {
         self.add_action(Action::new_erase(strategy, cell, digit));
     }
@@ -239,6 +243,84 @@ impl fmt::Display for Effects {
         }
         Ok(())
     }
+}
+
+/// Asserts that an [`Action`] or [`Effects`] sets a [`Cell`] to a given [`Digit`].
+///
+/// Compile-time convenience that parses the cell and digit tokens and panics on invalid input.
+/// For runtime parsing with error handling, use [`Cell::from_str`] and [`Digit::from_str`].
+///
+/// # Examples
+///
+/// ```
+/// use sudoku_rust::{assert_set, layout::{Cell, Digit}, Action, Effects};
+///
+/// let action = Action::new_set(Strategy::Place, cell!(A2), digit!(5));
+/// assert_set!(action, A2, 5);
+///
+/// let mut effects = Effects::new();
+/// effects.add_set(Strategy::Place, cell!(B7), digit!(9));
+/// assert_set!(effects, B7, 9);
+/// ```
+///
+/// # Panics
+///
+/// Panics if:
+/// - The provided cell or digit tokens are invalid (see [`Cell::from_str`] and [`Digit::from_str`]).
+/// - The assertion fails because the value does not set the cell to the digit.
+#[macro_export]
+macro_rules! assert_set {
+    ($value:expr, $cell:tt, $digit:tt $(,)?) => {{
+        let __cell = cell!($cell);
+        let __digit = digit!($digit);
+
+        assert!(
+            $value.sets(__cell, __digit),
+            "expected {} to set {} to {}",
+            stringify!($value),
+            __cell,
+            __digit
+        );
+    }};
+}
+
+/// Asserts that an [`Action`] or [`Effects`] erases a [`Digit`] from a [`Cell`].
+///
+/// Compile-time convenience that parses the cell and digit tokens and panics on invalid input.
+/// For runtime parsing with error handling, use [`Cell::from_str`] and [`Digit::from_str`].
+///
+/// # Examples
+///
+/// ```
+/// use sudoku_rust::{assert_erase, layout::{Cell, Digit}, Action, Effects};
+///
+/// let action = Action::new_erase(Strategy::Erase, cell!(A2), digit!(5));
+/// assert_erase!(action, A2, 5);
+///
+/// let mut effects = Effects::new();
+/// effects.add_erase(Strategy::Erase, cell!(B7), digit!(9));
+/// assert_erase!(effects, B7, 9);
+/// ```
+///
+/// # Panics
+///
+/// Panics if:
+/// - The provided cell or digit tokens are invalid (see [`Cell::from_str`] and [`Digit::from_str`]).
+/// - The assertion fails because the value does not erase the digit from the cell.
+#[macro_export]
+macro_rules! assert_erase {
+    ($value:expr, $cell:tt, $digit:tt $(,)?) => {{
+        let __cell = cell!($cell);
+        let __digit = digit!($digit);
+
+        assert!(
+            $value.erases(__cell, __digit),
+            "expected {} to erase {} from {}",
+            stringify!($value),
+            __digit,
+            __cell
+        );
+    }};
 }
 
 #[cfg(test)]

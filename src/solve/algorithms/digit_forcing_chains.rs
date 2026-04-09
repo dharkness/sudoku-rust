@@ -338,24 +338,6 @@ mod tests {
 
     use super::*;
 
-    fn assert_any_erase(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.erases(cell, digit)),
-            "expected erase of {} from {}",
-            digit,
-            cell
-        );
-    }
-
-    fn assert_any_set(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.sets(cell, digit)),
-            "expected set of {} in {}",
-            digit,
-            cell
-        );
-    }
-
     #[test]
     fn figure_1_example() {
         let parser = Parse::packed_with_options(Options::errors());
@@ -366,8 +348,8 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_digit_forcing_chains(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(E2), digit!(6));
-        assert_any_erase(got.actions(), cell!(E8), digit!(6));
+        assert_erase!(got, E2, 6);
+        assert_erase!(got, E8, 6);
     }
 
     #[test]
@@ -380,7 +362,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_digit_forcing_chains(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(H2), digit!(5));
+        assert_erase!(got, H2, 5);
     }
 
     #[test]
@@ -409,9 +391,9 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_digit_forcing_chains(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(D2), digit!(1));
-        assert_any_erase(got.actions(), cell!(D8), digit!(1));
-        assert_any_erase(got.actions(), cell!(D9), digit!(1));
+        assert_erase!(got, D2, 1);
+        assert_erase!(got, D8, 1);
+        assert_erase!(got, D9, 1);
     }
 
     #[test]
@@ -424,6 +406,6 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_digit_forcing_chains(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(H7), digit!(2));
+        assert_erase!(got, H7, 2);
     }
 }

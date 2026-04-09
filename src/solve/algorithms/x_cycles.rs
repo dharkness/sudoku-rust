@@ -319,24 +319,6 @@ mod tests {
 
     use super::*;
 
-    fn assert_any_erase(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.erases(cell, digit)),
-            "expected erase of {} from {}",
-            digit,
-            cell
-        );
-    }
-
-    fn assert_any_set(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.sets(cell, digit)),
-            "expected set of {} in {}",
-            digit,
-            cell
-        );
-    }
-
     #[test]
     fn part1_figure_4_example() {
         let parser = Parse::packed_with_options(Options::all());
@@ -347,11 +329,10 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_x_cycles(&board, false).expect("not found");
-        let actions = got.actions();
-        assert_any_erase(actions, cell!(C3), digit!(8));
-        assert_any_erase(actions, cell!(C9), digit!(8));
-        assert_any_erase(actions, cell!(G3), digit!(8));
-        assert_any_erase(actions, cell!(G9), digit!(8));
+        assert_erase!(got, C3, 8);
+        assert_erase!(got, C9, 8);
+        assert_erase!(got, G3, 8);
+        assert_erase!(got, G9, 8);
     }
 
     #[test]
@@ -364,8 +345,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_x_cycles(&board, false).expect("not found");
-        let actions = got.actions();
-        assert_any_erase(actions, cell!(H9), digit!(3));
+        assert_erase!(got, H9, 3);
     }
 
     #[test]
@@ -378,7 +358,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_x_cycles(&board, false).expect("not found");
-        assert_any_set(got.actions(), cell!(J1), digit!(1));
+        assert_set!(got, J1, 1);
     }
 
     #[test]
@@ -391,7 +371,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_x_cycles(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(C3), digit!(1));
+        assert_erase!(got, C3, 1);
     }
 
     #[test]
@@ -404,6 +384,6 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_x_cycles(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(B7), digit!(8));
+        assert_erase!(got, B7, 8);
     }
 }

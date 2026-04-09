@@ -191,15 +191,6 @@ mod tests {
 
     use super::*;
 
-    fn assert_any_erase(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.erases(cell, digit)),
-            "expected erase of {} from {}",
-            digit,
-            cell
-        );
-    }
-
     fn assert_any_erase_in(actions: &[Action], targets: CellSet, digit: Digit) {
         assert!(
             actions
@@ -221,9 +212,8 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_w_wings(&board, false).expect("not found");
-        let actions = got.actions();
-        assert_any_erase(actions, cell!(H3), digit!(4));
-        assert_any_erase(actions, cell!(H3), digit!(9));
+        assert_erase!(got, H3, 4);
+        assert_erase!(got, H3, 9);
     }
 
     #[test]
@@ -236,9 +226,8 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_w_wings(&board, false).expect("not found");
-        let actions = got.actions();
-        assert_any_erase(actions, cell!(H2), digit!(4));
-        assert_any_erase(actions, cell!(H2), digit!(9));
+        assert_erase!(got, H2, 4);
+        assert_erase!(got, H2, 9);
     }
 
     #[test]
@@ -251,9 +240,8 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_w_wings(&board, false).expect("not found");
-        let actions = got.actions();
-        assert_any_erase(actions, cell!(D6), digit!(3));
-        assert_any_erase(actions, cell!(E6), digit!(3));
+        assert_erase!(got, D6, 3);
+        assert_erase!(got, E6, 3);
     }
 
     #[test]
@@ -281,8 +269,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_w_wings(&board, false).expect("not found");
-        let actions = got.actions();
-        assert_any_erase(actions, cell!(B2), digit!(4));
-        assert_any_erase(actions, cell!(B2), digit!(1));
+        assert_erase!(got, B2, 4);
+        assert_erase!(got, B2, 1);
     }
 }

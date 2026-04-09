@@ -411,24 +411,6 @@ mod tests {
 
     use super::*;
 
-    fn assert_any_erase(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.erases(cell, digit)),
-            "expected erase of {} from {}",
-            digit,
-            cell
-        );
-    }
-
-    fn assert_any_set(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.sets(cell, digit)),
-            "expected set of {} in {}",
-            digit,
-            cell
-        );
-    }
-
     #[test]
     fn rule_1_example() {
         let parser = Parse::wiki().stop_on_error();
@@ -439,7 +421,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_alternating_inference_chains(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(A4), digit!(8));
+        assert_erase!(got, A4, 8);
     }
 
     #[test]
@@ -452,7 +434,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_alternating_inference_chains(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(H1), digit!(8));
+        assert_erase!(got, H1, 8);
     }
 
     #[test]
@@ -465,7 +447,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_alternating_inference_chains(&board, false).expect("not found");
-        assert_any_set(got.actions(), cell!(B9), digit!(9));
+        assert_set!(got, B9, 9);
     }
 
     #[test]
@@ -478,6 +460,6 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_alternating_inference_chains(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(A2), digit!(5));
+        assert_erase!(got, A2, 5);
     }
 }

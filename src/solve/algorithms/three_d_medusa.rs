@@ -400,15 +400,6 @@ mod tests {
 
     use super::*;
 
-    fn assert_any_erase(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.erases(cell, digit)),
-            "expected erase of {} from {}",
-            digit,
-            cell
-        );
-    }
-
     #[test]
     fn rule_1_example() {
         let parser = Parse::packed_with_options(Options::all());
@@ -419,7 +410,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_three_d_medusa(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(H2), digit!(1));
+        assert_erase!(got, H2, 1);
     }
 
     #[test]
@@ -432,7 +423,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_three_d_medusa(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(E5), digit!(4));
+        assert_erase!(got, E5, 4);
     }
 
     #[test]
@@ -445,7 +436,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_three_d_medusa(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(C2), digit!(8));
+        assert_erase!(got, C2, 8);
     }
 
     #[test]
@@ -458,7 +449,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_three_d_medusa(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(B1), digit!(7));
+        assert_erase!(got, B1, 7);
     }
 
     #[test]
@@ -471,7 +462,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_three_d_medusa(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(E5), digit!(1));
+        assert_erase!(got, E5, 1);
     }
 
     #[test]
@@ -484,7 +475,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_three_d_medusa(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(A3), digit!(1));
+        assert_erase!(got, A3, 1);
     }
 
     #[test]
@@ -497,6 +488,6 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_three_d_medusa(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(A6), digit!(4));
+        assert_erase!(got, A6, 4);
     }
 }

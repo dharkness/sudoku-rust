@@ -234,15 +234,6 @@ mod tests {
 
     use super::*;
 
-    fn assert_any_erase(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.erases(cell, digit)),
-            "expected erase of {} from {}",
-            digit,
-            cell
-        );
-    }
-
     #[test]
     fn example_1() {
         let parser = Parse::wiki().stop_on_error();
@@ -253,9 +244,8 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_chute_remote_pairs(&board, false).expect("not found");
-        let actions = got.actions();
-        assert_any_erase(actions, cell!(A1), digit!(4));
-        assert_any_erase(actions, cell!(C7), digit!(4));
+        assert_erase!(got, A1, 4);
+        assert_erase!(got, C7, 4);
     }
 
     #[test]
@@ -268,9 +258,8 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_chute_remote_pairs(&board, false).expect("not found");
-        let actions = got.actions();
-        assert_any_erase(actions, cell!(C5), digit!(2));
-        assert_any_erase(actions, cell!(D6), digit!(2));
+        assert_erase!(got, C5, 2);
+        assert_erase!(got, D6, 2);
     }
 
     #[test]
@@ -283,9 +272,8 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_chute_remote_pairs(&board, false).expect("not found");
-        let actions = got.actions();
-        assert_any_erase(actions, cell!(D2), digit!(9));
-        assert_any_erase(actions, cell!(D3), digit!(9));
+        assert_erase!(got, D2, 9);
+        assert_erase!(got, D3, 9);
     }
 
     #[test]
@@ -298,9 +286,8 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_chute_remote_pairs(&board, false).expect("not found");
-        let actions = got.actions();
-        assert_any_erase(actions, cell!(B3), digit!(4));
-        assert_any_erase(actions, cell!(B3), digit!(7));
+        assert_erase!(got, B3, 4);
+        assert_erase!(got, B3, 7);
     }
 
     #[test]
@@ -313,10 +300,9 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_chute_remote_pairs(&board, false).expect("not found");
-        let actions = got.actions();
-        assert_any_erase(actions, cell!(J7), digit!(7));
-        assert_any_erase(actions, cell!(J7), digit!(9));
-        assert_any_erase(actions, cell!(G8), digit!(7));
-        assert_any_erase(actions, cell!(G8), digit!(9));
+        assert_erase!(got, J7, 7);
+        assert_erase!(got, J7, 9);
+        assert_erase!(got, G8, 7);
+        assert_erase!(got, G8, 9);
     }
 }

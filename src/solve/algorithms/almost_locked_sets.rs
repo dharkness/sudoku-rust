@@ -299,15 +299,6 @@ mod tests {
 
     use super::*;
 
-    fn assert_any_erase(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.erases(cell, digit)),
-            "expected erase of {} from {}",
-            digit,
-            cell
-        );
-    }
-
     #[test]
     fn rule_1_example_1() {
         let parser = Parse::packed_with_options(Options::all());
@@ -318,7 +309,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_almost_locked_sets(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(A7), digit!(4));
+        assert_erase!(got, A7, 4);
     }
 
     #[test]
@@ -331,7 +322,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_almost_locked_sets(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(B2), digit!(2));
+        assert_erase!(got, B2, 2);
     }
 
     #[test]
@@ -344,7 +335,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_almost_locked_sets(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(E2), digit!(1));
+        assert_erase!(got, E2, 1);
     }
 
     #[test]
@@ -357,7 +348,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_almost_locked_sets(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(E2), digit!(1));
+        assert_erase!(got, E2, 1);
     }
 
     #[test]
@@ -370,6 +361,6 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_almost_locked_sets(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(A3), digit!(4));
+        assert_erase!(got, A3, 4);
     }
 }

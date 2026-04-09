@@ -159,15 +159,6 @@ mod tests {
 
     use super::*;
 
-    fn assert_any_erase(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.erases(cell, digit)),
-            "expected erase of {} from {}",
-            digit,
-            cell
-        );
-    }
-
     fn apply_singles(board: &Board) -> Board {
         let mut board = *board;
         let changer = Changer::new(Options::errors());
@@ -208,7 +199,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_finned_x_wings(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(H9), digit!(7));
+        assert_erase!(got, H9, 7);
     }
 
     #[test]
@@ -221,8 +212,8 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_finned_x_wings(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(E6), digit!(4));
-        assert_any_erase(got.actions(), cell!(F6), digit!(4));
+        assert_erase!(got, E6, 4);
+        assert_erase!(got, F6, 4);
     }
 
     #[test]

@@ -475,24 +475,6 @@ mod tests {
 
     use super::*;
 
-    fn assert_any_erase(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.erases(cell, digit)),
-            "expected erase of {} from {}",
-            digit,
-            cell
-        );
-    }
-
-    fn assert_any_set(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.sets(cell, digit)),
-            "expected set of {} in {}",
-            digit,
-            cell
-        );
-    }
-
     #[test]
     fn rule_1_figure_2_example() {
         let parser = Parse::packed_with_options(Options::errors());
@@ -503,11 +485,10 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_grouped_x_cycles(&board, false).expect("not found");
-        let actions = got.actions();
-        assert_any_erase(actions, cell!(C9), digit!(4));
-        assert_any_erase(actions, cell!(H9), digit!(4));
-        assert_any_erase(actions, cell!(H6), digit!(4));
-        assert_any_erase(actions, cell!(C4), digit!(4));
+        assert_erase!(got, C9, 4);
+        assert_erase!(got, H9, 4);
+        assert_erase!(got, H6, 4);
+        assert_erase!(got, C4, 4);
     }
 
     #[test]
@@ -546,7 +527,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_grouped_x_cycles(&board, false).expect("not found");
-        assert_any_set(got.actions(), cell!(G9), digit!(8));
+        assert_set!(got, G9, 8);
     }
 
     #[test]
@@ -572,7 +553,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_grouped_x_cycles(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(C1), digit!(2));
+        assert_erase!(got, C1, 2);
     }
 
     #[test]
@@ -585,6 +566,6 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_grouped_x_cycles(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(C5), digit!(4));
+        assert_erase!(got, C5, 4);
     }
 }

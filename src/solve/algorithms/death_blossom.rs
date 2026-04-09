@@ -176,15 +176,6 @@ mod tests {
 
     use super::*;
 
-    fn assert_any_erase(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.erases(cell, digit)),
-            "expected erase of {} from {}",
-            digit,
-            cell
-        );
-    }
-
     #[test]
     fn example_1() {
         let board = Parse::packed_with_options(Options::errors()).parse_simple(
@@ -215,10 +206,10 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_death_blossoms(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(D9), digit!(3));
-        assert_any_erase(got.actions(), cell!(E9), digit!(3));
-        assert_any_erase(got.actions(), cell!(F9), digit!(3));
-        assert_any_erase(got.actions(), cell!(J7), digit!(3));
+        assert_erase!(got, D9, 3);
+        assert_erase!(got, E9, 3);
+        assert_erase!(got, F9, 3);
+        assert_erase!(got, J7, 3);
     }
 
     #[test]

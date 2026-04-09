@@ -158,15 +158,6 @@ mod tests {
 
     use super::*;
 
-    fn assert_any_erase(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.erases(cell, digit)),
-            "expected erase of {} from {}",
-            digit,
-            cell
-        );
-    }
-
     #[test]
     fn example_1() {
         let parser = Parse::wiki().stop_on_error();
@@ -177,7 +168,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_finned_swordfish(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(G4), digit!(3));
+        assert_erase!(got, G4, 3);
     }
 
     #[test]
@@ -190,7 +181,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_finned_swordfish(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(H1), digit!(3));
+        assert_erase!(got, H1, 3);
     }
 
     #[test]
@@ -203,7 +194,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_finned_swordfish(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(B6), digit!(7));
+        assert_erase!(got, B6, 7);
     }
 
     #[test]

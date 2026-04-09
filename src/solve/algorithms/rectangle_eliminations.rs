@@ -133,15 +133,6 @@ mod tests {
 
     use super::*;
 
-    fn assert_any_erase(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.erases(cell, digit)),
-            "expected erase of {} from {}",
-            digit,
-            cell
-        );
-    }
-
     #[test]
     fn example_1() {
         let parser = Parse::wiki().stop_on_error();
@@ -152,7 +143,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_rectangle_eliminations(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(A2), digit!(9));
+        assert_erase!(got, A2, 9);
     }
 
     #[test]
@@ -165,7 +156,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_rectangle_eliminations(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(F2), digit!(9));
+        assert_erase!(got, F2, 9);
     }
 
     #[test]
@@ -178,7 +169,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_rectangle_eliminations(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(B7), digit!(5));
-        assert_any_erase(got.actions(), cell!(E2), digit!(5));
+        assert_erase!(got, B7, 5);
+        assert_erase!(got, E2, 5);
     }
 }

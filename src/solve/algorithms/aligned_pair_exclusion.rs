@@ -217,15 +217,6 @@ mod tests {
 
     use super::*;
 
-    fn assert_any_erase(actions: &[Action], cell: Cell, digit: Digit) {
-        assert!(
-            actions.iter().any(|action| action.erases(cell, digit)),
-            "expected erase of {} from {}",
-            digit,
-            cell
-        );
-    }
-
     #[test]
     fn example_1() {
         let parser = Parse::packed_with_options(Options::all());
@@ -236,7 +227,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_aligned_pair_exclusion(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(B3), digit!(5));
+        assert_erase!(got, B3, 5);
     }
 
     #[test]
@@ -249,7 +240,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_aligned_pair_exclusion(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(C2), digit!(1));
+        assert_erase!(got, C2, 1);
     }
 
     #[test]
@@ -262,7 +253,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_aligned_pair_exclusion(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(A1), digit!(4));
+        assert_erase!(got, A1, 4);
     }
 
     #[test]
@@ -275,7 +266,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_aligned_pair_exclusion(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(B1), digit!(8));
+        assert_erase!(got, B1, 8);
     }
 
     #[test]
@@ -288,7 +279,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_aligned_pair_exclusion(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(B1), digit!(1));
+        assert_erase!(got, B1, 1);
     }
 
     #[test]
@@ -301,7 +292,7 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_aligned_pair_exclusion(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(D1), digit!(6));
+        assert_erase!(got, D1, 6);
     }
 
     #[test]
@@ -314,6 +305,6 @@ mod tests {
         assert!(!effects.has_errors());
 
         let got = find_aligned_pair_exclusion(&board, false).expect("not found");
-        assert_any_erase(got.actions(), cell!(E5), digit!(2));
+        assert_erase!(got, E5, 2);
     }
 }
