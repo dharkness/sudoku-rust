@@ -1369,7 +1369,7 @@ fn strip_ansi(input: &str) -> String {
         if ch == '\u{1b}' {
             if matches!(chars.peek(), Some('[')) {
                 chars.next();
-                while let Some(c) = chars.next() {
+                for c in chars.by_ref() {
                     if c == 'm' {
                         break;
                     }
@@ -1435,7 +1435,7 @@ fn trim_ansi_trailing_spaces(input: &str) -> String {
         if ch == '\u{1b}' && matches!(chars.peek(), Some('[')) {
             let mut seq = String::from("\u{1b}");
             seq.push(chars.next().unwrap());
-            while let Some(c) = chars.next() {
+            for c in chars.by_ref() {
                 seq.push(c);
                 if c == 'm' {
                     break;
@@ -1479,7 +1479,7 @@ fn ansi_line_to_line(line: &str) -> Line<'static> {
             chars.next();
             let mut code = String::new();
             let mut codes = Vec::new();
-            while let Some(c) = chars.next() {
+            for c in chars.by_ref() {
                 if c == 'm' {
                     if !code.is_empty() {
                         codes.push(code.clone());

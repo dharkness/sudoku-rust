@@ -76,16 +76,12 @@ fn check_combo(
 
     for (index, cells) in base_cells.iter().enumerate() {
         let covered = *cells & cover_cells;
+        if covered.is_empty() {
+            return false;
+        }
         let extra = *cells - covered;
-        if extra.is_empty() {
-            if covered.len() < 1 {
-                return false;
-            }
-        } else {
+        if !extra.is_empty() {
             if fin_index.is_some() {
-                return false;
-            }
-            if covered.is_empty() {
                 return false;
             }
             fin_index = Some(index);

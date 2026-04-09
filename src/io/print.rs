@@ -181,8 +181,8 @@ fn append_solved_digit_lines(
     given: bool,
     verdict: Verdict,
 ) {
-    for line in 0..3 {
-        let glyph = pad_digit_glyph_line(digit, line);
+    for (index, line) in cell_lines.iter_mut().enumerate().take(3) {
+        let glyph = pad_digit_glyph_line(digit, index);
         let rendered = match verdict {
             Verdict::None => {
                 if given {
@@ -193,7 +193,7 @@ fn append_solved_digit_lines(
             }
             verdict => verdict.color(glyph),
         };
-        cell_lines[line].push_str(&rendered);
+        line.push_str(&rendered);
     }
 }
 

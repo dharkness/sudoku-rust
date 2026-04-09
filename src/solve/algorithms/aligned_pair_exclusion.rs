@@ -7,7 +7,7 @@ pub fn find_aligned_pair_exclusion(board: &Board, single: bool) -> Option<Effect
     let candidate_cells: Vec<Cell> = Cell::iter()
         .filter(|cell| {
             let count = board.candidates(*cell).len();
-            count >= 2 && count <= 5
+            (2..=5).contains(&count)
         })
         .collect();
 
